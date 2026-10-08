@@ -1,0 +1,11 @@
+name = "ak-parti-kepez-push"
+main = "src/worker.js"
+compatibility_date = "2026-10-08"
+
+[[kv_namespaces]]
+binding = "SUBSCRIPTIONS"
+id = "4cf6453d99ad41ba9f0ef0b794a26eec"
+
+[vars]
+VAPID_PUBLIC_KEY = "BDF-DNF3ase4Th9_1FYDC3hlLrM_POPq-HwBV6NL7rt-3PvtYodySS22FP57vVD1rBvlmKVRRQbfIaI3XxQEBLU"
+VAPID_SUBJECT = "mailto:admin@akpartikepez.local"
