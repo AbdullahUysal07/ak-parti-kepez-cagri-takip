@@ -177,6 +177,14 @@ async function putAccessOverrides(env, overrides) {
   await env.SUBSCRIPTIONS.put('__access_overrides__', JSON.stringify(overrides || {}));
 }
 
+async function getCallLogs(env) {
+  return (await env.SUBSCRIPTIONS.get('__call_logs__', 'json')) || [];
+}
+
+async function putCallLogs(env, logs) {
+  await env.SUBSCRIPTIONS.put('__call_logs__', JSON.stringify((logs || []).slice(0, 5000)));
+}
+
 async function requireAdmin(request, env) {
   const expected = env.ADMIN_TOKEN;
   const actual = request.headers.get('Authorization') || '';
@@ -224,6 +232,32 @@ export default {
       };
       await putAccessOverrides(env, overrides);
       return json({ ok: true, overrides });
+    }
+
+    if (url.pathname === '/logs' && request.method === 'GET') {
+      if (!(await requireAdmin(request, env))) return json({ error: 'unauthorized' }, 401);
+      return json({ ok: true, logs: await getCallLogs(env) });
+    }
+
+    if (url.pathname === '/logs' && request.method === 'POST') {
+      const body = await request.json();
+      if (!body.memberId) return json({ error: 'member_required' }, 400);
+      const logs = await getCallLogs(env);
+      const item = {
+        id: body.id || crypto.randomUUID(),
+        memberId: String(body.memberId || ''),
+        memberName: String(body.memberName || ''),
+        memberPhone: String(body.memberPhone || ''),
+        neighborhood: String(body.neighborhood || ''),
+        status: String(body.status || 'called'),
+        note: String(body.note || ''),
+        agent: String(body.agent || ''),
+        username: String(body.username || ''),
+        time: body.time || new Date().toISOString()
+      };
+      logs.unshift(item);
+      await putCallLogs(env, logs);
+      return json({ ok: true, log: item });
     }
 
     if (url.pathname === '/announcements' && request.method === 'POST') {
