@@ -243,6 +243,30 @@ export default {
       return json({ ok: true });
     }
 
+    if (url.pathname.startsWith('/announcements/') && request.method === 'PUT') {
+      if (!(await requireAdmin(request, env))) return json({ error: 'unauthorized' }, 401);
+      const id = decodeURIComponent(url.pathname.replace('/announcements/', ''));
+      const body = await request.json();
+      const text = String(body.body || '').trim();
+      if (!text) return json({ error: 'body_required' }, 400);
+      const announcements = await getAnnouncements(env);
+      const item = announcements.find(a => a.id === id);
+      if (!item) return json({ error: 'not_found' }, 404);
+      item.body = text;
+      item.updatedAt = new Date().toISOString();
+      await putAnnouncements(env, announcements);
+      return json({ ok: true, announcement: item });
+    }
+
+    if (url.pathname.startsWith('/announcements/') && request.method === 'DELETE') {
+      if (!(await requireAdmin(request, env))) return json({ error: 'unauthorized' }, 401);
+      const id = decodeURIComponent(url.pathname.replace('/announcements/', ''));
+      const announcements = await getAnnouncements(env);
+      const next = announcements.filter(a => a.id !== id);
+      await putAnnouncements(env, next);
+      return json({ ok: true });
+    }
+
     if (url.pathname === '/announcements/like' && request.method === 'POST') {
       const body = await request.json();
       const announcements = await getAnnouncements(env);
