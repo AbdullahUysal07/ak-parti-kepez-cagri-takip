@@ -185,6 +185,14 @@ async function putCallLogs(env, logs) {
   await env.SUBSCRIPTIONS.put('__call_logs__', JSON.stringify((logs || []).slice(0, 5000)));
 }
 
+async function getLocations(env) {
+  return (await env.SUBSCRIPTIONS.get('__user_locations__', 'json')) || {};
+}
+
+async function putLocations(env, locations) {
+  await env.SUBSCRIPTIONS.put('__user_locations__', JSON.stringify(locations || {}));
+}
+
 async function requireAdmin(request, env) {
   const expected = env.ADMIN_TOKEN;
   const actual = request.headers.get('Authorization') || '';
@@ -258,6 +266,33 @@ export default {
       logs.unshift(item);
       await putCallLogs(env, logs);
       return json({ ok: true, log: item });
+    }
+
+    if (url.pathname === '/locations' && request.method === 'GET') {
+      if (!(await requireAdmin(request, env))) return json({ error: 'unauthorized' }, 401);
+      const locations = await getLocations(env);
+      return json({ ok: true, locations: Object.values(locations).sort((a, b) => String(b.time).localeCompare(String(a.time))) });
+    }
+
+    if (url.pathname === '/locations' && request.method === 'POST') {
+      const body = await request.json();
+      const username = String(body.username || '').trim();
+      const lat = Number(body.lat);
+      const lng = Number(body.lng);
+      if (!username || !Number.isFinite(lat) || !Number.isFinite(lng)) return json({ error: 'location_required' }, 400);
+      const locations = await getLocations(env);
+      locations[username] = {
+        username,
+        name: String(body.name || username),
+        role: String(body.role || ''),
+        neighborhood: String(body.neighborhood || ''),
+        lat,
+        lng,
+        accuracy: Number(body.accuracy || 0),
+        time: body.time || new Date().toISOString()
+      };
+      await putLocations(env, locations);
+      return json({ ok: true, location: locations[username] });
     }
 
     if (url.pathname === '/announcements' && request.method === 'POST') {
