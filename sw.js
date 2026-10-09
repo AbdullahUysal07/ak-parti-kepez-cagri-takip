@@ -1,20 +1,31 @@
 self.addEventListener('push', event => {
-  let data = {};
-  try {
-    data = event.data ? event.data.json() : {};
-  } catch (error) {
-    data = { title: 'AK Parti Kepez', body: event.data ? event.data.text() : 'Yeni bildirim var.' };
-  }
+  event.waitUntil((async () => {
+    let data = {};
+    try {
+      data = event.data ? event.data.json() : {};
+    } catch (error) {
+      data = { title: 'AK Parti Kepez', body: event.data ? event.data.text() : '' };
+    }
 
-  const title = data.title || 'AK Parti Kepez';
-  const options = {
-    body: data.body || 'Yeni bildirim var.',
-    icon: data.icon || './',
-    badge: data.badge || './',
-    data: { url: data.url || './' },
-    requireInteraction: true
-  };
-  event.waitUntil(self.registration.showNotification(title, options));
+    if (!data.body) {
+      try {
+        const response = await fetch('https://ak-parti-kepez-push.aytride.workers.dev/latest', { cache: 'no-store' });
+        if (response.ok) data = await response.json();
+      } catch (error) {
+        data = {};
+      }
+    }
+
+    const title = data.title || 'AK Parti Kepez';
+    const options = {
+      body: data.body || 'Yeni bildirim var.',
+      icon: './',
+      badge: './',
+      data: { url: data.url || './' },
+      requireInteraction: true
+    };
+    await self.registration.showNotification(title, options);
+  })());
 });
 
 self.addEventListener('notificationclick', event => {

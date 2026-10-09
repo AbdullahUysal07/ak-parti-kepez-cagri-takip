@@ -140,20 +140,16 @@ function originFromEndpoint(endpoint) {
   return `${url.protocol}//${url.host}`;
 }
 
-async function sendPush(env, subscription, payload) {
-  const body = await encryptPayload(subscription, payload);
+async function sendPush(env, subscription) {
   const audience = originFromEndpoint(subscription.endpoint);
   const jwt = await signJwt(env, audience);
   return fetch(subscription.endpoint, {
     method: 'POST',
     headers: {
       TTL: '86400',
-      'Content-Type': 'application/octet-stream',
-      'Content-Encoding': 'aes128gcm',
       Authorization: `WebPush ${jwt}`,
       'Crypto-Key': `p256ecdsa=${env.VAPID_PUBLIC_KEY}`
-    },
-    body
+    }
   });
 }
 
@@ -170,6 +166,11 @@ export default {
 
     if (url.pathname === '/health') {
       return json({ ok: true });
+    }
+
+    if (url.pathname === '/latest') {
+      const latest = await env.SUBSCRIPTIONS.get('__latest_notification__', 'json');
+      return json(latest || { title: 'AK Parti Kepez', body: 'Yeni bildirim var.', url: 'https://abdullahuysal07.github.io/ak-parti-kepez-cagri-takip/' });
     }
 
     if (url.pathname === '/subscribe' && request.method === 'POST') {
@@ -192,6 +193,7 @@ export default {
         body: body.body || 'Yeni bildirim var.',
         url: body.url || 'https://abdullahuysal07.github.io/ak-parti-kepez-cagri-takip/'
       };
+      await env.SUBSCRIPTIONS.put('__latest_notification__', JSON.stringify({ ...payload, sentAt: new Date().toISOString() }));
       const list = await env.SUBSCRIPTIONS.list();
       let sent = 0;
       let failed = 0;
@@ -199,7 +201,7 @@ export default {
       for (const key of list.keys) {
         const saved = await env.SUBSCRIPTIONS.get(key.name, 'json');
         if (!saved || !saved.subscription) continue;
-        const res = await sendPush(env, saved.subscription, payload);
+        const res = await sendPush(env, saved.subscription);
         if (res.ok) sent += 1;
         else {
           failed += 1;
