@@ -153,6 +153,22 @@ async function sendPush(env, subscription) {
   });
 }
 
+async function getAnnouncements(env) {
+  return (await env.SUBSCRIPTIONS.get('__announcements__', 'json')) || [];
+}
+
+async function putAnnouncements(env, announcements) {
+  await env.SUBSCRIPTIONS.put('__announcements__', JSON.stringify(announcements.slice(0, 100)));
+}
+
+function upsertPerson(list, body) {
+  const username = String(body.username || '').trim();
+  if (!username) return list || [];
+  const next = (list || []).filter(item => item.username !== username);
+  next.push({ username, name: body.name || username, at: new Date().toISOString() });
+  return next;
+}
+
 async function requireAdmin(request, env) {
   const expected = env.ADMIN_TOKEN;
   const actual = request.headers.get('Authorization') || '';
@@ -171,6 +187,71 @@ export default {
     if (url.pathname === '/latest') {
       const latest = await env.SUBSCRIPTIONS.get('__latest_notification__', 'json');
       return json(latest || { title: 'AK Parti Kepez', body: 'Yeni bildirim var.', url: 'https://abdullahuysal07.github.io/ak-parti-kepez-cagri-takip/' });
+    }
+
+    if (url.pathname === '/announcements' && request.method === 'GET') {
+      const announcements = await getAnnouncements(env);
+      return json({ ok: true, announcements });
+    }
+
+    if (url.pathname === '/announcements' && request.method === 'POST') {
+      if (!(await requireAdmin(request, env))) return json({ error: 'unauthorized' }, 401);
+      const body = await request.json();
+      const text = String(body.body || '').trim();
+      if (!text) return json({ error: 'body_required' }, 400);
+      const announcements = await getAnnouncements(env);
+      const announcement = {
+        id: crypto.randomUUID(),
+        body: text,
+        authorName: body.authorName || 'Hasan Demir',
+        createdAt: new Date().toISOString(),
+        reads: [],
+        likes: []
+      };
+      announcements.unshift(announcement);
+      await putAnnouncements(env, announcements);
+      await env.SUBSCRIPTIONS.put('__latest_notification__', JSON.stringify({
+        title: 'Yeni duyuru var',
+        body: text,
+        url: body.url || 'https://abdullahuysal07.github.io/ak-parti-kepez-cagri-takip/',
+        sentAt: new Date().toISOString()
+      }));
+      const list = await env.SUBSCRIPTIONS.list();
+      let sent = 0;
+      let failed = 0;
+      for (const key of list.keys) {
+        if (key.name.startsWith('__')) continue;
+        const saved = await env.SUBSCRIPTIONS.get(key.name, 'json');
+        if (!saved || !saved.subscription) continue;
+        const res = await sendPush(env, saved.subscription);
+        if (res.ok) sent += 1;
+        else {
+          failed += 1;
+          if (res.status === 404 || res.status === 410) await env.SUBSCRIPTIONS.delete(key.name);
+        }
+      }
+      return json({ ok: true, announcement, sent, failed });
+    }
+
+    if (url.pathname === '/announcements/read' && request.method === 'POST') {
+      const body = await request.json();
+      const announcements = await getAnnouncements(env);
+      const item = announcements.find(a => a.id === body.announcementId);
+      if (!item) return json({ error: 'not_found' }, 404);
+      item.reads = upsertPerson(item.reads, body);
+      await putAnnouncements(env, announcements);
+      return json({ ok: true });
+    }
+
+    if (url.pathname === '/announcements/like' && request.method === 'POST') {
+      const body = await request.json();
+      const announcements = await getAnnouncements(env);
+      const item = announcements.find(a => a.id === body.announcementId);
+      if (!item) return json({ error: 'not_found' }, 404);
+      item.likes = upsertPerson(item.likes, body);
+      item.reads = upsertPerson(item.reads, body);
+      await putAnnouncements(env, announcements);
+      return json({ ok: true });
     }
 
     if (url.pathname === '/subscribe' && request.method === 'POST') {
@@ -199,6 +280,7 @@ export default {
       let failed = 0;
       const failures = [];
       for (const key of list.keys) {
+        if (key.name.startsWith('__')) continue;
         const saved = await env.SUBSCRIPTIONS.get(key.name, 'json');
         if (!saved || !saved.subscription) continue;
         const res = await sendPush(env, saved.subscription);

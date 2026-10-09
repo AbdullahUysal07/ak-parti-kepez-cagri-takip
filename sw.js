@@ -1,3 +1,11 @@
+self.addEventListener('install', event => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', event => {
+  event.waitUntil(self.clients.claim());
+});
+
 self.addEventListener('push', event => {
   event.waitUntil((async () => {
     let data = {};
@@ -9,7 +17,7 @@ self.addEventListener('push', event => {
 
     if (!data.body) {
       try {
-        const response = await fetch('https://ak-parti-kepez-push.aytride.workers.dev/latest', { cache: 'no-store' });
+        const response = await fetch('https://ak-parti-kepez-push.aytride.workers.dev/latest?t=' + Date.now(), { cache: 'no-store' });
         if (response.ok) data = await response.json();
       } catch (error) {
         data = {};
