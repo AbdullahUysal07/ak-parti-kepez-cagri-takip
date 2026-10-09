@@ -169,6 +169,16 @@ function upsertPerson(list, body) {
   return next;
 }
 
+function normalizeTarget(value) {
+  return value === 'management' || value === 'neighborhood' ? value : 'all';
+}
+
+function matchesTarget(saved, target) {
+  const wanted = normalizeTarget(target);
+  if (wanted === 'all') return true;
+  return saved && saved.role === wanted;
+}
+
 async function getAccessOverrides(env) {
   return (await env.SUBSCRIPTIONS.get('__access_overrides__', 'json')) || {};
 }
@@ -214,8 +224,9 @@ export default {
     }
 
     if (url.pathname === '/announcements' && request.method === 'GET') {
+      const role = normalizeTarget(url.searchParams.get('role') || 'all');
       const announcements = await getAnnouncements(env);
-      return json({ ok: true, announcements });
+      return json({ ok: true, announcements: announcements.filter(item => matchesTarget({ role }, item.target || 'all')) });
     }
 
     if (url.pathname === '/access' && request.method === 'GET') {
@@ -304,6 +315,7 @@ export default {
       const announcement = {
         id: crypto.randomUUID(),
         body: text,
+        target: normalizeTarget(body.target),
         authorName: body.authorName || 'Hasan Demir',
         createdAt: new Date().toISOString(),
         reads: [],
@@ -320,10 +332,12 @@ export default {
       const list = await env.SUBSCRIPTIONS.list();
       let sent = 0;
       let failed = 0;
+      const target = announcement.target;
       for (const key of list.keys) {
         if (key.name.startsWith('__')) continue;
         const saved = await env.SUBSCRIPTIONS.get(key.name, 'json');
         if (!saved || !saved.subscription) continue;
+        if (!matchesTarget(saved, target)) continue;
         const res = await sendPush(env, saved.subscription);
         if (res.ok) sent += 1;
         else {
@@ -386,6 +400,7 @@ export default {
       await env.SUBSCRIPTIONS.put(id, JSON.stringify({
         subscription: body.subscription,
         username: body.username || '',
+        role: normalizeTarget(body.role),
         createdAt: new Date().toISOString()
       }));
       return json({ ok: true, id });
@@ -397,7 +412,8 @@ export default {
       const payload = {
         title: body.title || 'AK Parti Kepez',
         body: body.body || 'Yeni bildirim var.',
-        url: body.url || 'https://abdullahuysal07.github.io/ak-parti-kepez-cagri-takip/'
+        url: body.url || 'https://abdullahuysal07.github.io/ak-parti-kepez-cagri-takip/',
+        target: normalizeTarget(body.target)
       };
       await env.SUBSCRIPTIONS.put('__latest_notification__', JSON.stringify({ ...payload, sentAt: new Date().toISOString() }));
       const list = await env.SUBSCRIPTIONS.list();
@@ -408,6 +424,7 @@ export default {
         if (key.name.startsWith('__')) continue;
         const saved = await env.SUBSCRIPTIONS.get(key.name, 'json');
         if (!saved || !saved.subscription) continue;
+        if (!matchesTarget(saved, payload.target)) continue;
         const res = await sendPush(env, saved.subscription);
         if (res.ok) sent += 1;
         else {
