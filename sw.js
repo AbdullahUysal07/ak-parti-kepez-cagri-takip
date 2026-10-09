@@ -19,8 +19,8 @@ self.addEventListener('push', event => {
     const title = data.title || 'AK Parti Kepez';
     const options = {
       body: data.body || 'Yeni bildirim var.',
-      icon: './',
-      badge: './',
+      icon: './icon-180.png',
+      badge: './icon-180.png',
       data: { url: data.url || './' },
       requireInteraction: true
     };
