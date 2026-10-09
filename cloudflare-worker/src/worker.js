@@ -214,7 +214,14 @@ export default {
       const role = body.role === 'neighborhood' ? 'neighborhood' : 'management';
       const neighborhoods = role === 'management' ? [] : [String(body.neighborhood || '').trim()].filter(Boolean);
       const overrides = await getAccessOverrides(env);
-      overrides[username] = { role, neighborhoods, disabled: !!body.disabled };
+      overrides[username] = {
+        role,
+        neighborhoods,
+        disabled: !!body.disabled,
+        loginUsername: String(body.loginUsername || username).trim(),
+        name: String(body.name || '').trim(),
+        password: String(body.password || 'kepez2026.').trim() || 'kepez2026.'
+      };
       await putAccessOverrides(env, overrides);
       return json({ ok: true, overrides });
     }
