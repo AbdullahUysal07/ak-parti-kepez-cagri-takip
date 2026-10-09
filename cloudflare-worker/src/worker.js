@@ -169,6 +169,14 @@ function upsertPerson(list, body) {
   return next;
 }
 
+async function getAccessOverrides(env) {
+  return (await env.SUBSCRIPTIONS.get('__access_overrides__', 'json')) || {};
+}
+
+async function putAccessOverrides(env, overrides) {
+  await env.SUBSCRIPTIONS.put('__access_overrides__', JSON.stringify(overrides || {}));
+}
+
 async function requireAdmin(request, env) {
   const expected = env.ADMIN_TOKEN;
   const actual = request.headers.get('Authorization') || '';
@@ -192,6 +200,23 @@ export default {
     if (url.pathname === '/announcements' && request.method === 'GET') {
       const announcements = await getAnnouncements(env);
       return json({ ok: true, announcements });
+    }
+
+    if (url.pathname === '/access' && request.method === 'GET') {
+      return json({ ok: true, overrides: await getAccessOverrides(env) });
+    }
+
+    if (url.pathname === '/access' && request.method === 'POST') {
+      if (!(await requireAdmin(request, env))) return json({ error: 'unauthorized' }, 401);
+      const body = await request.json();
+      const username = String(body.username || '').trim();
+      if (!username) return json({ error: 'username_required' }, 400);
+      const role = body.role === 'neighborhood' ? 'neighborhood' : 'management';
+      const neighborhoods = role === 'management' ? [] : [String(body.neighborhood || '').trim()].filter(Boolean);
+      const overrides = await getAccessOverrides(env);
+      overrides[username] = { role, neighborhoods, disabled: !!body.disabled };
+      await putAccessOverrides(env, overrides);
+      return json({ ok: true, overrides });
     }
 
     if (url.pathname === '/announcements' && request.method === 'POST') {
