@@ -56,7 +56,26 @@ async function signJwt(env, audience) {
   const token = `${header}.${payload}`;
   const key = await importVapidPrivateKey(env.VAPID_PRIVATE_KEY, env.VAPID_PUBLIC_KEY);
   const signature = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, key, encoder.encode(token));
-  return `${token}.${bytesToBase64Url(new Uint8Array(signature))}`;
+  return `${token}.${bytesToBase64Url(ecdsaToJose(new Uint8Array(signature)))}`;
+}
+
+function ecdsaToJose(signature) {
+  if (signature.length === 64) return signature;
+  if (signature[0] !== 0x30) return signature;
+  let offset = 2;
+  if (signature[offset] !== 0x02) return signature;
+  let rLen = signature[offset + 1];
+  let r = signature.slice(offset + 2, offset + 2 + rLen);
+  offset = offset + 2 + rLen;
+  if (signature[offset] !== 0x02) return signature;
+  let sLen = signature[offset + 1];
+  let s = signature.slice(offset + 2, offset + 2 + sLen);
+  if (r.length > 32) r = r.slice(r.length - 32);
+  if (s.length > 32) s = s.slice(s.length - 32);
+  const out = new Uint8Array(64);
+  out.set(r, 32 - r.length);
+  out.set(s, 64 - s.length);
+  return out;
 }
 
 async function encryptPayload(subscription, payload) {
@@ -68,14 +87,23 @@ async function encryptPayload(subscription, payload) {
   const remotePublic = await crypto.subtle.importKey('raw', userPublicKey, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
   const sharedSecret = new Uint8Array(await crypto.subtle.deriveBits({ name: 'ECDH', public: remotePublic }, localKeys.privateKey, 256));
 
-  const prkKey = await crypto.subtle.importKey('raw', authSecret, 'HMAC', false, ['sign']);
-  const prk = new Uint8Array(await crypto.subtle.sign('HMAC', prkKey, sharedSecret));
-  const ikmKey = await crypto.subtle.importKey('raw', salt, 'HMAC', false, ['sign']);
+  const prkKey = await crypto.subtle.importKey('raw', authSecret, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const ikm = new Uint8Array(await crypto.subtle.sign({ name: 'HMAC' }, prkKey, sharedSecret));
+  const ikmKey = await crypto.subtle.importKey('raw', salt, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const prk = new Uint8Array(await crypto.subtle.sign({ name: 'HMAC' }, ikmKey, ikm));
 
-  const keyInfo = encoder.encode('Content-Encoding: aes128gcm\0');
-  const nonceInfo = encoder.encode('Content-Encoding: nonce\0');
-  const keyMaterial = new Uint8Array(await crypto.subtle.sign('HMAC', ikmKey, concatBytes(prk, keyInfo, new Uint8Array([1]))));
-  const nonceMaterial = new Uint8Array(await crypto.subtle.sign('HMAC', ikmKey, concatBytes(prk, nonceInfo, new Uint8Array([1]))));
+  const context = concatBytes(
+    encoder.encode('P-256\0'),
+    uint16(userPublicKey.length),
+    userPublicKey,
+    uint16(localPublicRaw.length),
+    localPublicRaw
+  );
+  const keyInfo = concatBytes(encoder.encode('Content-Encoding: aes128gcm\0'), context);
+  const nonceInfo = concatBytes(encoder.encode('Content-Encoding: nonce\0'), context);
+  const prkKey2 = await crypto.subtle.importKey('raw', prk, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  const keyMaterial = new Uint8Array(await crypto.subtle.sign({ name: 'HMAC' }, prkKey2, concatBytes(keyInfo, new Uint8Array([1]))));
+  const nonceMaterial = new Uint8Array(await crypto.subtle.sign({ name: 'HMAC' }, prkKey2, concatBytes(nonceInfo, new Uint8Array([1]))));
   const key = await crypto.subtle.importKey('raw', keyMaterial.slice(0, 16), { name: 'AES-GCM' }, false, ['encrypt']);
   const nonce = nonceMaterial.slice(0, 12);
   const plaintext = concatBytes(encoder.encode(JSON.stringify(payload)), new Uint8Array([2]));
@@ -101,6 +129,12 @@ function uint32(value) {
   return out;
 }
 
+function uint16(value) {
+  const out = new Uint8Array(2);
+  new DataView(out.buffer).setUint16(0, value);
+  return out;
+}
+
 function originFromEndpoint(endpoint) {
   const url = new URL(endpoint);
   return `${url.protocol}//${url.host}`;
@@ -116,7 +150,8 @@ async function sendPush(env, subscription, payload) {
       TTL: '86400',
       'Content-Type': 'application/octet-stream',
       'Content-Encoding': 'aes128gcm',
-      Authorization: `vapid t=${jwt}, k=${env.VAPID_PUBLIC_KEY}`
+      Authorization: `WebPush ${jwt}`,
+      'Crypto-Key': `p256ecdsa=${env.VAPID_PUBLIC_KEY}`
     },
     body
   });
@@ -160,6 +195,7 @@ export default {
       const list = await env.SUBSCRIPTIONS.list();
       let sent = 0;
       let failed = 0;
+      const failures = [];
       for (const key of list.keys) {
         const saved = await env.SUBSCRIPTIONS.get(key.name, 'json');
         if (!saved || !saved.subscription) continue;
@@ -167,10 +203,11 @@ export default {
         if (res.ok) sent += 1;
         else {
           failed += 1;
+          failures.push({ status: res.status, text: await res.text().catch(() => '') });
           if (res.status === 404 || res.status === 410) await env.SUBSCRIPTIONS.delete(key.name);
         }
       }
-      return json({ ok: true, sent, failed });
+      return json({ ok: true, sent, failed, failures: failures.slice(0, 5) });
     }
 
     return json({ error: 'not_found' }, 404);
