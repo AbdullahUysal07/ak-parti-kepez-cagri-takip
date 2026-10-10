@@ -176,7 +176,10 @@ function normalizeTarget(value) {
 function matchesTarget(saved, target) {
   const wanted = normalizeTarget(target);
   if (wanted === 'all') return true;
-  return saved && saved.role === wanted;
+  if (!saved) return false;
+  if (saved.role === wanted) return true;
+  if (wanted === 'management' && !saved.role) return true;
+  return false;
 }
 
 async function getAccessOverrides(env) {
