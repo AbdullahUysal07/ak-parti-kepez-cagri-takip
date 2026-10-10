@@ -277,6 +277,8 @@ export default {
         username: String(body.username || ''),
         time: body.time || new Date().toISOString()
       };
+      const existingIndex = logs.findIndex(log => log.id && log.id === item.id);
+      if (existingIndex !== -1) logs.splice(existingIndex, 1);
       logs.unshift(item);
       await putCallLogs(env, logs);
       return json({ ok: true, log: item });
