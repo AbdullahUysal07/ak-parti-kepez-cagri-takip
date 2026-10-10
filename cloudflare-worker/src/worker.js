@@ -327,7 +327,7 @@ export default {
       announcements.unshift(announcement);
       await putAnnouncements(env, announcements);
       await env.SUBSCRIPTIONS.put('__latest_notification__', JSON.stringify({
-        title: 'Yeni duyuru var',
+        title: announcement.authorName,
         body: text,
         url: body.url || 'https://abdullahuysal07.github.io/ak-parti-kepez-cagri-takip/',
         sentAt: new Date().toISOString()
