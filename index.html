@@ -472,7 +472,7 @@
       renderNotice();
       if(state.mode==='analysis'&&canUseAnalysis()){setBodyMode('analysis-mode'); renderAnalysis(); clearLogsPanel(); return;}
       if(state.mode==='admin'&&isAdmin()){setBodyMode('admin-mode'); renderAdmin(); renderLogs(); return;}
-      if(state.mode==='check'){setBodyMode('admin-mode'); if(!$('checkForm'))renderCheck(); clearLogsPanel(); return;}
+      if(state.mode==='check'){setBodyMode('admin-mode'); if(!$('checkForm'))renderCheck(); if(isAdmin())renderLogs(); else clearLogsPanel(); return;}
       if(state.mode==='requests'){setBodyMode('admin-mode'); if($('requestForm'))renderMyRequests(); else renderRequests(); clearLogsPanel(); return;}
       if(state.mode==='home'){setBodyMode('home-mode'); renderHome(); if(isAdmin())renderLogs(); else clearLogsPanel(); return;}
       if(state.mode==='list'&&(state.memberTab==='leaders'||state.memberTab==='board')){
@@ -785,7 +785,7 @@
         <div class="check-warning"><strong>Dikkat:</strong> Bu sorgu yalnızca <strong>Kepez ilçesi</strong> üyeliklerini gösterir. Kişinin ikametgâhının Kepez'de olduğundan emin olun; başka ilçelerdeki üyelikler burada görünmez.</div>
         <form id="checkForm" class="form check-form"><div class="field"><label>Ad Soyad</label><input id="checkName" value="${esc(c.name)}" placeholder="Örn. Mehmet Yılmaz" autocomplete="off" required></div><div class="field"><label>Telefon</label><input id="checkPhone" value="${esc(c.phone)}" placeholder="05xx xxx xx xx" inputmode="tel" autocomplete="off"></div><div class="actions"><button>Sorgula</button><button type="button" class="secondary" id="checkClear">Temizle</button></div></form>
         <div id="checkResult">${checkResultHtml(c.result)}</div></div>`;
-      $('checkForm').onsubmit=async e=>{e.preventDefault(); const name=$('checkName').value.trim(), phone=$('checkPhone').value.trim(); if(name.split(/\s+/).filter(Boolean).length<2){toast('Lütfen ad ve soyadı birlikte yazın.'); return;} const btn=e.target.querySelector('button'); btn.disabled=true; $('checkResult').innerHTML='<div class="small">Sorgulanıyor…</div>'; let result; try{result=await api('/members/check',{method:'POST',json:{name,phone}});}catch(err){result={error:err.message==='no_member_list'?'Üye listesi henüz yüklenmemiş.':'Sunucuya ulaşılamadı, tekrar deneyin.'};} btn.disabled=false; state.check={name,phone,result}; $('checkResult').innerHTML=checkResultHtml(result);};
+      $('checkForm').onsubmit=async e=>{e.preventDefault(); const name=$('checkName').value.trim(), phone=$('checkPhone').value.trim(); if(name.split(/\s+/).filter(Boolean).length<2){toast('Lütfen ad ve soyadı birlikte yazın.'); return;} const btn=e.target.querySelector('button'); btn.disabled=true; $('checkResult').innerHTML='<div class="small">Sorgulanıyor…</div>'; let result; try{result=await api('/members/check',{method:'POST',json:{name,phone}});}catch(err){result={error:err.message==='no_member_list'?'Üye listesi henüz yüklenmemiş.':err.message==='not_found'?'Sunucu henüz güncellenmemiş. Yöneticinin "npx wrangler deploy" komutunu çalıştırması gerekiyor.':'Sunucuya ulaşılamadı, tekrar deneyin.'};} btn.disabled=false; state.check={name,phone,result}; $('checkResult').innerHTML=checkResultHtml(result);};
       $('checkClear').onclick=()=>{state.check=null; renderCheck(); $('checkName').focus();};
     }
 
