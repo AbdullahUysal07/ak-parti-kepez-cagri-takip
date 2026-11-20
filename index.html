@@ -8,8 +8,8 @@
   <meta name="theme-color" content="#123c7c">
   <title>AK Parti Kepez Üye Çağrı Takip</title>
   <link rel="manifest" href="./manifest.webmanifest">
-  <link rel="icon" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjI0IiBmaWxsPSIjZmZmIi8+PGNpcmNsZSBjeD0iOTAiIGN5PSI3MiIgcj0iMzQiIGZpbGw9IiNmNWI0MDAiLz48cGF0aCBkPSJNNzAgMTA1aDQwbC02IDEzSDc2eiIgZmlsbD0iIzEyM2M3YyIvPjx0ZXh0IHg9IjkwIiB5PSIxNTEiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyMiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzEyM2M3YyI+QUsgUEFSVMSwPC90ZXh0Pjwvc3ZnPg==">
-  <link rel="apple-touch-icon" sizes="180x180" href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjI0IiBmaWxsPSIjZmZmIi8+PGNpcmNsZSBjeD0iOTAiIGN5PSI3MiIgcj0iMzQiIGZpbGw9IiNmNWI0MDAiLz48cGF0aCBkPSJNNzAgMTA1aDQwbC02IDEzSDc2eiIgZmlsbD0iIzEyM2M3YyIvPjx0ZXh0IHg9IjkwIiB5PSIxNTEiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyMiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzEyM2M3YyI+QUsgUEFSVMSwPC90ZXh0Pjwvc3ZnPg==">
+  <link rel="icon" href="icon-180.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous">
   <style>
     :root { --bg:#f3f6fb; --ink:#172033; --muted:#64748b; --line:#d9e0ea; --brand:#f28c00; --brand-dark:#d97800; --brand2:#123c7c; --accent:#f28c00; --panel:#fff; --soft:#f8fafc; --bad:#b91c1c; --warn:#b45309; --ok:#166534; }
@@ -169,6 +169,9 @@
     body.board-mode .panel-logs { display:none; }
      @media (max-width:1050px) { .app { display:block; } .wrap,body.home-mode .wrap,body.auto-mode .wrap,body.admin-mode .wrap,body.analysis-mode .wrap { grid-template-columns:1fr; } .panel { min-height:340px; margin-bottom:10px; } .list,.detail,.logs { max-height:62vh; } .panel-list .list { max-height:none; overflow:visible; } .admin-grid { grid-template-columns:1fr; } .user-row { grid-template-columns:1fr; } .analysis-shell { grid-template-columns:1fr; } .analysis-map-card { min-height:0; } #kepezMap { min-height:360px; } }
     @media (max-width:680px) { header { align-items:center; flex-wrap:wrap; padding:10px; } #exportBtn { width:auto; min-height:36px; padding:0 10px; font-size:.88rem; margin-left:58px; } .brand-lockup { align-items:center; flex:1 1 100%; } .logo { width:50px; height:50px; } .toolbar { grid-template-columns:1fr; } .wrap { padding:8px; gap:8px; } .notice,.notice.show { display:none!important; } body.home-mode { background:#fff; } body.home-mode .wrap { padding:0; gap:0; background:#fff; } body.home-mode .wrap>.panel { border:0; border-radius:0; box-shadow:none; min-height:0; margin-bottom:0; background:#fff; } body.home-mode .detail { max-height:none; overflow:visible; padding:10px; background:#fff; } body.home-mode .home { gap:10px; } body.analysis-mode { background:#fff; } body.analysis-mode .wrap { padding:8px; background:#fff; } body.analysis-mode .wrap>.panel { min-height:0; margin-bottom:0; } body.analysis-mode .detail { max-height:none; overflow:visible; padding:0; background:#fff; } body.analysis-mode .analysis-shell { display:block; min-height:0; } body.analysis-mode .analysis-sidebar { min-height:0; max-height:none; border-radius:10px; margin-bottom:10px; } body.analysis-mode .analysis-summary { gap:8px; } body.analysis-mode .street-list { display:none; } body.analysis-mode .street-row { padding:14px 16px; } body.analysis-mode .analysis-map-card { display:block; min-height:0; border-radius:10px; overflow:hidden; } body.analysis-mode #kepezMap { min-height:0; height:340px; width:100%; } body.analysis-mode .street-members { max-height:none; overflow:visible; } body.auto-mode .panel-logs,body.home-mode .panel-logs,body:not(.admin-mode) .panel-logs { display:none; } body.admin-mode .panel-logs { display:block; } .grid2,.quick,.auto-actions { grid-template-columns:1fr; } .fact { grid-template-columns:1fr; } .fact div:first-child { padding-bottom:0; } .phone { position:sticky; top:0; z-index:2; } .member { gap:8px; padding:14px 12px; } .member strong { font-size:1.08rem; white-space:normal; } .list-phone { width:100%; min-height:44px; font-size:1.08rem; } .meta { font-size:.96rem; } .auto-phone { min-height:72px; font-size:1.45rem; } .welcome { grid-template-columns:1fr; } .chairman { width:72px; height:72px; } }
+    .app { grid-template-columns:minmax(0,1fr); }
+    .notice.show { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; }
+    .announcement-body,.log p { overflow-wrap:anywhere; }
     .nav-request { border-top:1px solid var(--line); }
     .admin-tabs { display:flex; gap:6px; flex-wrap:wrap; }
     .admin-tab { min-height:36px; background:#fff; color:var(--brand2); border:1px solid var(--line); padding:0 12px; }
@@ -200,7 +203,7 @@
 <body class="locked">
   <div id="login" class="login">
     <form id="loginForm" class="login-card">
-      <img class="login-logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjI0IiBmaWxsPSIjZmZmIi8+PGNpcmNsZSBjeD0iOTAiIGN5PSI3MiIgcj0iMzQiIGZpbGw9IiNmNWI0MDAiLz48cGF0aCBkPSJNNzAgMTA1aDQwbC02IDEzSDc2eiIgZmlsbD0iIzEyM2M3YyIvPjx0ZXh0IHg9IjkwIiB5PSIxNTEiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyMiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzEyM2M3YyI+QUsgUEFSVMSwPC90ZXh0Pjwvc3ZnPg==" alt="AK Parti Kepez İlçe Başkanlığı logosu">
+      <img class="login-logo" src="assets/logo.png" alt="AK Parti Kepez İlçe Başkanlığı logosu">
       <h2>AK Parti Kepez İlçe Başkanlığı</h2>
       <p class="subtle">Üye çağrı takip ekranına giriş yap</p>
       <input id="usernameInput" type="text" placeholder="Kullanıcı adı" autocomplete="username" autocapitalize="none">
@@ -211,7 +214,7 @@
     </form>
   </div>
   <div class="app">
-    <header><div class="brand-lockup"><button id="menuBtn" class="menu-btn" aria-label="Menüyü aç"><span></span></button><img class="logo" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjI0IiBmaWxsPSIjZmZmIi8+PGNpcmNsZSBjeD0iOTAiIGN5PSI3MiIgcj0iMzQiIGZpbGw9IiNmNWI0MDAiLz48cGF0aCBkPSJNNzAgMTA1aDQwbC02IDEzSDc2eiIgZmlsbD0iIzEyM2M3YyIvPjx0ZXh0IHg9IjkwIiB5PSIxNTEiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyMiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzEyM2M3YyI+QUsgUEFSVMSwPC90ZXh0Pjwvc3ZnPg==" alt="AK Parti Kepez İlçe Başkanlığı logosu"><div><h1>AK Parti Kepez İlçe Başkanlığı</h1><div class="sub">Üye çağrı ve mahalle takip ekranı</div></div></div><button id="exportBtn" class="secondary">Logları İndir</button></header>
+    <header><div class="brand-lockup"><button id="menuBtn" class="menu-btn" aria-label="Menüyü aç"><span></span></button><img class="logo" src="assets/logo.png" alt="AK Parti Kepez İlçe Başkanlığı logosu"><div><h1>AK Parti Kepez İlçe Başkanlığı</h1><div class="sub">Üye çağrı ve mahalle takip ekranı</div></div></div><button id="exportBtn" class="secondary">Logları İndir</button></header>
     <aside id="drawer" class="drawer" aria-hidden="true">
       <div class="drawer-panel">
         <div class="drawer-head"><strong>Menü</strong><button id="closeMenuBtn" class="secondary" type="button">Kapat</button></div>
@@ -258,7 +261,7 @@
     </form>
   </div>
   <div id="toast" class="toast"></div>
-  <script>const CHAIRMAN_PHOTO='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxODAgMTgwIj48cmVjdCB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgcng9IjI0IiBmaWxsPSIjZmZmIi8+PGNpcmNsZSBjeD0iOTAiIGN5PSI3MiIgcj0iMzQiIGZpbGw9IiNmNWI0MDAiLz48cGF0aCBkPSJNNzAgMTA1aDQwbC02IDEzSDc2eiIgZmlsbD0iIzEyM2M3YyIvPjx0ZXh0IHg9IjkwIiB5PSIxNTEiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZvbnQtZmFtaWx5PSJBcmlhbCIgZm9udC1zaXplPSIyMiIgZm9udC13ZWlnaHQ9IjcwMCIgZmlsbD0iIzEyM2M3YyI+QUsgUEFSVMSwPC90ZXh0Pjwvc3ZnPg==';</script>
+  <script>const CHAIRMAN_PHOTO='assets/hasan-demir.jpg';</script>
   <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
   <script>
     // Kişisel veriler (üyeler, başkanlar, kullanıcılar) bu dosyada YOK; giriş yapıldıktan sonra
@@ -516,8 +519,8 @@
       const out=$('importPreview'), prog=$('importProgress'); out.innerHTML=''; prog.textContent='Dosya okunuyor…'; pendingImport=null;
       try{
         await loadScript(XLSX_URL);
-        const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:true});
-        const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:'',raw:false,dateNF:'yyyy-mm-dd'});
+        const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:false});
+        const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:'',raw:true});
         if(!rows.length)throw new Error('Dosyada satır bulunamadı.');
         const headers=Object.keys(rows[0]);
         const col={tc:pickColumn(headers,[h=>h.includes('tc')||h.includes('kimlik')]),first:pickColumn(headers,[h=>h==='adi'||h==='ad'||h==='isim']),last:pickColumn(headers,[h=>h.startsWith('soyad')]),phone:pickColumn(headers,[h=>h.includes('cep')||h.includes('telefon')]),refs:pickColumn(headers,[h=>h.startsWith('referans')]),joined:pickColumn(headers,[h=>h.includes('uyelik')||h.includes('tarih')]),address:pickColumn(headers,[h=>h.includes('adres')])};
@@ -541,7 +544,7 @@
             const name=[r[col.first],r[col.last]].map(x=>String(x||'').trim()).filter(Boolean).join(' ').toLocaleUpperCase('tr-TR');
             const phone=col.phone?cleanPhone(r[col.phone]):''; if(phone)withPhone++;
             const refs=col.refs?String(r[col.refs]||'').split(',').map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean):[];
-            let joined=col.joined?String(r[col.joined]||'').trim():''; const dm=joined.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})/); if(dm)joined=`${dm[3]}-${dm[2].padStart(2,'0')}-${dm[1].padStart(2,'0')}`; joined=joined.slice(0,10);
+            const jv=col.joined?r[col.joined]:''; let joined=''; if(typeof jv==='number'&&jv>1000&&jv<100000){const dc=XLSX.SSF.parse_date_code(jv); joined=`${dc.y}-${String(dc.m).padStart(2,'0')}-${String(dc.d).padStart(2,'0')}`;} else {joined=String(jv||'').trim(); const dm=joined.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})/); if(dm)joined=`${dm[3]}-${dm[2].padStart(2,'0')}-${dm[1].padStart(2,'0')}`; else if(!/^\d{4}-\d{2}-\d{2}/.test(joined)){const d=new Date(joined); joined=isNaN(d)?'':`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}} joined=joined.slice(0,10);
             const row=[id,name,phone,address,joined,refs];
             (byHood[hood]=byHood[hood]||[]).push(row);
             new Set(refs.map(refKey).filter(Boolean)).forEach(k=>{const s=shards[refShard(k)]; (s[k]=s[k]||[]).push([hood,row]);});
@@ -641,6 +644,7 @@
     $('searchInput').oninput=e=>{state.query=e.target.value; state.limit=180; render();};
     $('statusFilter').onchange=e=>{state.status=e.target.value; state.limit=180; render();};
     $('nextBtn').onclick=()=>selectNext();
+    $('notice').onclick=()=>setMode('home');
     $('exportBtn').onclick=async()=>{if(!isAdmin())return; await loadLogs(); exportLogs(state.logs);};
     $('loginForm').onsubmit=async e=>{e.preventDefault(); const u=$('usernameInput').value, p=$('passwordInput').value; if(!u||!p){showLoginMessage('Kullanıcı adı ve şifre gerekli.'); return;} showLoginMessage('Kontrol ediliyor…'); try{await login(u,p,$('rememberInput').checked); $('passwordInput').value='';}catch(err){showLoginMessage(err.status===401?'Kullanıcı adı veya şifre hatalı ya da kullanıcı pasif.':'Sunucuya bağlanılamadı. İnternet bağlantınızı kontrol edin.');}};
     $('detail').innerHTML='<div class="empty">Giriş yapınca üyeler açılacak.</div>';
