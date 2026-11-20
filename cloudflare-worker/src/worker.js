@@ -269,7 +269,7 @@ function publicUser(u) {
     neighborhoods: u.neighborhoods,
     isAdmin: ADMIN_USERNAMES.includes(u.username),
     title: USER_TITLES[u.username] || '',
-    canAnalysis: ADMIN_USERNAMES.includes(u.username) || ANALYSIS_USERS.includes(normalizeUser(u.username)) || ANALYSIS_USERS.includes(normalizeUser(u.loginUsername)) || ANALYSIS_USERS.includes(normalizeUser(u.name)),
+    canAnalysis: ADMIN_USERNAMES.includes(u.username) || u.role === 'neighborhood' || ANALYSIS_USERS.includes(normalizeUser(u.username)) || ANALYSIS_USERS.includes(normalizeUser(u.loginUsername)) || ANALYSIS_USERS.includes(normalizeUser(u.name)),
     mustChangePassword: u.password === DEFAULT_PASSWORD
   };
 }
@@ -556,10 +556,30 @@ async function locateStreet(street, hood) {
   if (h) return { point: { lat: +h.lat, lng: +h.lon }, line: null, source: 'hood' };
   return { point: { lat: 36.9300, lng: 30.6900 }, line: null, source: 'kepez' };
 }
+async function locateHood(hood) {
+  const hb = hoodBase(hood);
+  const list = await nominatim({ q: `${hb} Mahallesi, Kepez, Antalya`, polygon_geojson: '1' });
+  const ok = (list || []).filter(r => inKepez({ lat: +r.lat, lng: +r.lon }));
+  const r = ok.find(x => /polygon/i.test((x.geojson || {}).type || '')) || ok[0];
+  if (!r) return { point: { lat: 36.93, lng: 30.69 }, line: null, source: 'kepez' };
+  let ring = null;
+  const g = r.geojson || {};
+  if (g.type === 'Polygon') ring = g.coordinates[0];
+  else if (g.type === 'MultiPolygon') ring = g.coordinates.map(p => p[0]).sort((a, b) => b.length - a.length)[0];
+  // Çok noktalı sınırları sadeleştir (yanıt boyutu için)
+  if (ring && ring.length > 400) { const step = Math.ceil(ring.length / 400); ring = ring.filter((_, i) => i % step === 0); }
+  return { point: { lat: +r.lat, lng: +r.lon }, line: ring ? ring.map(([lng, lat]) => [+lat.toFixed(6), +lng.toFixed(6)]) : null, source: 'hood_area' };
+}
 async function geoForStreet(env, body) {
   const street = clean(body.street, 120);
   const hood = clean(body.hood, 80);
-  if (!street) return json({ error: 'street_required' }, 400);
+  if (!street && !hood) return json({ error: 'street_required' }, 400);
+  if (!street) {
+    const key = '__geo__:hood:' + (await sha256Hex(trLower(hood))).slice(0, 32);
+    let rec = await getJson(env, key, null);
+    if (!rec || (rec.source === 'kepez' && Date.now() - (rec.at || 0) > 864e5)) { rec = { hood, ...(await locateHood(hood)), at: Date.now() }; await putJson(env, key, rec); }
+    return json({ ok: true, point: rec.point, line: rec.line, source: rec.source, doors: {}, pending: 0 });
+  }
   const key = '__geo__:' + (await sha256Hex(trLower(hood) + '|' + trLower(street))).slice(0, 32);
   let rec = await getJson(env, key, null);
   let changed = false;

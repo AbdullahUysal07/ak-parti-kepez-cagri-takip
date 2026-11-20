@@ -404,6 +404,7 @@
     .announcement-card { border-radius:var(--radius); border-color:var(--line); box-shadow:var(--shadow); padding:16px; }
     .announcement-card.unread { border-color:#fbd38d; background:#fff; box-shadow:inset 3px 0 0 var(--brand),var(--shadow); }
     .announcement-avatar { border-radius:50%; width:44px; height:44px; }
+    .single-hood { min-height:40px; display:flex; align-items:center; padding:0 12px; border-radius:10px; background:#fff4e6; color:#c2410c; font-weight:800; }
     .initials-avatar { display:grid; place-items:center; background:#eef4ff; color:var(--brand2); font-weight:800; }
     .announcement-map-btn { border-radius:12px; }
     .like-btn { border-radius:999px; min-height:36px; padding:0 16px; background:#f1f5f9; border:1px solid var(--line); }
@@ -537,7 +538,7 @@
     function fmtDay(v){if(!v)return '-'; const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})/); return m?`${m[3]}.${m[2]}.${m[1]}`:String(v);}
     function mapUrlFor(x){const q=[x.address,x.neighborhood,'Kepez Antalya'].filter(Boolean).join(' '); return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q);}
     function toast(msg){const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toast.timer); toast.timer=setTimeout(()=>t.classList.remove('show'),2600);}
-    function updateDrawer(){if(!state.user)return; const n=state.user.name||''; $('drawerName').textContent=n; $('drawerAvatar').textContent=n.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toLocaleUpperCase('tr-TR')||'AK'; $('drawerRole').textContent=[firstHood(),titleForUser()].filter(Boolean).join(' • '); $('navSectionMgmt').hidden=!(isAdmin()||canUseAnalysis()); const pl=$('adminNavBtn').querySelector('.nav-label'); if(pl)pl.textContent=panelName(); updateNavBadges();}
+    function updateDrawer(){if(!state.user)return; const n=state.user.name||''; $('drawerName').textContent=n; $('drawerAvatar').textContent=n.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toLocaleUpperCase('tr-TR')||'AK'; $('drawerRole').textContent=[firstHood(),titleForUser()].filter(Boolean).join(' • '); $('navSectionMgmt').hidden=!(isAdmin()||canUseAnalysis()); const pl=$('adminNavBtn').querySelector('.nav-label'); if(pl)pl.textContent=panelName(); $('navSectionMgmt').textContent=isAdmin()?'Yönetim':'Analiz'; const al=$('analysisNavBtn').querySelector('.nav-label'); if(al)al.textContent=isManagement()?'Kepez Analiz':'Mahalle Analizi'; updateNavBadges();}
     function isUnread(a){if(!a)return false; if(state.lastSeenAt)return new Date(a.createdAt)>new Date(state.lastSeenAt); return a.id!==state.lastSeenAnnouncement&&!state.lastSeenAnnouncement;}
     function markSeen(a){if(!a)return; state.lastSeenAnnouncement=a.id; if(!state.lastSeenAt||new Date(a.createdAt)>new Date(state.lastSeenAt))state.lastSeenAt=a.createdAt; save();}
     function updateNavBadges(){if(!state.user)return; const unread=state.announcements.filter(a=>isUnread(a)).length; const h=$('navBadgeHome'); h.textContent=unread; h.hidden=!unread; const req=isAdmin()?state.requests.filter(r=>r.status==='new').length:0; const ad=$('navBadgeAdmin'); ad.textContent=req; ad.hidden=!req;}
@@ -774,6 +775,7 @@
       mapDrawSeq++; if(state.map){state.map.remove(); state.map=null; state.mapLayers=null;}
       const allAnalysis=analysisList(); const groups=streetGroups(); const hoods=neighborhoodGroups(groups);
       if(state.selectedAnalysisNeighborhood&&!hoods.some(h=>h.name===state.selectedAnalysisNeighborhood))state.selectedAnalysisNeighborhood=null;
+      const singleHood=hoods.length===1; if(singleHood)state.selectedAnalysisNeighborhood=hoods[0].name;
       if(!state.selectedAnalysisNeighborhood)state.selectedStreet=null;
       const q=norm(state.analysisQuery||'');
       const hood=state.selectedAnalysisNeighborhood;
@@ -785,18 +787,18 @@
       const active=canSeeLiveLocations()?state.locations.filter(l=>Date.now()-new Date(l.time).getTime()<1000*60*15):[];
       const hoodOpts=`<option value="">Tüm mahalleler (${hoods.length})</option>${hoods.map(h=>`<option value="${esc(h.name)}" ${hood===h.name?'selected':''}>${esc(h.name)} • ${h.members} üye</option>`).join('')}`;
       const listHtml=hood
-        ? `<button type="button" class="analysis-back" data-back-hood>← Tüm mahalleler</button>`+(filteredGroups.map(g=>`<button type="button" class="street-row ${g.key===state.selectedStreet?'active':''}" data-street="${esc(g.key)}"><strong>${esc(streetLabel(g))}</strong><span class="street-count">${g.members.length}</span></button>`).join('')||'<div class="analysis-empty-note">Aramaya uyan sokak/cadde yok.</div>')
+        ? (singleHood?'':`<button type="button" class="analysis-back" data-back-hood>← Tüm mahalleler</button>`)+(filteredGroups.map(g=>`<button type="button" class="street-row ${g.key===state.selectedStreet?'active':''}" data-street="${esc(g.key)}"><strong>${esc(streetLabel(g))}</strong><span class="street-count">${g.members.length}</span></button>`).join('')||'<div class="analysis-empty-note">Aramaya uyan sokak/cadde yok.</div>')
         : (filteredHoods.map(h=>`<button type="button" class="street-row" data-analysis-hood="${esc(h.name)}"><strong>${esc(h.name)}</strong><span class="street-count">${h.members}</span><span class="street-meta">${h.streets} sokak/cadde</span></button>`).join('')||'<div class="analysis-empty-note">Aramaya uyan mahalle yok.</div>');
       const stats=`<div class="analysis-stats"><div><strong>${hood?visibleGroups.reduce((a,g)=>a+g.members.length,0).toLocaleString('tr-TR'):allAnalysis.length.toLocaleString('tr-TR')}</strong><span>üye</span></div><div><strong>${hood?visibleGroups.length:hoods.length}</strong><span>${hood?'sokak/cadde':'mahalle'}</span></div>${canSeeLiveLocations()?`<div><strong>${active.length}</strong><span>aktif konum</span></div>`:''}</div>`;
       $('detail').innerHTML=`<div class="analysis-shell">
         <aside class="analysis-sidebar">
-          <div class="analysis-summary"><div class="analysis-title"><h2>Kepez Analiz</h2><button type="button" class="secondary small-btn" id="refreshMapBtn" title="Haritayı yenile">↻ Yenile</button></div>${stats}</div>
-          <div class="analysis-controls"><select id="analysisHoodSelect">${hoodOpts}</select><input id="analysisSearchInput" type="search" placeholder="${hood?'Sokak / cadde ara (örn. 2627)':'Mahalle ara'}" value="${esc(state.analysisQuery||'')}" autocomplete="off"></div>
+          <div class="analysis-summary"><div class="analysis-title"><h2>${singleHood?'Mahalle Analizi':'Kepez Analiz'}</h2><button type="button" class="secondary small-btn" id="refreshMapBtn" title="Haritayı yenile">↻ Yenile</button></div>${stats}</div>
+          <div class="analysis-controls">${singleHood?`<div class="single-hood">📍 ${esc(hood)}</div>`:`<select id="analysisHoodSelect">${hoodOpts}</select>`}<input id="analysisSearchInput" type="search" placeholder="${hood?'Sokak / cadde ara (örn. 2627)':'Mahalle ara'}" value="${esc(state.analysisQuery||'')}" autocomplete="off"></div>
           <div class="street-list">${listHtml}</div>
         </aside>
         <section class="analysis-map-card"><div class="map-wrap"><div id="kepezMap"></div><div id="mapStatus" class="map-status" hidden></div></div><div id="streetMembers" class="street-members">${selected?streetMembersHtml(selected):`<div class="analysis-hint">${hood?'Soldaki listeden bir sokak/cadde seçin; üyeler haritada ve burada görünür.':'Bir mahalle seçerek başlayın.'}</div>`}</div></section>
       </div>`;
-      $('analysisHoodSelect').onchange=e=>{state.selectedAnalysisNeighborhood=e.target.value||null; state.selectedStreet=null; state.analysisQuery=''; save(); renderAnalysis();};
+      if($('analysisHoodSelect'))$('analysisHoodSelect').onchange=e=>{state.selectedAnalysisNeighborhood=e.target.value||null; state.selectedStreet=null; state.analysisQuery=''; save(); renderAnalysis();};
       $('analysisSearchInput').oninput=e=>{state.analysisQuery=e.target.value; clearTimeout(analysisSearchTimer); analysisSearchTimer=setTimeout(()=>{save(); renderAnalysis(); const i=$('analysisSearchInput'); i.focus(); i.setSelectionRange(i.value.length,i.value.length);},260);};
       $('refreshMapBtn').onclick=async()=>{await loadLocations(); drawMap(selected); toast('Harita yenilendi.');};
       const act=document.querySelector('.street-row.active'); if(act)act.scrollIntoView({block:'nearest'});
@@ -840,7 +842,13 @@
       if(!state.map){state.map=L.map(el).setView([36.95,30.69],12); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(state.map); state.mapLayers=L.layerGroup().addTo(state.map);} else {state.map.invalidateSize(); state.mapLayers.clearLayers();}
       const layers=state.mapLayers, map=state.map;
       if(canSeeLiveLocations())state.locations.forEach(l=>{const age=Math.round((Date.now()-new Date(l.time).getTime())/60000); L.circleMarker([l.lat,l.lng],{radius:8,color:'#123c7c',fillColor:'#f28c00',fillOpacity:.9,className:'location-dot'}).addTo(layers).bindPopup(`<strong>${esc(l.name)}</strong><br>${esc(l.neighborhood||l.role||'')}<br>${age} dk önce`);});
-      if(!group){map.setView([36.95,30.69],12); return;}
+      if(!group){
+        const hood=state.selectedAnalysisNeighborhood; if(!hood){map.setView([36.95,30.69],12); return;}
+        let g=null; try{g=await api('/geo',{method:'POST',json:{street:'',hood}});}catch(e){}
+        if(seq!==mapDrawSeq||!g||!g.point){if(seq===mapDrawSeq)map.setView([36.95,30.69],12); return;}
+        if(g.line&&g.line.length>2){L.polygon(g.line,{color:'#f28c00',weight:3,fillColor:'#f28c00',fillOpacity:.08}).addTo(layers); map.fitBounds(g.line,{padding:[20,20]});} else map.setView([g.point.lat,g.point.lng],15);
+        return;
+      }
       const status=$('mapStatus'); const setStatus=t=>{if(status&&seq===mapDrawSeq){status.textContent=t; status.hidden=!t;}};
       const buildings=new Map(); group.members.forEach(m=>{const d=doorInfo(m).door||'?'; if(!buildings.has(d))buildings.set(d,[]); buildings.get(d).push(m);});
       const doors=[...buildings.keys()].filter(d=>d!=='?');
