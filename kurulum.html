@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#123c7c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Kepez Çağrı">
+  <title>Uygulamayı Kur • AK Parti Kepez</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./assets/icon-192.png">
+  <link rel="apple-touch-icon" href="./icon-180.png">
+  <style>
+    :root { --brand:#f28c00; --brand2:#123c7c; --brand3:#1d5fb8; --line:#e5eaf1; --muted:#64748b; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif; background:linear-gradient(160deg,var(--brand2),var(--brand3) 55%,#f28c00 140%); color:#0f172a; display:flex; justify-content:center; padding:18px 14px calc(18px + env(safe-area-inset-bottom)); -webkit-font-smoothing:antialiased; }
+    body.has-arrow { padding-bottom:80px; }
+    .card { align-self:flex-start; width:100%; max-width:460px; background:#fff; border-radius:24px; box-shadow:0 20px 60px rgba(15,23,42,.3); padding:22px 20px; display:grid; gap:16px; align-content:start; }
+    .head { text-align:center; display:grid; gap:6px; justify-items:center; }
+    .head img { width:96px; height:96px; border-radius:22px; box-shadow:0 6px 18px rgba(18,60,124,.18); }
+    h1 { margin:0; font-size:1.35rem; color:var(--brand2); }
+    .sub { margin:0; color:var(--muted); font-size:.95rem; }
+    .btn { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; min-height:56px; border:0; border-radius:14px; background:var(--brand); color:#fff; font:inherit; font-weight:800; font-size:1.08rem; text-decoration:none; cursor:pointer; box-shadow:0 6px 16px rgba(242,140,0,.3); }
+    .btn.blue { background:var(--brand2); box-shadow:0 6px 16px rgba(18,60,124,.25); }
+    .btn.ghost { background:#f1f5f9; color:var(--brand2); box-shadow:none; min-height:46px; font-size:.95rem; }
+    .steps { display:grid; gap:10px; margin:0; padding:0; list-style:none; counter-reset:s; }
+    .steps li { display:grid; grid-template-columns:36px 1fr; gap:12px; align-items:center; background:#f8fafc; border:1px solid var(--line); border-radius:14px; padding:12px; counter-increment:s; }
+    .steps li:before { content:counter(s); width:36px; height:36px; border-radius:50%; background:var(--brand2); color:#fff; display:grid; place-items:center; font-weight:800; }
+    .steps b { color:var(--brand2); }
+    .ic { display:inline-grid; place-items:center; vertical-align:middle; width:28px; height:28px; border-radius:8px; background:#fff; border:1px solid var(--line); margin:0 2px; }
+    .ic svg { width:18px; height:18px; color:#0a84ff; }
+    .note { background:#fff4e6; border:1px solid #fbd38d; color:#7c3f00; border-radius:14px; padding:12px; font-size:.92rem; }
+    .ok { background:#f0fdf4; border:1px solid #bbf7d0; color:#166534; border-radius:14px; padding:14px; text-align:center; font-weight:700; }
+    .qr { display:grid; justify-items:center; gap:8px; }
+    .qr div { background:#fff; padding:10px; border-radius:14px; border:1px solid var(--line); }
+    .qr svg { width:210px; height:210px; display:block; }
+    .small { color:var(--muted); font-size:.85rem; text-align:center; }
+    .arrow { position:fixed; left:50%; bottom:calc(10px + env(safe-area-inset-bottom)); transform:translateX(-50%); color:#fff; font-weight:800; text-align:center; animation:bob 1.2s ease-in-out infinite; text-shadow:0 2px 8px rgba(0,0,0,.3); }
+    @keyframes bob { 50% { transform:translate(-50%,6px); } }
+    [hidden] { display:none!important; }
+    a { color:var(--brand2); }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="head">
+      <img src="./assets/icon-192.png" alt="">
+      <h1>Kepez Çağrı Uygulaması</h1>
+      <p class="sub">AK Parti Kepez İlçe Başkanlığı</p>
+    </div>
+
+    <!-- Zaten kurulu -->
+    <section id="vInstalled" hidden>
+      <div class="ok">✓ Uygulama bu cihazda kurulu.</div>
+      <p></p><a class="btn blue" href="./">Uygulamayı Aç</a>
+    </section>
+
+    <!-- Android / bilgisayar: tek dokunuşla kurulum -->
+    <section id="vPrompt" hidden>
+      <button class="btn" id="installBtn" type="button">⬇ Uygulamayı Yükle</button>
+      <p class="small">Tek dokunuşla ana ekranınıza eklenir. Ardından giriş yapıp bildirimlere izin verin.</p>
+    </section>
+    <section id="vDone" hidden>
+      <div class="ok">✓ Kurulum tamamlandı! Ana ekranınızdaki <b>Kepez Çağrı</b> simgesine dokunun.</div>
+      <p></p><a class="btn blue" href="./">Uygulamayı Aç</a>
+    </section>
+
+    <!-- Android: Chrome menüsünden -->
+    <section id="vAndroidManual" hidden>
+      <ol class="steps">
+        <li><span>Sağ üstteki <b>⋮</b> (üç nokta) menüsüne dokunun.</span></li>
+        <li><span><b>"Uygulamayı yükle"</b> ya da <b>"Ana ekrana ekle"</b>yi seçin.</span></li>
+        <li><span><b>Yükle</b>ye dokunun. Simge ana ekranınıza gelir.</span></li>
+      </ol>
+    </section>
+
+    <!-- Uygulama içi tarayıcı (WhatsApp, Instagram vb.) -->
+    <section id="vInApp" hidden>
+      <div class="note"><b>Önce tarayıcıda açın.</b> Bu sayfa şu an bir uygulamanın içinde açıldı; kurulum yalnızca <b id="needBrowser">Chrome</b>'da yapılabilir.</div>
+      <p></p>
+      <a class="btn" id="openChrome" href="#" hidden>Chrome'da Aç</a>
+      <button class="btn ghost" id="copyBtn" type="button">Bağlantıyı Kopyala</button>
+      <p class="small" id="inAppHelp">Kopyaladıktan sonra tarayıcıyı açıp adres çubuğuna yapıştırın.</p>
+    </section>
+
+    <!-- iPhone / iPad (Safari) -->
+    <section id="vIos" hidden>
+      <ol class="steps">
+        <li><span>Alttaki <b>Paylaş</b> düğmesine dokunun <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 8 5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg></span><br><span class="small" style="text-align:left;display:block">Görmüyorsanız adres çubuğundaki <b>•••</b> düğmesine dokunun.</span></span></li>
+        <li><span>Listeyi kaydırıp <b>"Ana Ekrana Ekle"</b>yi seçin <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><path d="M12 8v8M8 12h8"/></svg></span></span></li>
+        <li><span>Sağ üstteki <b>Ekle</b>ye dokunun. Simge ana ekranınıza gelir.</span></li>
+        <li><span>Uygulamayı <b>ana ekrandaki simgeden</b> açın, giriş yapın ve <b>Bildirimlere İzin Ver</b>in.</span></li>
+      </ol>
+      <div class="note">iPhone'da bildirimler yalnızca uygulama ana ekrana eklenip oradan açıldığında çalışır.</div>
+    </section>
+
+    <!-- Bilgisayar: telefonla okut -->
+    <section id="vDesktop" hidden>
+      <div class="qr"><div id="qr"></div><p class="small">Telefonunuzun kamerasıyla okutun, açılan sayfadaki adımları izleyin.</p></div>
+      <a class="btn ghost" href="./">Bilgisayarda kullanmaya devam et</a>
+    </section>
+
+    <p class="small">Sorun yaşarsanız ilçe Bilgi İşlem birimine ulaşın.</p>
+  </main>
+  <div class="arrow" id="iosArrow" hidden>↓ Paylaş düğmesi aşağıda</div>
+
+  <script src="./vendor/qrcode.js"></script>
+  <script>
+    const $ = id => document.getElementById(id);
+    const ua = navigator.userAgent || '';
+    const isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    const isAndroid = /Android/i.test(ua);
+    const inApp = /FBAN|FBAV|Instagram|Line\/|WhatsApp|; wv\)|Twitter|TikTok|Snapchat/i.test(ua);
+    const iosNotSafari = isIOS && /CriOS|FxiOS|EdgiOS|OPiOS|YaBrowser|GSA\//i.test(ua);
+    const standalone = (window.matchMedia && matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+    const appUrl = new URL('./', location.href).href;
+    const show = id => $(id).hidden = false;
+    let deferred = null;
+
+    if ('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(() => {});
+
+    function drawQr() {
+      try { const q = qrcode(0, 'M'); q.addData(location.href.split('#')[0]); q.make(); $('qr').innerHTML = q.createSvgTag({ cellSize: 6, margin: 2, scalable: true }); } catch (e) { $('qr').textContent = location.href; }
+    }
+
+    if (standalone) show('vInstalled');
+    else if (isIOS && (inApp || iosNotSafari)) { $('needBrowser').textContent = 'Safari'; $('inAppHelp').textContent = 'Kopyaladıktan sonra Safari\'yi açıp adres çubuğuna yapıştırın.'; show('vInApp'); }
+    else if (isIOS) { show('vIos'); $('iosArrow').hidden = !/iPhone|iPod/.test(ua); document.body.classList.toggle('has-arrow', !$('iosArrow').hidden); }
+    else if (isAndroid && inApp) {
+      show('vInApp');
+      const u = new URL(location.href);
+      $('openChrome').href = `intent://${u.host}${u.pathname}${u.search}#Intent;scheme=https;package=com.android.chrome;end`;
+      $('openChrome').hidden = false;
+    }
+    else {
+      // Chrome / Edge / Samsung: kurulum penceresi gelirse tek düğme; gelmezse menü talimatı
+      const fallback = setTimeout(() => { if (!deferred) { if (isAndroid) show('vAndroidManual'); else { show('vDesktop'); drawQr(); } } }, 2500);
+      window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferred = e; clearTimeout(fallback); ['vAndroidManual', 'vDesktop'].forEach(id => $(id).hidden = true); show('vPrompt'); if (!isAndroid) { show('vDesktop'); drawQr(); } });
+    }
+    $('installBtn').onclick = async () => {
+      if (!deferred) return;
+      deferred.prompt();
+      const r = await deferred.userChoice.catch(() => ({}));
+      deferred = null;
+      if (r && r.outcome === 'accepted') { $('vPrompt').hidden = true; show('vDone'); }
+    };
+    window.addEventListener('appinstalled', () => { $('vPrompt').hidden = true; show('vDone'); });
+    $('copyBtn').onclick = async () => {
+      try { await navigator.clipboard.writeText(location.href); $('copyBtn').textContent = '✓ Kopyalandı'; }
+      catch (e) { prompt('Bağlantıyı kopyalayın:', location.href); }
+    };
+  </script>
+</body>
+</html>
