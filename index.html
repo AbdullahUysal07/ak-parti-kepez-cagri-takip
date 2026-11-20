@@ -565,26 +565,57 @@
     async function geocodeBuilding(group,door,streetPoint){const cacheKey='geo2b:'+group.key+'|'+door; const cached=geoCacheGet(cacheKey); if(cached)return cached.lat?cached:null; const p=await geocodeQuery(`${streetLabel(group)} No:${door} ${group.neighborhood} Kepez Antalya Türkiye`); // sokaktan çok uzak ya da düşük güvenilirlikli sonuçları kullanma
       const ok=p&&p.score>=80&&(!streetPoint||distanceM(p,streetPoint)<1200); geoCacheSet(cacheKey,ok?p:{miss:1}); return ok?p:null;}
     function buildingIcon(count,approx){return L.divIcon({className:'bmarker-wrap',html:`<div class="bmarker ${approx?'approx':''}">${count}</div>`,iconSize:[30,30],iconAnchor:[15,15]});}
+    // Sokak konumunu sunucudan al (OpenStreetMap + ArcGIS, sunucuda saklanır).
+    // Sunucu eski sürümdeyse tarayıcıdan doğrudan aranır.
+    async function streetGeo(group,doors,onProgress){
+      let res=null;
+      for(let round=0;round<4;round++){
+        try{res=await api('/geo',{method:'POST',json:{street:streetLabel(group),hood:group.neighborhood,doors}});}catch(e){res=null; break;}
+        onProgress&&onProgress(res);
+        if(!res.pending)break;
+      }
+      if(res)return res;
+      const point=await geocodeGroup(group); if(!point)return {point:null,line:null,source:'none',doors:{}};
+      const out={point,line:null,source:'arcgis',doors:{}};
+      const queue=doors.filter(d=>d!=='?'); const work=async()=>{while(queue.length){const d=queue.shift(); const p=await geocodeBuilding(group,d,point); out.doors[d]=p?[p.lat,p.lng]:0; onProgress&&onProgress({...out,pending:queue.length});}};
+      await Promise.all(Array.from({length:6},work)); return out;
+    }
+    // Konumu bulunamayan binaları sokak çizgisi boyunca kapı numarası sırasıyla yerleştir
+    function pointAlong(line,t){if(!line||line.length<2)return null; const segs=[]; let total=0; for(let i=1;i<line.length;i++){const a={lat:line[i-1][0],lng:line[i-1][1]},b={lat:line[i][0],lng:line[i][1]}; const d=distanceM(a,b); segs.push([a,b,d]); total+=d;} let want=t*total; for(const [a,b,d] of segs){if(want<=d||d===0&&want===0){const f=d?want/d:0; return {lat:a.lat+(b.lat-a.lat)*f,lng:a.lng+(b.lng-a.lng)*f};} want-=d;} const last=line[line.length-1]; return {lat:last[0],lng:last[1]};}
     async function drawMap(group){
       const el=$('kepezMap'); if(!el||!window.L)return; const seq=++mapDrawSeq;
-      if(!state.map){state.map=L.map(el).setView([37.0219,30.7141],12); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(state.map); state.mapLayers=L.layerGroup().addTo(state.map);} else {state.map.invalidateSize(); state.mapLayers.clearLayers();}
+      if(!state.map){state.map=L.map(el).setView([36.95,30.69],12); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(state.map); state.mapLayers=L.layerGroup().addTo(state.map);} else {state.map.invalidateSize(); state.mapLayers.clearLayers();}
       const layers=state.mapLayers, map=state.map;
       if(canSeeLiveLocations())state.locations.forEach(l=>{const age=Math.round((Date.now()-new Date(l.time).getTime())/60000); L.circleMarker([l.lat,l.lng],{radius:8,color:'#123c7c',fillColor:'#f28c00',fillOpacity:.9,className:'location-dot'}).addTo(layers).bindPopup(`<strong>${esc(l.name)}</strong><br>${esc(l.neighborhood||l.role||'')}<br>${age} dk önce`);});
-      if(!group){map.setView([37.0219,30.7141],12); return;}
+      if(!group){map.setView([36.95,30.69],12); return;}
       const status=$('mapStatus'); const setStatus=t=>{if(status&&seq===mapDrawSeq){status.textContent=t; status.hidden=!t;}};
-      setStatus('Sokak konumu bulunuyor…');
-      const point=await geocodeGroup(group); if(seq!==mapDrawSeq)return;
-      if(!point){setStatus('Bu sokak haritada bulunamadı. Üye listesi aşağıda.'); return;}
-      map.setView([point.lat,point.lng],17);
-      // Aynı binadaki üyeler tek işarette toplanır; her bina için bir kez konum aranır
       const buildings=new Map(); group.members.forEach(m=>{const d=doorInfo(m).door||'?'; if(!buildings.has(d))buildings.set(d,[]); buildings.get(d).push(m);});
-      const list=[...buildings.entries()]; let done=0, approx=0; const bounds=[[point.lat,point.lng]];
-      const place=(door,members,p,isApprox)=>{if(seq!==mapDrawSeq)return; const rows=members.map(m=>`<div class="pop-row"><strong>${esc(m.name)}</strong>${m.phone?` <a href="tel:${esc(m.phone)}">Ara</a>`:''}<br><span>${esc(doorInfo(m).flat?'Daire '+doorInfo(m).flat:'')}</span></div>`).join(''); L.marker([p.lat,p.lng],{icon:buildingIcon(members.length,isApprox)}).addTo(layers).bindPopup(`<strong>${esc(streetLabel(group))} No: ${esc(door)}</strong>${isApprox?'<br><em>Yaklaşık konum</em>':''}<div class="pop-list">${rows}</div><a href="${esc(mapUrlFor(members[0]))}" target="_blank" rel="noopener">Google Haritalar'da aç</a>`); if(!isApprox)bounds.push([p.lat,p.lng]);};
-      const worker=async()=>{while(list.length){const [door,members]=list.shift(); const p=door==='?'?null:await geocodeBuilding(group,door,point); if(seq!==mapDrawSeq)return; if(p)place(door,members,p,false); else {const k=approx++; const ang=k*2.4, r=.00012+.00004*Math.sqrt(k); place(door,members,{lat:point.lat+Math.sin(ang)*r,lng:point.lng+Math.cos(ang)*r},true);} done++; setStatus(`Konumlar yükleniyor… ${done}/${buildings.size} bina`);}};
-      await Promise.all(Array.from({length:6},worker)); if(seq!==mapDrawSeq)return;
-      if(bounds.length>1)map.fitBounds(bounds,{padding:[30,30],maxZoom:18});
-      setStatus(approx?`${buildings.size} bina • ${approx} binanın konumu yaklaşık (soluk işaret)`:'');
+      const doors=[...buildings.keys()].filter(d=>d!=='?');
+      setStatus('Sokak haritada bulunuyor…');
+      let centered=false;
+      const geo=await streetGeo(group,doors,r=>{if(seq!==mapDrawSeq||!r||!r.point)return; if(!centered){centered=true; map.setView([r.point.lat,r.point.lng],r.source==='hood'?15:17);} const known=Object.keys(r.doors||{}).length; if(r.pending)setStatus(`Bina konumları yükleniyor… ${Math.min(known,doors.length)}/${doors.length}`);});
+      if(seq!==mapDrawSeq)return;
+      if(!geo||!geo.point){setStatus('Harita servisine ulaşılamadı. Üye listesi aşağıda.'); return;}
+      const {point,line,source}=geo;
+      if(line&&line.length>1)L.polyline(line,{color:'#123c7c',weight:6,opacity:.35}).addTo(layers);
+      // kapı numarası sırası (yaklaşık yerleşim için)
+      const ordered=[...buildings.keys()].sort((a,b)=>(parseInt(a)||9999)-(parseInt(b)||9999));
+      const bounds=[]; let approx=0;
+      ordered.forEach((door,idx)=>{
+        const members=buildings.get(door); const exact=geo.doors&&Array.isArray(geo.doors[door])?{lat:geo.doors[door][0],lng:geo.doors[door][1]}:null;
+        let p=exact;
+        if(!p){approx++; p=(source==='osm'&&line)?pointAlong(line,ordered.length>1?idx/(ordered.length-1):.5):null; if(!p){const ang=approx*2.4, r=.00012+.00004*Math.sqrt(approx); p={lat:point.lat+Math.sin(ang)*r,lng:point.lng+Math.cos(ang)*r};}}
+        const rows=members.map(m=>`<div class="pop-row"><strong>${esc(m.name)}</strong>${m.phone?` <a href="tel:${esc(m.phone)}">Ara</a>`:''}<br><span>${esc(doorInfo(m).flat?'Daire '+doorInfo(m).flat:'')}</span></div>`).join('');
+        L.marker([p.lat,p.lng],{icon:buildingIcon(members.length,!exact)}).addTo(layers).bindPopup(`<strong>${esc(streetLabel(group))} No: ${esc(door)}</strong>${exact?'':'<br><em>Yaklaşık konum</em>'}<div class="pop-list">${rows}</div><a href="${esc(mapUrlFor(members[0]))}" target="_blank" rel="noopener">Google Haritalar'da aç</a>`);
+        bounds.push([p.lat,p.lng]);
+      });
+      if(line)line.forEach(x=>bounds.push(x));
+      if(bounds.length>1)map.fitBounds(bounds,{padding:[30,30],maxZoom:18}); else map.setView([point.lat,point.lng],17);
+      if(source==='hood')setStatus('Sokak haritada bulunamadı; üyeler mahalle merkezinde yaklaşık gösteriliyor.');
+      else if(source==='kepez')setStatus('Sokak ve mahalle bulunamadı. Üye listesi aşağıda.');
+      else setStatus(approx?`${buildings.size} bina • ${approx} tanesi sokak üzerinde yaklaşık (gri)`:'');
     }
+
     async function postLocation(pos,auto=false){const last=Number(localStorage.getItem('uye-last-location-post')||0); if(auto&&Date.now()-last<1000*60*5)return; await api('/locations',{method:'POST',json:{lat:pos.coords.latitude,lng:pos.coords.longitude,accuracy:pos.coords.accuracy}}); localStorage.setItem('uye-last-location-post',String(Date.now())); if(!auto)toast('Konum paylaşıldı ve canlı takip açık.');}
     function startLocationWatch(auto=false){if(!state.user||!navigator.geolocation)return; if(state.locationWatch!==null)return; state.locationWatch=navigator.geolocation.watchPosition(pos=>postLocation(pos,true).catch(()=>{}),err=>{if(!auto)toast('Canlı konum izni verilmedi.');},{enableHighAccuracy:false,timeout:15000,maximumAge:300000});}
     async function shareLocation(auto=false){if(!state.user||!navigator.geolocation){if(!auto)toast('Bu cihaz konum desteklemiyor.'); return;} navigator.geolocation.getCurrentPosition(async pos=>{try{await postLocation(pos,auto); startLocationWatch(auto);}catch(e){if(!auto)toast('Konum gönderilemedi.');}},err=>{if(!auto)toast('Konum izni verilmedi.');},{enableHighAccuracy:true,timeout:12000,maximumAge:30000});}
