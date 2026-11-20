@@ -332,6 +332,107 @@
     .modal-card { background:#fff; border-radius:12px; padding:18px; width:min(420px,100%); display:grid; gap:10px; box-shadow:0 20px 50px rgba(0,0,0,.25); }
     .modal-card h2 { margin:0; }
     @media (max-width:1050px) { .admin-grid.four { grid-template-columns:1fr 1fr; } .edit-row,.edit-row.leader-row { grid-template-columns:1fr 1fr; } .edit-head { display:none; } .reply-form { grid-template-columns:1fr; } }
+    /* =====================================================================
+       MODERN TEMA — menüdeki sade görünüm tüm sayfalara uygulanır
+       ===================================================================== */
+    :root { --bg:#f1f5f9; --line:#e5eaf1; --soft:#f8fafc; --radius:16px; --shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px rgba(15,23,42,.06); --brand2:#123c7c; --brand3:#1d5fb8; }
+    body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; background:var(--bg); -webkit-font-smoothing:antialiased; }
+    button { border-radius:10px; font-weight:700; transition:background .15s, box-shadow .15s, transform .05s; }
+    button:active { transform:translateY(1px); }
+    button.secondary { background:#fff; color:var(--brand2); border:1px solid var(--line); }
+    button.secondary:hover { background:#f8fafc; }
+    input,select,textarea { border-radius:10px; border-color:var(--line); transition:border-color .15s, box-shadow .15s; }
+    input:focus,select:focus,textarea:focus { outline:none; border-color:#f5b041; box-shadow:0 0 0 3px rgba(242,140,0,.15); }
+    label { font-weight:600; color:#64748b; font-size:.82rem; }
+    h2 { letter-spacing:-.01em; }
+    /* üst bar */
+    header { background:linear-gradient(135deg,var(--brand2),var(--brand3)); border-bottom:3px solid var(--brand); padding:10px 16px; box-shadow:0 4px 16px rgba(18,60,124,.18); }
+    .menu-btn { border:0; background:rgba(255,255,255,.15); border-radius:12px; }
+    .menu-btn:hover { background:rgba(255,255,255,.25); }
+    .logo { border-radius:12px; }
+    #exportBtn { background:rgba(255,255,255,.15); color:#fff; border:1px solid rgba(255,255,255,.3); }
+    #exportBtn:hover { background:rgba(255,255,255,.25); }
+    /* araç çubuğu */
+    .toolbar { background:transparent; border:0; box-shadow:none; padding:12px 12px 0; }
+    .toolbar input,.toolbar select { background:#fff; box-shadow:0 1px 2px rgba(15,23,42,.04); }
+    .notice { margin:12px 12px 0; border-radius:12px; border-color:#fbd38d; }
+    /* paneller */
+    .panel { border-radius:var(--radius); border:1px solid var(--line); box-shadow:var(--shadow); }
+    .panel-head { background:#fff; padding:14px 16px; border-bottom:1px solid var(--line); }
+    .panel-title { font-size:1rem; font-weight:800; color:#0f172a; }
+    .detail { padding:18px; }
+    .empty { color:#94a3b8; font-weight:500; }
+    /* liste sekmeleri: segmentli düğme */
+    .list-tabs { background:#fff; padding:10px 12px; gap:4px; }
+    .list-tabs { position:relative; }
+    .list-tab { background:#f1f5f9; color:#475569; border:0; border-radius:10px; min-height:36px; font-size:.86rem; }
+    .list-tab:hover { background:#e9eef5; }
+    .list-tab.active { background:var(--brand2); color:#fff; box-shadow:0 2px 6px rgba(18,60,124,.25); }
+    /* üye satırları */
+    .member { padding:12px 16px; border-bottom:1px solid #f1f5f9; min-height:52px; gap:3px; transition:background .12s; }
+    .member:hover { background:#f8fafc; }
+    .member.active { background:#fff4e6; box-shadow:inset 3px 0 0 var(--brand); }
+    .member strong { font-weight:700; font-size:.95rem; color:#0f172a; }
+    .meta { font-size:.8rem; }
+    .badge { font-weight:700; padding:3px 10px; }
+    /* detay: arama ve konum düğmeleri */
+    .detail-actions { display:flex; flex-wrap:wrap; gap:10px; }
+    .detail-actions .phone { flex:1 1 100%; margin:0; }
+    .detail-actions .map-link { flex:1 1 0; }
+    .detail-actions .map-link,.detail-actions .phone { min-height:50px; margin:0; text-align:center; padding:0 12px; }
+    .phone { background:#16a34a; border-radius:12px; min-height:52px; box-shadow:0 4px 12px rgba(22,163,74,.2); }
+    .map-link { background:#eef4ff; color:var(--brand2); border:1px solid #d6e4ff; border-radius:12px; min-height:52px; }
+    .quick { gap:8px; }
+    .quick button { background:#f1f5f9; color:#334155; border:1px solid var(--line); border-radius:12px; }
+    .quick button:hover { background:#e9eef5; }
+    .quick button[data-quick="called"] { color:#15803d; } .quick button[data-quick="wrong"] { color:#b91c1c; }
+    .form { border-top:1px solid var(--line); }
+    .facts { border-radius:12px; border-color:var(--line); }
+    .fact { grid-template-columns:130px 1fr; border-bottom-color:#f1f5f9; }
+    .fact div:first-child { background:#f8fafc; color:#64748b; font-weight:600; font-size:.86rem; }
+    .edit-box { border-radius:12px; }
+    /* log kartları */
+    .logs { padding:12px; }
+    .log { border-radius:12px; border-color:#eef2f7; box-shadow:0 1px 2px rgba(15,23,42,.04); padding:12px; }
+    .log strong { color:#0f172a; }
+    /* ana sayfa ve duyurular */
+    .welcome { border:0; border-radius:var(--radius); background:linear-gradient(135deg,var(--brand2),var(--brand3)); color:#fff; padding:20px; box-shadow:0 8px 24px rgba(18,60,124,.2); }
+    .welcome h2 { color:#fff; font-size:1.4rem; }
+    .welcome p { color:rgba(255,255,255,.85); font-weight:600; }
+    .composer { border-radius:var(--radius); border-color:var(--line); box-shadow:var(--shadow); }
+    .announcement-list { gap:12px; }
+    .announcement-card { border-radius:var(--radius); border-color:var(--line); box-shadow:var(--shadow); padding:16px; }
+    .announcement-card.unread { border-color:#fbd38d; background:#fff; box-shadow:inset 3px 0 0 var(--brand),var(--shadow); }
+    .announcement-avatar { border-radius:50%; width:44px; height:44px; }
+    .announcement-map-btn { border-radius:12px; }
+    .like-btn { border-radius:999px; min-height:36px; padding:0 16px; background:#f1f5f9; border:1px solid var(--line); }
+    .like-btn.active { background:#fff4e6; color:#c2410c; border-color:#fbd38d; }
+    details summary { cursor:pointer; color:#64748b; font-weight:600; font-size:.88rem; }
+    /* admin paneli */
+    .admin-shell { gap:16px; }
+    .admin-tabs { background:#f1f5f9; padding:4px; border-radius:12px; gap:4px; width:fit-content; max-width:100%; }
+    .admin-tab { border:0; background:transparent; color:#475569; border-radius:9px; min-height:36px; font-size:.88rem; }
+    .admin-tab:hover { background:#e9eef5; }
+    .admin-tab.active { background:#fff; color:var(--brand2); box-shadow:0 1px 3px rgba(15,23,42,.12); }
+    .admin-section { border-radius:var(--radius); border-color:var(--line); box-shadow:var(--shadow); padding:16px; }
+    .admin-section h2 { font-size:1.1rem; }
+    .admin-card { border-radius:14px; border-color:var(--line); padding:14px 16px; background:linear-gradient(180deg,#fff,#f8fafc); }
+    .admin-card strong { color:#64748b; font-size:.82rem; font-weight:700; }
+    .admin-card h2 { color:var(--brand2); font-size:1.7rem; }
+    .user-row,.edit-row { border-radius:12px; border-color:var(--line); }
+    .user-row:hover,.edit-row:hover { border-color:#cbd5e1; }
+    .chip { background:#f1f5f9; border-color:var(--line); }
+    /* sorgu, talepler, analiz, pencereler */
+    .check-result,.ap-card,.ap-next,.analysis-sidebar,.analysis-map-card { border-radius:var(--radius); }
+    .analysis-sidebar,.analysis-map-card { border-color:var(--line); box-shadow:var(--shadow); }
+    .analysis-summary { background:#fff; }
+    .modal-card { border-radius:20px; }
+    .toast { border-radius:12px; box-shadow:0 10px 30px rgba(15,23,42,.25); }
+    /* giriş ekranı */
+    .login { background:linear-gradient(135deg,var(--brand2),var(--brand3) 60%,#f28c00 140%); }
+    .login-card { border-radius:22px; box-shadow:0 20px 60px rgba(15,23,42,.3); }
+    .login-card button { min-height:48px; }
+    @media (max-width:1050px) { .toolbar { padding:10px 8px 0; } .panel { border-radius:14px; } .detail { padding:14px; } .admin-tabs { width:100%; overflow-x:auto; flex-wrap:nowrap; } .admin-tab { white-space:nowrap; } }
   </style>
 </head>
 <body class="locked">
@@ -436,7 +537,9 @@
     function mapUrlFor(x){const q=[x.address,x.neighborhood,'Kepez Antalya'].filter(Boolean).join(' '); return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q);}
     function toast(msg){const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toast.timer); toast.timer=setTimeout(()=>t.classList.remove('show'),2600);}
     function updateDrawer(){if(!state.user)return; const n=state.user.name||''; $('drawerName').textContent=n; $('drawerAvatar').textContent=n.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toLocaleUpperCase('tr-TR')||'AK'; $('drawerRole').textContent=[firstHood(),titleForUser()].filter(Boolean).join(' • '); $('navSectionMgmt').hidden=!(isAdmin()||canUseAnalysis()); updateNavBadges();}
-    function updateNavBadges(){if(!state.user)return; const unread=state.announcements.filter(a=>a.id!==state.lastSeenAnnouncement).length; const h=$('navBadgeHome'); h.textContent=unread; h.hidden=!unread; const req=isAdmin()?state.requests.filter(r=>r.status==='new').length:0; const ad=$('navBadgeAdmin'); ad.textContent=req; ad.hidden=!req;}
+    function isUnread(a){if(!a)return false; if(state.lastSeenAt)return new Date(a.createdAt)>new Date(state.lastSeenAt); return a.id!==state.lastSeenAnnouncement&&!state.lastSeenAnnouncement;}
+    function markSeen(a){if(!a)return; state.lastSeenAnnouncement=a.id; if(!state.lastSeenAt||new Date(a.createdAt)>new Date(state.lastSeenAt))state.lastSeenAt=a.createdAt; save();}
+    function updateNavBadges(){if(!state.user)return; const unread=state.announcements.filter(a=>isUnread(a)).length; const h=$('navBadgeHome'); h.textContent=unread; h.hidden=!unread; const req=isAdmin()?state.requests.filter(r=>r.status==='new').length:0; const ad=$('navBadgeAdmin'); ad.textContent=req; ad.hidden=!req;}
     function closeDrawer(){$('drawer').classList.remove('open'); $('drawer').setAttribute('aria-hidden','true');}
 
     // ------------------------------------------------------------------ sunucu bağlantısı
@@ -461,8 +564,8 @@
     function canSeeNeighborhood(n){return isManagement()||(state.user&&(state.user.neighborhoods||[]).includes(n));}
 
     // ------------------------------------------------------------------ yerel durum
-    function save(){try{localStorage.setItem(key,JSON.stringify({selected:state.selected,neighborhood:state.neighborhood,mode:state.mode,adminTab:state.adminTab,autoScope:state.autoScope,lastSeenAnnouncement:state.lastSeenAnnouncement,localLogs:isAdmin()?[]:state.logs.slice(0,300)}));}catch(e){}}
-    function load(){try{const s=JSON.parse(localStorage.getItem(key)||'{}'); state.selected=s.selected||null; state.neighborhood=s.neighborhood||'all'; state.mode=s.mode||'home'; if(state.mode==='logs'){state.mode='admin'; state.adminTab='loglar';} state.adminTab=s.adminTab||state.adminTab; state.autoScope=s.autoScope||'new'; state.lastSeenAnnouncement=s.lastSeenAnnouncement||''; state.logs=Array.isArray(s.localLogs)?s.localLogs:[];}catch(e){} localStorage.removeItem('uye-cagri-v2');}
+    function save(){try{localStorage.setItem(key,JSON.stringify({selected:state.selected,neighborhood:state.neighborhood,mode:state.mode,adminTab:state.adminTab,autoScope:state.autoScope,lastSeenAnnouncement:state.lastSeenAnnouncement,lastSeenAt:state.lastSeenAt,localLogs:isAdmin()?[]:state.logs.slice(0,300)}));}catch(e){}}
+    function load(){try{const s=JSON.parse(localStorage.getItem(key)||'{}'); state.selected=s.selected||null; state.neighborhood=s.neighborhood||'all'; state.mode=s.mode||'home'; if(state.mode==='logs'){state.mode='admin'; state.adminTab='loglar';} state.adminTab=s.adminTab||state.adminTab; state.autoScope=s.autoScope||'new'; state.lastSeenAnnouncement=s.lastSeenAnnouncement||''; state.lastSeenAt=s.lastSeenAt||''; state.logs=Array.isArray(s.localLogs)?s.localLogs:[];}catch(e){} localStorage.removeItem('uye-cagri-v2');}
     function indexLogs(){memberLogs.clear(); state.logs.forEach(l=>{if(!memberLogs.has(l.memberId))memberLogs.set(l.memberId,[]); memberLogs.get(l.memberId).push(l);});}
     function logsFor(id){return memberLogs.get(id)||[];}
     function statusFor(id){return (logsFor(id)[0]||{status:'new'}).status;}
@@ -566,8 +669,8 @@
       setBodyMode(state.mode==='auto'?'auto-mode':'');
       renderList(list); renderDetail(list); if(isAdmin())renderLogs(); else clearLogsPanel();
     }
-    function renderNotice(){updateNavBadges(); const n=$('notice'); const latest=state.announcements[0]; if(latest&&state.mode!=='home'&&latest.id!==state.lastSeenAnnouncement){n.innerHTML=`<span class="notice-text">Yeni duyuru: ${esc(String(latest.body).replace(/\s+/g,' '))}</span><button type="button" class="notice-close" aria-label="Kapat">✕</button>`; n.classList.add('show');} else {n.innerHTML=''; n.classList.remove('show');}}
-    function dismissNotice(){const latest=state.announcements[0]; if(!latest)return; state.lastSeenAnnouncement=latest.id; save(); renderNotice(); api('/announcements/read',{method:'POST',json:{announcementId:latest.id}}).catch(()=>{});}
+    function renderNotice(){updateNavBadges(); const n=$('notice'); const latest=state.announcements[0]; if(latest&&state.mode!=='home'&&isUnread(latest)){n.innerHTML=`<span class="notice-text">Yeni duyuru: ${esc(String(latest.body).replace(/\s+/g,' '))}</span><button type="button" class="notice-close" aria-label="Kapat">✕</button>`; n.classList.add('show');} else {n.innerHTML=''; n.classList.remove('show');}}
+    function dismissNotice(){const latest=state.announcements[0]; if(!latest)return; markSeen(latest); renderNotice(); api('/announcements/read',{method:'POST',json:{announcementId:latest.id}}).catch(()=>{});}
     function listTabs(){if(state.mode!=='list')return ''; const t=state.memberTab; return `<div class="list-tabs"><button type="button" class="list-tab ${t==='members'?'active':''}" data-list-tab="members">Üyeler</button><button type="button" class="list-tab ${t==='mine'?'active':''}" data-list-tab="mine">Üyelerim</button><button type="button" class="list-tab ${t==='leaders'?'active':''}" data-list-tab="leaders">Mahalle Başkanları</button></div>`;}
     function renderList(list){
       const mine=state.memberTab==='mine';
@@ -595,7 +698,7 @@
     function titleForUser(){if(!state.user)return ''; if(state.user.role==='neighborhood')return 'Mahalle Başkanı'; return isAdmin()?'İlçe Başkanı':'Yönetici';}
     function firstHood(){return state.user&&state.user.neighborhoods&&state.user.neighborhoods[0]?state.user.neighborhoods[0]:'';}
     function announcementLiked(a){return (a.likes||[]).some(x=>x.username===(state.user&&state.user.username));}
-    function renderHome(){const unread=state.announcements.filter(a=>a.id!==state.lastSeenAnnouncement).length; $('countText').textContent=unread?`${unread} yeni duyuru`:'Duyurular'; $('memberList').innerHTML=''; const composer=isAdmin()?`<form id="homeAnnounceForm" class="composer"><select id="homeAnnouncementTarget"><option value="all">Herkes</option><option value="management">Ana kademe / yönetim</option><option value="neighborhood">Mahalle başkanları</option></select><textarea id="homeAnnouncementInput" placeholder="Ne duyurmak istersiniz?"></textarea><button>Duyuruyu Paylaş</button></form>`:''; const cards=state.announcements.map(a=>{const adminTools=isAdmin()?`<div class="actions"><button type="button" class="danger" data-delete-announcement="${esc(a.id)}">Duyuruyu Sil</button></div><details><summary>Görüntüleyenler</summary><p class="small">${(a.reads||[]).map(x=>esc(x.name||x.username)).join(', ')||'Henüz görüntüleyen yok.'}</p><p class="small"><strong>Beğenenler:</strong> ${(a.likes||[]).map(x=>esc(x.name||x.username)).join(', ')||'Henüz beğenen yok.'}</p></details>`:''; return `<article class="announcement-card ${a.id!==state.lastSeenAnnouncement?'unread':''}"><div class="announcement-author"><img class="announcement-avatar" src="${CHAIRMAN_PHOTO}" alt=""><div><strong>${esc(a.authorName||'Hasan Demir')}</strong><div class="small">${esc(fmtDate(a.createdAt))} • ${a.target==='management'?'Yönetim':a.target==='neighborhood'?'Mahalle başkanları':'Herkes'}</div></div></div><div class="announcement-body">${announcementBodyHtml(a.body)}</div><div class="announcement-meta"><span>${(a.reads||[]).length} görüldü • ${(a.likes||[]).length} beğeni</span><button class="like-btn ${announcementLiked(a)?'active':''}" data-like-announcement="${esc(a.id)}" type="button">${announcementLiked(a)?'Beğenildi':'Beğen'}</button></div>${adminTools}</article>`;}).join('')||'<div class="empty">Henüz duyuru yok.</div>'; $('detail').innerHTML=`<div class="home"><section class="welcome text-only"><div><h2>Hoş geldiniz Sayın ${esc(state.user.name)}</h2><p>${esc(firstHood()?firstHood()+' '+titleForUser():titleForUser())}</p></div></section>${composer}<section class="announcement-list">${cards}</section></div>`; const form=$('homeAnnounceForm'); if(form)form.onsubmit=createAnnouncement; markAnnouncementsRead();}
+    function renderHome(){const unread=state.announcements.filter(a=>isUnread(a)).length; $('countText').textContent=unread?`${unread} yeni duyuru`:'Duyurular'; $('memberList').innerHTML=''; const composer=isAdmin()?`<form id="homeAnnounceForm" class="composer"><select id="homeAnnouncementTarget"><option value="all">Herkes</option><option value="management">Ana kademe / yönetim</option><option value="neighborhood">Mahalle başkanları</option></select><textarea id="homeAnnouncementInput" placeholder="Ne duyurmak istersiniz?"></textarea><button>Duyuruyu Paylaş</button></form>`:''; const cards=state.announcements.map(a=>{const adminTools=isAdmin()?`<div class="actions"><button type="button" class="danger" data-delete-announcement="${esc(a.id)}">Duyuruyu Sil</button></div><details><summary>Görüntüleyenler</summary><p class="small">${(a.reads||[]).map(x=>esc(x.name||x.username)).join(', ')||'Henüz görüntüleyen yok.'}</p><p class="small"><strong>Beğenenler:</strong> ${(a.likes||[]).map(x=>esc(x.name||x.username)).join(', ')||'Henüz beğenen yok.'}</p></details>`:''; return `<article class="announcement-card ${isUnread(a)?'unread':''}"><div class="announcement-author"><img class="announcement-avatar" src="${CHAIRMAN_PHOTO}" alt=""><div><strong>${esc(a.authorName||'Hasan Demir')}</strong><div class="small">${esc(fmtDate(a.createdAt))} • ${a.target==='management'?'Yönetim':a.target==='neighborhood'?'Mahalle başkanları':'Herkes'}</div></div></div><div class="announcement-body">${announcementBodyHtml(a.body)}</div><div class="announcement-meta"><span>${(a.reads||[]).length} görüldü • ${(a.likes||[]).length} beğeni</span><button class="like-btn ${announcementLiked(a)?'active':''}" data-like-announcement="${esc(a.id)}" type="button">${announcementLiked(a)?'Beğenildi':'Beğen'}</button></div>${adminTools}</article>`;}).join('')||'<div class="empty">Henüz duyuru yok.</div>'; $('detail').innerHTML=`<div class="home"><section class="welcome text-only"><div><h2>Hoş geldiniz Sayın ${esc(state.user.name)}</h2><p>${esc(firstHood()?firstHood()+' '+titleForUser():titleForUser())}</p></div></section>${composer}<section class="announcement-list">${cards}</section></div>`; const form=$('homeAnnounceForm'); if(form)form.onsubmit=createAnnouncement; markAnnouncementsRead();}
     function memberEditForm(m){if(!isAdmin())return ''; return `<details class="edit-box"><summary>Üye bilgilerini düzenle</summary><form class="form" data-member-edit="${esc(m.id)}"><div class="grid2"><div class="field"><label>Ad soyad</label><input name="name" value="${esc(m.name)}"></div><div class="field"><label>Telefon</label><input name="phone" value="${esc(m.phone||'')}" inputmode="tel"></div></div><div class="field"><label>Adres</label><input name="address" value="${esc(m.address||'')}"></div><div class="field"><label>Mahalle</label><select name="neighborhood">${hoodOptions(m.neighborhood)}</select></div><div class="actions"><button>Kaydet</button></div></form></details>`;}
     function hoodOptions(selected){const hoods=Array.from(new Set([...(state.memberHoods||[]),...state.members.map(m=>m.neighborhood),selected])).filter(Boolean).sort((a,b)=>a.localeCompare(b,'tr')); return hoods.map(h=>`<option value="${esc(h)}" ${h===selected?'selected':''}>${esc(h)}</option>`).join('');}
     function memberFacts(m){return `<div class="facts"><div class="fact"><div>Telefon</div><div>${esc(m.phone||'-')}</div></div><div class="fact"><div>Mahalle</div><div>${esc(m.neighborhood)}</div></div><div class="fact"><div>Adres</div><div>${esc(m.address||'-')}</div></div><div class="fact"><div>Üyelik Tarihi</div><div>${esc(fmtDay(m.joined))}</div></div><div class="fact"><div>Referans</div><div>${esc((m.refs||[]).join(', ')||'-')}</div></div>${m.updatedAt?`<div class="fact"><div>Son düzenleme</div><div>${esc(fmtDate(m.updatedAt))}${m.updatedBy?' • '+esc(m.updatedBy):''}</div></div>`:''}</div>`;}
@@ -921,7 +1024,7 @@
     async function loadAnnouncements(showToast=false){try{const data=await api('/announcements'); state.announcements=data.announcements||[]; renderNotice(); if(showToast)toast('Duyurular yenilendi.'); if(state.mode==='home')render();}catch(e){if(showToast)toast('Duyurular alınamadı.');}}
     async function createAnnouncement(e){e.preventDefault(); if(!isAdmin())return; const input=$('homeAnnouncementInput'); const target=($('homeAnnouncementTarget')||{value:'all'}).value; const body=input?input.value.trim():''; if(!body){toast('Duyuru metni gerekli.'); return;} try{await api('/announcements',{method:'POST',json:{body,target,authorName:'Hasan Demir',url:location.href}}); input.value=''; await loadAnnouncements(); toast('Duyuru yayınlandı ve hedef kitleye bildirim gönderildi.');}catch(err){toast('Duyuru yayınlanamadı.');}}
     async function deleteAnnouncement(id){if(!confirm('Duyuru silinsin mi?'))return; try{await api('/announcements/'+encodeURIComponent(id),{method:'DELETE'}); await loadAnnouncements(); toast('Duyuru silindi.');}catch(e){toast('Duyuru silinemedi.');}}
-    async function markAnnouncementsRead(){if(!state.user||!state.announcements.length)return; const latest=state.announcements[0]; if(state.lastSeenAnnouncement===latest.id)return; state.lastSeenAnnouncement=latest.id; save(); try{await api('/announcements/read',{method:'POST',json:{announcementId:latest.id}}); await loadAnnouncements();}catch(e){}}
+    async function markAnnouncementsRead(){if(!state.user||!state.announcements.length)return; const latest=state.announcements[0]; if(state.lastSeenAnnouncement===latest.id&&state.lastSeenAt)return; markSeen(latest); updateNavBadges(); try{await api('/announcements/read',{method:'POST',json:{announcementId:latest.id}}); await loadAnnouncements();}catch(e){}}
     async function toggleAnnouncementLike(id){try{await api('/announcements/like',{method:'POST',json:{announcementId:id}}); await loadAnnouncements(); toast('Beğeni kaydedildi.');}catch(e){toast('Beğeni kaydedilemedi.');}}
 
     // ------------------------------------------------------------------ giriş / çıkış
