@@ -624,6 +624,54 @@ async function geoForStreet(env, body) {
   return json({ ok: true, point: rec.point, line: rec.line, source: rec.source, doors: rec.doors, pending });
 }
 
+
+// --------------------------- Kullanım takibi ------------------------------
+// Kimin giriş yaptığı, uygulamayı kurup kurmadığı ve bildirim durumu (kullanıcı başına bir kayıt).
+const actKey = username => `__act__:${username}`;
+async function touchActivity(env, user, patch = {}, force = false) {
+  const key = actKey(user.username);
+  const rec = (await getJson(env, key, null)) || { username: user.username, logins: 0, devices: {} };
+  const now = Date.now();
+  let changed = force;
+  if (patch.login) { rec.lastLogin = new Date(now).toISOString(); rec.logins = (rec.logins || 0) + 1; changed = true; }
+  if (patch.device && patch.device.id) {
+    const d = patch.device; const prev = rec.devices[d.id] || {};
+    const next = { platform: clean(d.platform, 20), standalone: !!d.standalone, permission: clean(d.permission, 20), pushSubscribed: !!d.pushSubscribed, at: new Date(now).toISOString() };
+    if (prev.platform !== next.platform || prev.standalone !== next.standalone || prev.permission !== next.permission || prev.pushSubscribed !== next.pushSubscribed) changed = true;
+    rec.devices[clean(d.id, 40)] = next;
+    const ids = Object.keys(rec.devices).sort((a, b) => String(rec.devices[b].at).localeCompare(String(rec.devices[a].at)));
+    ids.slice(4).forEach(id => delete rec.devices[id]);
+  }
+  // Yazma sayısını düşük tutmak için "son görülme" en fazla 20 dakikada bir güncellenir
+  if (!rec.lastSeen || now - new Date(rec.lastSeen).getTime() > 20 * 60000) changed = true;
+  if (changed) { rec.lastSeen = new Date(now).toISOString(); await putJson(env, key, rec); }
+  return rec;
+}
+async function usageReport(env) {
+  const [users, org] = [await loadUsers(env), await getJson(env, K.org, null)];
+  const acts = {}; const subs = {};
+  let cursor;
+  do {
+    const page = await env.SUBSCRIPTIONS.list({ prefix: '__act__:', cursor });
+    await Promise.all(page.keys.map(async k => { const r = await env.SUBSCRIPTIONS.get(k.name, 'json'); if (r) acts[r.username] = r; }));
+    cursor = page.list_complete ? null : page.cursor;
+  } while (cursor);
+  await forEachSubscription(env, async (name, saved) => { const u = saved.username || ''; if (!subs[u]) subs[u] = 0; subs[u] += 1; });
+  const rows = users.map(u => {
+    const a = acts[u.username] || null;
+    const devices = a ? Object.values(a.devices || {}) : [];
+    return {
+      username: u.username, loginUsername: u.loginUsername, name: u.name, group: u.group, groupLabel: GROUP_LABELS[u.group] || '',
+      neighborhoods: u.neighborhoods, allHoods: u.allHoods, disabled: u.disabled,
+      passwordChanged: u.password !== DEFAULT_PASSWORD,
+      lastLogin: a && a.lastLogin || '', lastSeen: a && a.lastSeen || '', logins: a && a.logins || 0,
+      devices, pushSubscriptions: subs[u.username] || 0,
+      installed: devices.some(d => d.standalone), permission: devices.length ? (devices.find(d => d.permission === 'granted') ? 'granted' : devices.find(d => d.permission === 'denied') ? 'denied' : devices[0].permission) : ''
+    };
+  });
+  return { ok: true, generatedAt: new Date().toISOString(), rows, anonymousSubscriptions: subs[''] || 0 };
+}
+
 // --------------------------- İstek yönlendirme ----------------------------
 export default {
   async fetch(request, env) {
@@ -655,6 +703,7 @@ async function handle(request, env) {
     const users = await loadUsers(env);
     const u = users.find(x => x.loginUsername === wanted || x.username === wanted);
     if (!u || u.disabled || String(b.password || '') !== u.password) return json({ error: 'login_failed' }, 401);
+    await touchActivity(env, u, { login: true });
     return json({ ok: true, token: await createToken(env, u), user: publicUser(u) });
   }
 
@@ -664,6 +713,8 @@ async function handle(request, env) {
   const requireAdmin = () => admin ? null : json({ error: 'forbidden' }, 403);
 
   if (path === '/auth/me' && method === 'GET') return json({ ok: true, user: publicUser(user) });
+  if (path === '/activity' && method === 'POST') { const b = await body(); await touchActivity(env, user, { device: b }); return json({ ok: true }); }
+  if (path === '/admin/usage' && method === 'GET') { const denied = requireAdmin(); if (denied) return denied; return json(await usageReport(env)); }
 
   if (path === '/auth/password' && method === 'POST') {
     const b = await body();
