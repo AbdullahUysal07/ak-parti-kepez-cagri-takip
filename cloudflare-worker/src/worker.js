@@ -691,6 +691,8 @@ async function handle(request, env) {
   const body = async () => { try { return await request.json(); } catch (e) { return {}; } };
 
   if (path === '/health') return json({ ok: true });
+  // Kısa kurulum bağlantısı: WhatsApp mesajlarında uzun site adresi yerine kullanılır
+  if (path === '/kur' || path === '/k') return Response.redirect('https://abdullahuysal07.github.io/ak-parti-kepez-cagri-takip/kurulum.html', 302);
   if (path === '/latest') {
     const latest = await env.SUBSCRIPTIONS.get(K.latest, 'json');
     return json(latest || { title: 'AK Parti Kepez', body: 'Yeni bildirim var.', url: './' });
