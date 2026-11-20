@@ -161,6 +161,9 @@ async function sendPush(env, subscription) {
 // ---------------------------------------------------------------------------
 const DEFAULT_PASSWORD = 'kepez2026.';
 const ADMIN_USERNAME = 'hasan_demir';
+// Tam yetkili kullanıcılar (Hasan Demir paneliyle aynı yetkiler)
+const ADMIN_USERNAMES = ['hasan_demir', 'ilkaygunesss'];
+const USER_TITLES = { hasan_demir: 'İlçe Başkanı', ilkaygunesss: 'İlçe Teşkilat Başkanı' };
 const ANALYSIS_USERS = ['ilkaygunesss', 'huseyin_ilkay_gunes'];
 const REF_SHARDS = 64;
 const TOKEN_DAYS = 120;
@@ -264,8 +267,9 @@ function publicUser(u) {
     refName: u.refName,
     role: u.role,
     neighborhoods: u.neighborhoods,
-    isAdmin: u.username === ADMIN_USERNAME,
-    canAnalysis: u.username === ADMIN_USERNAME || ANALYSIS_USERS.includes(normalizeUser(u.username)) || ANALYSIS_USERS.includes(normalizeUser(u.loginUsername)) || ANALYSIS_USERS.includes(normalizeUser(u.name)),
+    isAdmin: ADMIN_USERNAMES.includes(u.username),
+    title: USER_TITLES[u.username] || '',
+    canAnalysis: ADMIN_USERNAMES.includes(u.username) || ANALYSIS_USERS.includes(normalizeUser(u.username)) || ANALYSIS_USERS.includes(normalizeUser(u.loginUsername)) || ANALYSIS_USERS.includes(normalizeUser(u.name)),
     mustChangePassword: u.password === DEFAULT_PASSWORD
   };
 }
@@ -296,7 +300,7 @@ async function authUser(request, env) {
   if ((await passwordVersion(secret, u)) !== payload.pv) return null;
   return u;
 }
-const isAdminUser = u => !!u && u.username === ADMIN_USERNAME;
+const isAdminUser = u => !!u && ADMIN_USERNAMES.includes(u.username);
 
 // --------------------------- Üyeler ---------------------------------------
 // Üye satırı biçimi (yer tasarrufu için dizi): [id, ad soyad, telefon, adres, üyelik tarihi, referanslar(dizi)]
