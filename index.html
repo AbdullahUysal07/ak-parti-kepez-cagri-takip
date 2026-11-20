@@ -468,6 +468,41 @@
     .login-card { border-radius:22px; box-shadow:0 20px 60px rgba(15,23,42,.3); }
     .login-card button { min-height:48px; }
     @media (max-width:1050px) { .toolbar { padding:10px 8px 0; } .panel { border-radius:14px; } .detail { padding:14px; } .admin-tabs { width:100%; overflow-x:auto; flex-wrap:nowrap; } .admin-tab { white-space:nowrap; } }
+    /* ---- Telefon görünümü: sade üst bar, panel tam sayfa, log paneli gizli ---- */
+    @media (max-width:700px) {
+      header { padding:10px 12px; gap:8px; flex-wrap:nowrap; }
+      .brand-lockup { flex:1 1 auto; gap:10px; }
+      header h1 { font-size:1.02rem; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      header .sub { font-size:.76rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      .logo { width:44px; height:44px; }
+      .menu-btn { width:44px; height:44px; flex:0 0 auto; }
+      #exportBtn { display:none!important; }
+      .panel-logs { display:none!important; }
+      .wrap { grid-template-columns:1fr!important; }
+      body.admin-mode .detail, body.admin-mode .panel { max-height:none!important; overflow:visible!important; }
+      .detail { padding:12px; }
+      .admin-shell { gap:12px; }
+      .admin-section-head { flex-wrap:wrap; gap:8px; }
+      .admin-section-head h2 { font-size:1.15rem; }
+      .admin-section-head .actions { width:100%; display:grid; grid-template-columns:1fr auto; gap:8px; }
+      .admin-section-head .actions button { min-height:40px; font-size:.88rem; }
+      .admin-tabs { position:sticky; top:0; z-index:5; }
+      .admin-section { padding:12px; border-radius:14px; }
+      .admin-grid, .admin-grid.four { grid-template-columns:1fr 1fr; gap:8px; }
+      .admin-card { padding:10px 12px; border-radius:12px; }
+      #adminBody .admin-card h2, .admin-card h2 { font-size:1.3rem; margin:2px 0; }
+      .admin-card strong { font-size:.74rem; }
+      .admin-card .small { font-size:.72rem; }
+      .scope-chips { flex-wrap:nowrap; overflow-x:auto; padding-bottom:4px; scrollbar-width:none; -webkit-overflow-scrolling:touch; }
+      .scope-chips::-webkit-scrollbar { display:none; }
+      .scope-chip { flex:0 0 auto; min-height:34px; font-size:.8rem; }
+      .log-filters { grid-template-columns:1fr; }
+      .usage-row { padding:10px; gap:8px; }
+      .admin-section > p.small { font-size:.74rem; }
+      .admin-tab:hover { background:transparent; } .admin-tab.active:hover { background:#fff; }
+      .usage-actions a { flex:1; text-align:center; }
+      .ubadge { font-size:.7rem; }
+    }
   </style>
 </head>
 <body class="locked">
@@ -975,6 +1010,7 @@
       $('detail').innerHTML=`<div class="admin-shell"><div class="admin-section-head"><h2>${esc(panelName())}</h2><button type="button" class="secondary" id="adminRefresh">Yenile</button></div>${tabs}<div id="adminBody">${body()}</div></div>`;
       $('adminRefresh').onclick=async()=>{await Promise.all([loadLogs(),loadRequests(),loadUsers(),loadLeaders()]); render(); toast('Panel yenilendi.');};
       bindAdmin();
+      const at=document.querySelector('.admin-tab.active'); if(at&&at.scrollIntoView)at.scrollIntoView({block:'nearest',inline:'center'});
     }
     function ago(t){if(!t)return ''; const m=Math.round((Date.now()-new Date(t).getTime())/60000); if(m<2)return 'şimdi'; if(m<60)return m+' dk önce'; const h=Math.round(m/60); if(h<24)return h+' saat önce'; const d=Math.round(h/24); return d+' gün önce';}
     const USAGE_FILTERS=[['all','Tümü'],['never','Hiç girmeyen'],['nopush','Bildirimi kapalı'],['noapp','Uygulamayı kurmamış'],['defaultpw','Şifresini değiştirmemiş'],['inactive','7 gündür girmeyen']];
