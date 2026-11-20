@@ -1,0 +1,1167 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-title" content="Kepez Çağrı">
+  <meta name="application-name" content="Kepez Çağrı">
+  <meta name="theme-color" content="#123c7c">
+  <title>AK Parti Kepez Üye Çağrı Takip</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="icon-180.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous">
+  <style>
+    :root { --bg:#f3f6fb; --ink:#172033; --muted:#64748b; --line:#d9e0ea; --brand:#f28c00; --brand-dark:#d97800; --brand2:#123c7c; --accent:#f28c00; --panel:#fff; --soft:#f8fafc; --bad:#b91c1c; --warn:#b45309; --ok:#166534; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; background:var(--bg); color:var(--ink); font-family:Arial, Helvetica, sans-serif; font-size:16px; }
+    button,input,select,textarea { font:inherit; }
+    button { border:0; border-radius:7px; min-height:42px; padding:0 14px; background:var(--brand); color:#fff; font-weight:700; cursor:pointer; }
+    button:hover { background:var(--brand-dark); }
+    button.secondary { background:#fff; color:var(--brand2); border:1px solid rgba(255,255,255,.55); } button.danger { background:var(--bad); } button:disabled { opacity:.45; cursor:not-allowed; }
+    input,select,textarea { width:100%; border:1px solid var(--line); border-radius:7px; background:#fff; padding:10px; min-height:42px; color:var(--ink); }
+    textarea { min-height:95px; resize:vertical; }
+    .app { min-height:100vh; display:grid; grid-template-rows:auto auto 1fr; }
+    header { background:linear-gradient(90deg,var(--brand2),#1f5fa8); color:#fff; padding:12px 16px; border-bottom:5px solid var(--brand); display:flex; align-items:center; justify-content:space-between; gap:12px; }
+    .brand-lockup { display:flex; align-items:center; gap:12px; min-width:0; }
+    .menu-btn { width:46px; height:46px; padding:0; display:grid; place-items:center; background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.32); flex:0 0 auto; }
+    .menu-btn span,.menu-btn span:before,.menu-btn span:after { display:block; width:22px; height:2px; background:#fff; border-radius:2px; content:""; }
+    .menu-btn span:before { transform:translateY(-7px); }
+    .menu-btn span:after { transform:translateY(5px); }
+    .logo { width:58px; height:58px; object-fit:contain; background:#fff; border-radius:8px; padding:5px; flex:0 0 auto; }
+    h1 { margin:0; font-size:1.18rem; line-height:1.18; }
+    .sub { color:#e8f1ff; font-size:.88rem; margin-top:3px; }
+    .toolbar { background:#fff; border-bottom:1px solid var(--line); padding:10px; display:grid; grid-template-columns:1.2fr 1fr .75fr auto; gap:8px; align-items:center; box-shadow:0 6px 16px rgba(18,60,124,.08); }
+    body.home-mode .toolbar { display:none; }
+    .drawer { position:fixed; inset:0; z-index:20; pointer-events:none; }
+    .drawer:before { content:""; position:absolute; inset:0; background:rgba(15,23,42,.38); opacity:0; transition:.18s; }
+    .drawer-panel { position:absolute; inset:0 auto 0 0; width:min(310px,84vw); background:#fff; box-shadow:18px 0 50px rgba(15,23,42,.22); transform:translateX(-102%); transition:.18s; display:flex; flex-direction:column; }
+    .drawer.open { pointer-events:auto; }
+    .drawer.open:before { opacity:1; }
+    .drawer.open .drawer-panel { transform:translateX(0); }
+    .drawer-head { padding:16px; background:var(--brand2); color:#fff; display:flex; justify-content:space-between; align-items:center; gap:10px; }
+    .drawer-nav { padding:10px; display:grid; gap:8px; }
+    .nav-item { width:100%; justify-content:flex-start; background:#f1f5f9; color:#172033; border:1px solid var(--line); }
+    .nav-item.active { background:var(--brand); color:#fff; border-color:var(--brand); }
+     .wrap { display:grid; grid-template-columns:minmax(320px,420px) minmax(0,1fr) minmax(280px,360px); gap:12px; padding:12px; min-height:0; width:100%; max-width:1920px; margin:0 auto; }
+    body.home-mode .wrap { grid-template-columns:1fr; }
+    body.home-mode .panel-list,body.home-mode .panel-logs { display:none; }
+     .panel { background:var(--panel); border:1px solid var(--line); border-radius:10px; min-height:calc(100vh - 176px); overflow:hidden; display:flex; flex-direction:column; box-shadow:0 10px 28px rgba(18,60,124,.08); }
+    .panel-head { padding:11px 12px; background:#f7faff; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .panel-title { margin:0; font-size:1rem; }
+    .list-tabs { display:flex; gap:8px; padding:10px; border-bottom:1px solid var(--line); background:#f8fbff; }
+    .list-tab { flex:1; min-height:36px; background:#fff; color:var(--brand2); border:1px solid var(--line); }
+    .list-tab.active { background:var(--brand2); color:#fff; border-color:var(--brand2); }
+    .small { color:var(--muted); font-size:.84rem; }
+    .list,.detail,.logs { overflow:auto; min-height:0; }
+    .member { width:100%; text-align:left; background:#fff; color:var(--ink); border-radius:0; border:0; border-bottom:1px solid var(--line); padding:13px 12px; min-height:56px; display:grid; gap:7px; cursor:pointer; font:inherit; }
+    .member.active,.member:hover { background:#fff4df; }
+    .member strong { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+    .meta { display:flex; gap:8px; flex-wrap:wrap; color:var(--muted); font-size:.84rem; }
+    .list-phone { display:inline-flex; align-items:center; justify-content:center; width:fit-content; min-height:38px; padding:8px 12px; border-radius:7px; background:var(--accent); color:#fff; border:1px solid var(--accent); font-size:1rem; font-weight:900; text-decoration:none; }
+    .badge { display:inline-flex; min-height:24px; align-items:center; border-radius:999px; padding:2px 8px; font-size:.8rem; font-weight:700; background:#e2e8f0; color:#334155; }
+    .new { background:#dbeafe; color:#1d4ed8; } .called { background:#dcfce7; color:var(--ok); } .noanswer { background:#fef3c7; color:var(--warn); } .later { background:#ede9fe; color:#6d28d9; } .wrong { background:#fee2e2; color:var(--bad); }
+    .detail { padding:14px; }
+    .empty { min-height:240px; display:grid; place-items:center; text-align:center; color:var(--muted); padding:22px; }
+    h2 { margin:0; font-size:1.35rem; line-height:1.18; }
+    .phone { display:flex; justify-content:center; align-items:center; min-height:50px; margin:12px 0; border-radius:8px; background:var(--brand); color:#fff; text-decoration:none; font-size:1.12rem; font-weight:800; }
+    .detail-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:12px 0; }
+    .map-link { display:flex; justify-content:center; align-items:center; min-height:50px; border-radius:8px; background:var(--brand2); color:#fff; text-decoration:none; font-size:1.05rem; font-weight:800; }
+    .auto-card { display:grid; gap:13px; min-height:100%; align-content:start; }
+    .auto-count { color:var(--muted); font-weight:700; }
+    .auto-person { border:1px solid var(--line); border-radius:10px; padding:16px; background:#fffaf0; display:grid; gap:12px; }
+    .auto-person h2 { font-size:1.55rem; }
+    .auto-phone { display:flex; align-items:center; justify-content:center; min-height:64px; border-radius:9px; background:var(--brand); color:#fff; font-size:1.35rem; font-weight:900; text-decoration:none; }
+    .auto-actions { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+    .auto-actions button { min-height:48px; }
+    .quick { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin:10px 0; }
+    .quick button { background:#e2e8f0; color:#1e293b; }
+    .form { display:grid; gap:9px; margin-top:10px; padding-top:12px; border-top:1px solid var(--line); }
+    .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    label { font-size:.86rem; color:#475569; font-weight:700; }
+    .field { display:grid; gap:5px; }
+    .facts { border:1px solid var(--line); border-radius:8px; overflow:hidden; margin-top:13px; }
+    .fact { display:grid; grid-template-columns:125px 1fr; border-bottom:1px solid var(--line); } .fact:last-child { border-bottom:0; }
+    .fact div { padding:9px 10px; white-space:pre-wrap; overflow-wrap:anywhere; } .fact div:first-child { background:var(--soft); color:#475569; font-weight:700; }
+    .logs { padding:10px; display:grid; align-content:start; gap:9px; }
+    .log { border:1px solid var(--line); border-radius:8px; padding:10px; display:grid; gap:5px; background:#fff; }
+    .log-top { display:flex; justify-content:space-between; gap:8px; align-items:flex-start; }
+    .log p { margin:0; white-space:pre-wrap; overflow-wrap:anywhere; }
+    .actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .notice { display:none; margin:10px; border:1px solid #ffd899; background:#fff4df; color:#7c3f00; padding:10px 12px; border-radius:8px; font-weight:700; }
+    .notice.show { display:block; }
+    .home { display:grid; gap:14px; }
+    .welcome { border:1px solid var(--line); border-radius:10px; background:linear-gradient(135deg,#fff,#eef5ff); padding:14px; display:grid; grid-template-columns:92px 1fr; gap:14px; align-items:center; }
+    .welcome.text-only { grid-template-columns:1fr; }
+    .chairman { width:92px; height:92px; border-radius:10px; object-fit:cover; object-position:center top; background:#fff; border:1px solid var(--line); }
+    .welcome h2 { color:var(--brand2); }
+    .welcome p { margin:6px 0 0; color:var(--muted); font-weight:700; }
+    .announcement-list { display:grid; gap:10px; }
+    .composer { border:1px solid var(--line); border-radius:10px; background:#fff; padding:12px; display:grid; gap:10px; }
+    .composer textarea { min-height:90px; }
+    .composer button { justify-self:end; min-width:160px; }
+    .announcement-card { border:1px solid var(--line); border-radius:8px; background:#fff; padding:12px; display:grid; gap:9px; }
+    .announcement-card.unread { border-color:#f5b041; background:#fffaf0; }
+    .announcement-author { display:flex; gap:10px; align-items:center; }
+    .announcement-avatar { width:46px; height:46px; border-radius:8px; object-fit:cover; object-position:center top; background:#fff; border:1px solid var(--line); }
+    .announcement-body { white-space:pre-wrap; overflow-wrap:anywhere; font-size:1.03rem; line-height:1.4; }
+    .announcement-body strong { display:block; color:var(--brand2); font-size:1.12rem; margin-bottom:8px; }
+    .announcement-body .announce-row { margin:4px 0; }
+    .announcement-body .announce-section { margin-top:12px; font-weight:700; color:var(--brand2); }
+    .announcement-links { display:grid; gap:8px; margin-top:10px; }
+    .announcement-map-btn { display:block; text-align:center; text-decoration:none; background:var(--brand); color:#fff; padding:11px 12px; border-radius:8px; font-weight:800; }
+    .announcement-map-btn.route { background:var(--brand2); }
+    .announcement-meta { display:flex; justify-content:space-between; gap:8px; align-items:center; flex-wrap:wrap; color:var(--muted); font-size:.86rem; }
+    .like-btn { width:fit-content; background:#e8f1ff; color:var(--brand2); border:1px solid #c9dcff; }
+    .like-btn.active { background:var(--brand); color:#fff; border-color:var(--brand); }
+    .home-actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .admin { display:grid; gap:12px; }
+    .admin-shell { display:grid; gap:14px; }
+    .admin-section { border:1px solid var(--line); border-radius:10px; background:#fff; padding:12px; display:grid; gap:10px; }
+    .admin-section-head { display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+    .admin-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+    .admin-card { border:1px solid var(--line); border-radius:8px; padding:12px; background:#fff; display:grid; gap:6px; }
+    .user-row { display:grid; grid-template-columns:.9fr 1fr .8fr .9fr 1fr auto auto; gap:8px; align-items:center; border:1px solid var(--line); border-radius:8px; padding:8px; background:#fff; }
+    .user-row.disabled { opacity:.52; background:#f8fafc; }
+    .toast { position:fixed; left:50%; bottom:calc(14px + env(safe-area-inset-bottom)); transform:translateX(-50%); background:#0f172a; color:#fff; padding:10px 14px; border-radius:8px; opacity:0; transition:.2s; z-index:10; max-width:calc(100vw - 24px); text-align:center; } .toast.show { opacity:1; transform:translateX(-50%) translateY(-4px); }
+    .pull-refresh { position:fixed; left:50%; top:calc(8px + env(safe-area-inset-top)); transform:translate(-50%,-120%); z-index:40; background:#fff; color:var(--brand2); border:1px solid var(--line); border-radius:999px; padding:8px 14px; font-weight:800; box-shadow:0 10px 24px rgba(15,23,42,.16); transition:.18s; pointer-events:none; }
+    .pull-refresh.show { transform:translate(-50%,0); }
+    .analysis-shell { display:grid; grid-template-columns:minmax(280px,360px) 1fr; gap:12px; min-height:64vh; }
+    .analysis-sidebar,.analysis-map-card { border:1px solid var(--line); border-radius:10px; background:#fff; overflow:hidden; }
+    .analysis-sidebar { display:grid; grid-template-rows:auto 1fr; min-height:420px; }
+    .analysis-summary { padding:12px; border-bottom:1px solid var(--line); display:grid; gap:6px; background:#f8fbff; }
+    .analysis-controls { display:grid; gap:8px; padding:12px; border-bottom:1px solid var(--line); background:#fff; }
+    .analysis-controls select,.analysis-controls input { min-height:44px; }
+    .analysis-choice { display:grid; gap:4px; border:1px solid var(--line); border-radius:8px; padding:10px; background:#f8fbff; }
+    .analysis-choice strong { color:var(--brand2); }
+    .analysis-empty-note { padding:12px; color:var(--muted); text-align:center; }
+    .street-list { overflow:auto; max-height:66vh; }
+    .street-row { width:100%; display:grid; gap:4px; text-align:left; background:#fff; color:#172033; border:0; border-bottom:1px solid var(--line); border-radius:0; padding:12px; min-height:0; }
+    .street-row.hood { background:#fff; }
+    .street-row.active { background:#fff4df; color:#5f3200; }
+    .street-row strong { overflow-wrap:anywhere; }
+    .street-meta { color:var(--muted); font-size:.86rem; }
+    .analysis-back { width:100%; justify-content:flex-start; background:#e8f1ff; color:var(--brand2); border-radius:0; border:0; border-bottom:1px solid var(--line); }
+    .analysis-map-card { display:grid; grid-template-rows:minmax(320px,1fr) auto; min-height:560px; }
+    #kepezMap { min-height:440px; width:100%; z-index:1; }
+    .street-members { border-top:1px solid var(--line); padding:12px; display:grid; gap:8px; max-height:260px; overflow:auto; }
+    .street-member { border:1px solid var(--line); border-radius:8px; padding:10px; display:grid; gap:6px; }
+    .street-member-actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .street-member-actions a,.street-member-actions button { width:auto; min-height:38px; padding:0 12px; }
+    .location-dot,.member-dot { border:2px solid #fff; box-shadow:0 6px 16px rgba(15,23,42,.28); }
+    .login { position:fixed; inset:0; z-index:30; display:grid; place-items:center; padding:18px; background:linear-gradient(135deg,#123c7c,#1f5fa8 55%,#f28c00); }
+    .login-card { width:min(420px,100%); background:#fff; border-radius:10px; padding:22px; box-shadow:0 24px 70px rgba(18,60,124,.35); display:grid; gap:12px; }
+    .login-logo { width:84px; height:84px; object-fit:contain; margin:auto; }
+    .login-card h2 { text-align:center; color:var(--brand2); }
+    .login-card .subtle { color:var(--muted); text-align:center; margin:0; }
+    .remember { display:flex; align-items:center; gap:8px; color:#475569; font-weight:700; }
+    .remember input { width:auto; min-height:auto; }
+    .login-error { min-height:22px; color:var(--bad); font-weight:700; text-align:center; }
+    body.locked .app { filter:blur(3px); pointer-events:none; user-select:none; }
+    body:not(.locked) .login { display:none; }
+    body.auto-mode .wrap { grid-template-columns:1fr minmax(280px,360px); }
+    body.auto-mode .panel-list { display:none; }
+    body.admin-mode .wrap { grid-template-columns:1fr minmax(280px,360px); }
+    body.admin-mode .panel-list { display:none; }
+    body.analysis-mode .toolbar { display:none; }
+    body.analysis-mode .wrap { grid-template-columns:1fr; }
+    body.analysis-mode .panel-list,body.analysis-mode .panel-logs { display:none; }
+    body.board-mode .panel-logs { display:none; }
+     @media (max-width:1050px) { .app { display:block; } .wrap,body.home-mode .wrap,body.auto-mode .wrap,body.admin-mode .wrap,body.analysis-mode .wrap { grid-template-columns:1fr; } .panel { min-height:340px; margin-bottom:10px; } .list,.detail,.logs { max-height:62vh; } .panel-list .list { max-height:none; overflow:visible; } .admin-grid { grid-template-columns:1fr; } .user-row { grid-template-columns:1fr; } .analysis-shell { grid-template-columns:1fr; } .analysis-map-card { min-height:0; } #kepezMap { min-height:360px; } }
+    @media (max-width:680px) { header { align-items:center; flex-wrap:wrap; padding:10px; } #exportBtn { width:auto; min-height:36px; padding:0 10px; font-size:.88rem; margin-left:58px; } .brand-lockup { align-items:center; flex:1 1 100%; } .logo { width:50px; height:50px; } .toolbar { grid-template-columns:1fr; } .wrap { padding:8px; gap:8px; } .notice,.notice.show { display:none!important; } body.home-mode { background:#fff; } body.home-mode .wrap { padding:0; gap:0; background:#fff; } body.home-mode .wrap>.panel { border:0; border-radius:0; box-shadow:none; min-height:0; margin-bottom:0; background:#fff; } body.home-mode .detail { max-height:none; overflow:visible; padding:10px; background:#fff; } body.home-mode .home { gap:10px; } body.analysis-mode { background:#fff; } body.analysis-mode .wrap { padding:8px; background:#fff; } body.analysis-mode .wrap>.panel { min-height:0; margin-bottom:0; } body.analysis-mode .detail { max-height:none; overflow:visible; padding:0; background:#fff; } body.analysis-mode .analysis-shell { display:block; min-height:0; } body.analysis-mode .analysis-sidebar { min-height:0; max-height:none; border-radius:10px; margin-bottom:10px; } body.analysis-mode .analysis-summary { gap:8px; } body.analysis-mode .street-list { display:none; } body.analysis-mode .street-row { padding:14px 16px; } body.analysis-mode .analysis-map-card { display:block; min-height:0; border-radius:10px; overflow:hidden; } body.analysis-mode #kepezMap { min-height:0; height:340px; width:100%; } body.analysis-mode .street-members { max-height:none; overflow:visible; } body.auto-mode .panel-logs,body.home-mode .panel-logs,body:not(.admin-mode) .panel-logs { display:none; } body.admin-mode .panel-logs { display:block; } .grid2,.quick,.auto-actions { grid-template-columns:1fr; } .fact { grid-template-columns:1fr; } .fact div:first-child { padding-bottom:0; } .phone { position:sticky; top:0; z-index:2; } .member { gap:8px; padding:14px 12px; } .member strong { font-size:1.08rem; white-space:normal; } .list-phone { width:100%; min-height:44px; font-size:1.08rem; } .meta { font-size:.96rem; } .auto-phone { min-height:72px; font-size:1.45rem; } .welcome { grid-template-columns:1fr; } .chairman { width:72px; height:72px; } }
+    .app { grid-template-columns:minmax(0,1fr); }
+    .notice.show { display:flex; align-items:center; gap:10px; cursor:pointer; }
+    .notice-text { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .notice-close { flex:0 0 auto; min-height:28px; width:28px; padding:0; background:transparent; color:#7c3f00; border:1px solid #f5c27a; border-radius:6px; }
+    .announcement-body,.log p { overflow-wrap:anywhere; }
+    body.resuming .login-card > *:not(.login-logo):not(h2):not(#loginError) { display:none; }
+    /* Kepez Analiz: sade ve kullanışlı yerleşim */
+    body.analysis-mode .analysis-shell { display:grid; grid-template-columns:minmax(280px,340px) minmax(0,1fr); gap:12px; min-height:0; }
+    body.analysis-mode .analysis-sidebar { display:flex; flex-direction:column; min-height:0; max-height:calc(100vh - 230px); margin:0; }
+    .analysis-title { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .analysis-title h2 { margin:0; font-size:1.15rem; }
+    .small-btn { width:auto; min-height:32px; padding:0 10px; font-size:.85rem; }
+    .analysis-stats { display:flex; gap:8px; }
+    .analysis-stats > div { flex:1; background:#fff; border:1px solid var(--line); border-radius:8px; padding:6px 8px; display:grid; }
+    .analysis-stats strong { color:var(--brand2); font-size:1.05rem; } .analysis-stats span { font-size:.75rem; color:var(--muted); }
+    body.analysis-mode .analysis-controls { display:grid; gap:8px; padding:10px; align-content:start; }
+    body.analysis-mode .analysis-controls select,body.analysis-mode .analysis-controls input { min-height:40px; height:40px; }
+    body.analysis-mode .street-list { display:block; flex:1; overflow:auto; max-height:none; min-height:0; }
+    body.analysis-mode .street-row { display:grid; grid-template-columns:1fr auto; align-items:center; gap:2px 8px; padding:9px 12px; }
+    body.analysis-mode .street-row .street-meta { grid-column:1/-1; font-size:.75rem; }
+    .street-count { background:#eef4ff; color:var(--brand2); border-radius:999px; padding:1px 9px; font-weight:800; font-size:.8rem; }
+    .street-row.active .street-count { background:#f28c00; color:#fff; }
+    .street-row:hover { background:#f8fbff; }
+    body.analysis-mode .analysis-map-card { display:flex; flex-direction:column; min-height:0; max-height:calc(100vh - 230px); }
+    body.analysis-mode #kepezMap { flex:0 0 auto; height:46vh; min-height:300px; }
+    body.analysis-mode .street-members { flex:1; max-height:none; overflow:auto; padding:10px; display:block; }
+    .street-members-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+    .street-member-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:8px; }
+    .street-member { padding:8px 10px; gap:4px; }
+    .street-member-top { display:flex; justify-content:space-between; gap:6px; align-items:center; }
+    .street-member-top strong { font-size:.92rem; }
+    .street-member { grid-template-columns:minmax(0,1fr) auto; align-items:center; }
+    .street-member > .small { grid-column:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .street-member-top { grid-column:1; }
+    .street-member-actions { grid-column:2; grid-row:1 / span 2; flex-wrap:nowrap; gap:6px; }
+    .street-member-actions { align-items:center; }
+    .street-member-actions a { margin:0!important; height:34px; min-height:0!important; padding:0 12px!important; font-size:.85rem; display:inline-flex; align-items:center; justify-content:center; width:auto!important; }
+    body.no-logs .panel-logs { display:none; }
+    @media (min-width:1051px) {
+      body.no-logs:not(.home-mode):not(.admin-mode):not(.auto-mode):not(.analysis-mode) .wrap,body.board-mode .wrap { grid-template-columns:minmax(320px,420px) minmax(0,1fr); }
+      body.no-logs.admin-mode .wrap,body.no-logs.auto-mode .wrap { grid-template-columns:1fr; }
+    }
+    .analysis-hint { color:var(--muted); text-align:center; padding:18px 10px; }
+    @media (max-width:1050px) {
+      body.analysis-mode .analysis-shell { grid-template-columns:1fr; }
+      body.analysis-mode .analysis-sidebar,body.analysis-mode .analysis-map-card { max-height:none; }
+      body.analysis-mode .street-list { max-height:240px; }
+      body.analysis-mode #kepezMap { height:42vh; min-height:260px; }
+      body.analysis-mode .street-members { overflow:visible; }
+      .street-member-grid { grid-template-columns:1fr; }
+    }
+    .map-wrap { position:relative; flex:0 0 auto; }
+    .map-status { position:absolute; left:50%; transform:translateX(-50%); bottom:10px; z-index:500; background:rgba(18,60,124,.92); color:#fff; padding:6px 12px; border-radius:999px; font-size:.82rem; font-weight:700; white-space:nowrap; }
+    .bmarker-wrap { background:transparent; border:0; }
+    .bmarker { width:30px; height:30px; border-radius:50%; background:#f28c00; color:#fff; border:2px solid #fff; box-shadow:0 2px 6px rgba(0,0,0,.35); display:grid; place-items:center; font-weight:800; font-size:.8rem; }
+    .bmarker.approx { background:#94a3b8; }
+    .pop-list { max-height:180px; overflow:auto; margin:6px 0; display:grid; gap:4px; }
+    .pop-row span { color:#64748b; font-size:.8rem; }
+    .check-shell { max-width:760px; }
+    .check-warning { border:1px solid #f5c27a; background:#fff4df; color:#7c3f00; border-radius:10px; padding:10px 12px; }
+    .check-form { border-top:0; padding-top:0; }
+    .check-result { border-radius:12px; padding:14px; display:grid; gap:8px; border:2px solid; }
+    .check-result p { margin:0; }
+    .check-result.ok { border-color:#16a34a; background:#f0fdf4; }
+    .check-result.no { border-color:#2563eb; background:#eff6ff; }
+    .check-result.warn { border-color:#dc2626; background:#fef2f2; }
+    .check-badge { font-size:1.35rem; font-weight:900; letter-spacing:.3px; }
+    .check-result.ok .check-badge { color:#15803d; } .check-result.no .check-badge { color:#1d4ed8; } .check-result.warn .check-badge { color:#b91c1c; }
+    body.hide-toolbar .toolbar { display:none!important; }
+    body.auto-mode #statusFilter,body.auto-mode #nextBtn { display:none; }
+    body.auto-mode .toolbar { grid-template-columns:1fr 1fr; }
+    /* ---- Yeni menü ---- */
+    .drawer-panel { width:min(300px,86vw); background:#f8fafc; }
+    .drawer-head { padding:16px 14px; background:linear-gradient(135deg,var(--brand2),#1d5fb8); }
+    .drawer-user { display:flex; align-items:center; gap:10px; min-width:0; }
+    .drawer-user > div:last-child { display:grid; min-width:0; }
+    .drawer-user strong { font-size:1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .drawer-user span { font-size:.78rem; opacity:.85; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .drawer-avatar { width:42px; height:42px; border-radius:50%; background:#fff; color:var(--brand2); display:grid; place-items:center; font-weight:800; flex:0 0 auto; }
+    .drawer-close { width:36px; min-height:36px; padding:0; background:rgba(255,255,255,.15); border:0; color:#fff; border-radius:10px; display:grid; place-items:center; }
+    .drawer-close .nav-ic { width:20px; height:20px; color:#fff; }
+    .drawer-nav { padding:8px 10px; display:flex; flex-direction:column; gap:2px; overflow:auto; flex:1; }
+    .nav-section { font-size:.7rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:#94a3b8; padding:12px 10px 4px; }
+    .nav-section[hidden] { display:none; }
+    .nav-item { width:100%; display:flex; align-items:center; gap:12px; justify-content:flex-start; text-align:left; min-height:42px; padding:0 12px; background:transparent; color:#1e293b; border:0; border-radius:10px; font-weight:600; font-size:.95rem; }
+    .nav-item[hidden] { display:none; }
+    .nav-item:hover { background:#eef2f7; }
+    .nav-item.active { background:#fff4e6; color:#c2410c; box-shadow:inset 3px 0 0 #f28c00; }
+    .nav-item.active .nav-ic { color:#f28c00; }
+    .nav-ic { width:20px; height:20px; flex:0 0 auto; color:#64748b; }
+    .nav-label { flex:1; }
+    .nav-badge { min-width:22px; height:22px; padding:0 7px; border-radius:999px; background:#f28c00; color:#fff; font-size:.75rem; font-weight:800; display:inline-grid; place-items:center; }
+    .nav-badge[hidden] { display:none; }
+    /* ---- Otomatik arama ---- */
+    .auto2 { display:grid; gap:12px; }
+    .auto-head { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; }
+    .auto-head h2 { margin:0; }
+    .auto-today { display:flex; gap:6px; flex-wrap:wrap; }
+    .auto-today span { background:#f1f5f9; border-radius:999px; padding:4px 10px; font-size:.8rem; color:#475569; }
+    .auto-today .ok { background:#dcfce7; color:#166534; } .auto-today .na { background:#e2e8f0; } .auto-today .lt { background:#fef3c7; color:#92400e; }
+    .scope-chips { display:flex; gap:6px; flex-wrap:wrap; }
+    .scope-chip { width:auto; min-height:34px; padding:0 12px; border-radius:999px; background:#fff; color:#334155; border:1px solid var(--line); font-weight:700; font-size:.85rem; display:inline-flex; gap:6px; align-items:center; }
+    .scope-chip span { background:#f1f5f9; border-radius:999px; padding:0 7px; font-size:.75rem; }
+    .scope-chip.active { background:var(--brand2); color:#fff; border-color:var(--brand2); } .scope-chip.active span { background:rgba(255,255,255,.2); }
+    .auto-progress { height:6px; background:#e2e8f0; border-radius:999px; overflow:hidden; } .auto-progress span { display:block; height:100%; background:#f28c00; }
+    .auto-grid { display:grid; grid-template-columns:minmax(0,1fr) 280px; gap:12px; align-items:start; }
+    .ap-card { border:1px solid var(--line); border-radius:14px; background:#fff; padding:16px; display:grid; gap:12px; box-shadow:0 8px 24px rgba(18,60,124,.06); }
+    .ap-head { display:flex; gap:12px; align-items:center; }
+    .ap-avatar { width:52px; height:52px; border-radius:50%; background:#eef4ff; color:var(--brand2); display:grid; place-items:center; font-weight:900; font-size:1.1rem; flex:0 0 auto; }
+    .ap-who { flex:1; min-width:0; } .ap-who h2 { margin:0; font-size:1.35rem; }
+    .ap-call { display:grid; grid-template-columns:1fr auto; gap:8px; }
+    .ap-phone { display:flex; align-items:center; justify-content:center; gap:10px; min-height:64px; border-radius:12px; background:#16a34a; color:#fff; text-decoration:none; font-size:1.15rem; font-weight:800; }
+    .ap-phone svg { width:24px; height:24px; } .ap-phone strong { letter-spacing:.5px; }
+    .ap-wa { display:flex; align-items:center; justify-content:center; padding:0 16px; border-radius:12px; background:#e7f8ee; color:#15803d; font-weight:800; text-decoration:none; border:1px solid #bbf7d0; }
+    .auto-prompt { display:none; background:#fff4df; color:#7c3f00; border:1px solid #f5c27a; border-radius:10px; padding:10px 12px; font-weight:800; text-align:center; }
+    .auto-prompt.show { display:block; animation:pulse 1.2s ease-in-out 2; }
+    @keyframes pulse { 50% { transform:scale(1.02); } }
+    .ap-results { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+    .ap-results button { min-height:54px; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; border:0; color:#fff; }
+    .ap-results kbd { font-size:.7rem; opacity:.75; font-family:inherit; }
+    .r-ok { background:#16a34a; } .r-na { background:#64748b; } .r-lt { background:#d97706; } .r-wr { background:#dc2626; }
+    .ap-nav { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+    .ap-nav button { width:auto; min-height:38px; padding:0 14px; }
+    .ap-hist { display:grid; gap:6px; border-top:1px dashed var(--line); padding-top:10px; }
+    .ap-hist-row { display:grid; gap:2px; }
+    .ap-next { border:1px solid var(--line); border-radius:14px; background:#fff; padding:12px; display:grid; gap:6px; }
+    .ap-next h3 { margin:0 0 4px; font-size:.95rem; }
+    .ap-next-row { width:100%; display:flex; gap:10px; align-items:center; text-align:left; background:#f8fafc; color:#1e293b; border:1px solid var(--line); border-radius:10px; padding:8px 10px; min-height:0; }
+    .ap-next-row > span:last-child { display:grid; } .ap-next-row strong { font-size:.88rem; }
+    .ap-num { min-width:28px; height:28px; border-radius:50%; background:#e2e8f0; display:grid; place-items:center; font-size:.75rem; font-weight:800; color:#475569; }
+    .auto-done { text-align:center; padding:40px 10px; border:1px dashed var(--line); border-radius:14px; }
+    .auto-done-ic { width:56px; height:56px; border-radius:50%; background:#dcfce7; color:#16a34a; display:grid; place-items:center; font-size:1.8rem; margin:0 auto 8px; }
+    .scope-chip:hover { background:#f8fafc; color:#334155; } .scope-chip.active:hover { background:var(--brand2); color:#fff; }
+    @media (max-width:1050px) { body.auto-mode .detail { max-height:none; overflow:visible; } body.auto-mode .wrap>.panel { min-height:0; } .ap-phone { font-size:1rem; } .auto-grid { grid-template-columns:1fr; } .ap-results { grid-template-columns:1fr 1fr; } .kbd-hint,.ap-results kbd { display:none; } .ap-next { order:2; } }
+    .nav-request { border-top:0; }
+    .drawer-foot { border-top:1px solid var(--line); padding:8px 10px 12px; display:grid; gap:2px; background:#fff; }
+    .nav-small { min-height:38px; font-size:.88rem; font-weight:500; color:#475569; }
+    .nav-danger, .nav-danger .nav-ic { color:#dc2626; }
+    .admin-tabs { display:flex; gap:6px; flex-wrap:wrap; }
+    .admin-tab { min-height:36px; background:#fff; color:var(--brand2); border:1px solid var(--line); padding:0 12px; }
+    .admin-tab.active { background:var(--brand2); color:#fff; border-color:var(--brand2); }
+    .count-pill { display:inline-block; min-width:20px; padding:0 6px; border-radius:999px; background:#f28c00; color:#fff; font-size:.75rem; line-height:20px; text-align:center; }
+    .admin-grid.four { grid-template-columns:repeat(4,1fr); }
+    .log-filters { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:8px; align-items:center; }
+    .log-table { display:grid; gap:8px; }
+    .chips { display:flex; gap:6px; flex-wrap:wrap; } .chip { border:1px solid var(--line); border-radius:999px; padding:3px 10px; font-size:.82rem; background:var(--soft); }
+    .edit-row { display:grid; grid-template-columns:1fr .8fr 1.6fr 1fr auto; gap:6px; align-items:center; border:1px solid var(--line); border-radius:8px; padding:8px; background:#fff; margin-bottom:6px; }
+    .edit-row.leader-row,.edit-head.leader-row { grid-template-columns:1fr 1fr .8fr .8fr 1.3fr 1fr auto auto; }
+    .edit-head { display:grid; gap:6px; padding:0 8px; font-size:.78rem; color:var(--muted); font-weight:700; }
+    .edit-head.user-row { border:0; background:transparent; padding:0 8px; }
+    .user-row { grid-template-columns:.8fr 1fr .7fr 1fr .8fr 1fr auto auto; }
+    .edit-box { border:1px dashed var(--line); border-radius:8px; padding:8px 10px; margin-top:12px; background:#fff; }
+    .edit-box summary { cursor:pointer; font-weight:700; color:var(--brand2); }
+    .reply-form { display:grid; grid-template-columns:1fr auto auto; gap:6px; }
+    .reply { background:var(--soft); border-radius:6px; padding:6px 8px; }
+    .unread-request { border-color:#f28c00; box-shadow:0 0 0 1px #f28c00 inset; }
+    .mine-note { font-size:.82rem; color:var(--muted); padding:4px 2px 8px; }
+    .small-empty { min-height:80px; }
+    .modal { position:fixed; inset:0; background:rgba(15,23,42,.55); display:grid; place-items:center; z-index:60; padding:16px; }
+    .modal[hidden] { display:none; }
+    .modal-card { background:#fff; border-radius:12px; padding:18px; width:min(420px,100%); display:grid; gap:10px; box-shadow:0 20px 50px rgba(0,0,0,.25); }
+    .modal-card h2 { margin:0; }
+    @media (max-width:1050px) { .admin-grid.four { grid-template-columns:1fr 1fr; } .edit-row,.edit-row.leader-row { grid-template-columns:1fr 1fr; } .edit-head { display:none; } .reply-form { grid-template-columns:1fr; } }
+    /* =====================================================================
+       MODERN TEMA — menüdeki sade görünüm tüm sayfalara uygulanır
+       ===================================================================== */
+    :root { --bg:#f1f5f9; --line:#e5eaf1; --soft:#f8fafc; --radius:16px; --shadow:0 1px 2px rgba(15,23,42,.04),0 8px 24px rgba(15,23,42,.06); --brand2:#123c7c; --brand3:#1d5fb8; }
+    body { font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif; background:var(--bg); -webkit-font-smoothing:antialiased; }
+    button { border-radius:10px; font-weight:700; transition:background .15s, box-shadow .15s, transform .05s; }
+    button:active { transform:translateY(1px); }
+    button.secondary { background:#fff; color:var(--brand2); border:1px solid var(--line); }
+    button.secondary:hover { background:#f8fafc; }
+    input,select,textarea { border-radius:10px; border-color:var(--line); transition:border-color .15s, box-shadow .15s; }
+    input:focus,select:focus,textarea:focus { outline:none; border-color:#f5b041; box-shadow:0 0 0 3px rgba(242,140,0,.15); }
+    label { font-weight:600; color:#64748b; font-size:.82rem; }
+    h2 { letter-spacing:-.01em; }
+    /* üst bar */
+    header { background:linear-gradient(135deg,var(--brand2),var(--brand3)); border-bottom:3px solid var(--brand); padding:10px 16px; box-shadow:0 4px 16px rgba(18,60,124,.18); }
+    .menu-btn { border:0; background:rgba(255,255,255,.15); border-radius:12px; }
+    .menu-btn:hover { background:rgba(255,255,255,.25); }
+    .logo { border-radius:12px; }
+    #exportBtn { background:rgba(255,255,255,.15); color:#fff; border:1px solid rgba(255,255,255,.3); }
+    #exportBtn:hover { background:rgba(255,255,255,.25); }
+    /* araç çubuğu */
+    .toolbar { background:transparent; border:0; box-shadow:none; padding:12px 12px 0; }
+    .toolbar input,.toolbar select { background:#fff; box-shadow:0 1px 2px rgba(15,23,42,.04); }
+    .notice { margin:12px 12px 0; border-radius:12px; border-color:#fbd38d; }
+    /* paneller */
+    .panel { border-radius:var(--radius); border:1px solid var(--line); box-shadow:var(--shadow); }
+    .panel-head { background:#fff; padding:14px 16px; border-bottom:1px solid var(--line); }
+    .panel-title { font-size:1rem; font-weight:800; color:#0f172a; }
+    .detail { padding:18px; }
+    .empty { color:#94a3b8; font-weight:500; }
+    /* liste sekmeleri: segmentli düğme */
+    .list-tabs { background:#fff; padding:10px 12px; gap:4px; }
+    .list-tabs { position:relative; }
+    .list-tab { background:#f1f5f9; color:#475569; border:0; border-radius:10px; min-height:36px; font-size:.86rem; }
+    .list-tab:hover { background:#e9eef5; }
+    .list-tab.active { background:var(--brand2); color:#fff; box-shadow:0 2px 6px rgba(18,60,124,.25); }
+    /* üye satırları */
+    .member { padding:12px 16px; border-bottom:1px solid #f1f5f9; min-height:52px; gap:3px; transition:background .12s; }
+    .member:hover { background:#f8fafc; }
+    .member.active { background:#fff4e6; box-shadow:inset 3px 0 0 var(--brand); }
+    .member strong { font-weight:700; font-size:.95rem; color:#0f172a; }
+    .meta { font-size:.8rem; }
+    .badge { font-weight:700; padding:3px 10px; }
+    /* detay: arama ve konum düğmeleri */
+    .detail-actions { display:flex; flex-wrap:wrap; gap:10px; }
+    .detail-actions .phone { flex:1 1 100%; margin:0; }
+    .detail-actions .map-link { flex:1 1 0; }
+    .detail-actions .map-link,.detail-actions .phone { min-height:50px; margin:0; text-align:center; padding:0 12px; }
+    .phone { background:#16a34a; border-radius:12px; min-height:52px; box-shadow:0 4px 12px rgba(22,163,74,.2); }
+    .map-link { background:#eef4ff; color:var(--brand2); border:1px solid #d6e4ff; border-radius:12px; min-height:52px; }
+    .quick { gap:8px; }
+    .quick button { background:#f1f5f9; color:#334155; border:1px solid var(--line); border-radius:12px; }
+    .quick button:hover { background:#e9eef5; }
+    .quick button[data-quick="called"] { color:#15803d; } .quick button[data-quick="wrong"] { color:#b91c1c; }
+    .form { border-top:1px solid var(--line); }
+    .facts { border-radius:12px; border-color:var(--line); }
+    .fact { grid-template-columns:130px 1fr; border-bottom-color:#f1f5f9; }
+    .fact div:first-child { background:#f8fafc; color:#64748b; font-weight:600; font-size:.86rem; }
+    .edit-box { border-radius:12px; }
+    /* log kartları */
+    .logs { padding:12px; }
+    .log { border-radius:12px; border-color:#eef2f7; box-shadow:0 1px 2px rgba(15,23,42,.04); padding:12px; }
+    .log strong { color:#0f172a; }
+    /* ana sayfa ve duyurular */
+    .welcome { border:0; border-radius:var(--radius); background:linear-gradient(135deg,var(--brand2),var(--brand3)); color:#fff; padding:20px; box-shadow:0 8px 24px rgba(18,60,124,.2); }
+    .welcome h2 { color:#fff; font-size:1.4rem; }
+    .welcome p { color:rgba(255,255,255,.85); font-weight:600; }
+    .composer { border-radius:var(--radius); border-color:var(--line); box-shadow:var(--shadow); }
+    .announcement-list { gap:12px; }
+    .announcement-card { border-radius:var(--radius); border-color:var(--line); box-shadow:var(--shadow); padding:16px; }
+    .announcement-card.unread { border-color:#fbd38d; background:#fff; box-shadow:inset 3px 0 0 var(--brand),var(--shadow); }
+    .announcement-avatar { border-radius:50%; width:44px; height:44px; }
+    .hood-chips { display:flex; flex-wrap:wrap; gap:4px; } .hood-chips .chip { font-size:.75rem; padding:2px 8px; }
+    .org-facts { margin-top:10px; }
+    .user-card { border:1px solid var(--line); border-radius:14px; padding:12px; display:grid; gap:10px; background:#fff; }
+    .user-card.disabled { opacity:.55; }
+    .user-card-head { display:flex; gap:8px; align-items:center; flex-wrap:wrap; } .user-card-head strong { font-size:1rem; }
+    .user-card-grid { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px; }
+    .user-card-grid label { display:grid; gap:4px; }
+    .hood-picker summary { font-size:.88rem; }
+    .hood-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:4px; margin-top:8px; max-height:260px; overflow:auto; border:1px solid var(--line); border-radius:10px; padding:8px; }
+    .hood-opt { display:flex; align-items:center; gap:6px; font-weight:500; color:#334155; font-size:.82rem; }
+    .hood-opt input { width:auto; min-height:0; }
+    @media (max-width:1050px) { .user-card-grid { grid-template-columns:1fr 1fr; } }
+    .single-hood { min-height:40px; display:flex; align-items:center; padding:0 12px; border-radius:10px; background:#fff4e6; color:#c2410c; font-weight:800; }
+    .initials-avatar { display:grid; place-items:center; background:#eef4ff; color:var(--brand2); font-weight:800; }
+    .announcement-map-btn { border-radius:12px; }
+    .like-btn { border-radius:999px; min-height:36px; padding:0 16px; background:#f1f5f9; border:1px solid var(--line); }
+    .like-btn.active { background:#fff4e6; color:#c2410c; border-color:#fbd38d; }
+    details summary { cursor:pointer; color:#64748b; font-weight:600; font-size:.88rem; }
+    /* admin paneli */
+    .admin-shell { gap:16px; }
+    .admin-tabs { background:#f1f5f9; padding:4px; border-radius:12px; gap:4px; width:fit-content; max-width:100%; }
+    .admin-tab { border:0; background:transparent; color:#475569; border-radius:9px; min-height:36px; font-size:.88rem; }
+    .admin-tab:hover { background:#e9eef5; }
+    .admin-tab.active { background:#fff; color:var(--brand2); box-shadow:0 1px 3px rgba(15,23,42,.12); }
+    .admin-section { border-radius:var(--radius); border-color:var(--line); box-shadow:var(--shadow); padding:16px; }
+    .admin-section h2 { font-size:1.1rem; }
+    .admin-card { border-radius:14px; border-color:var(--line); padding:14px 16px; background:linear-gradient(180deg,#fff,#f8fafc); }
+    .admin-card strong { color:#64748b; font-size:.82rem; font-weight:700; }
+    .admin-card h2 { color:var(--brand2); font-size:1.7rem; }
+    .user-row,.edit-row { border-radius:12px; border-color:var(--line); }
+    .user-row:hover,.edit-row:hover { border-color:#cbd5e1; }
+    .chip { background:#f1f5f9; border-color:var(--line); }
+    /* sorgu, talepler, analiz, pencereler */
+    .check-result,.ap-card,.ap-next,.analysis-sidebar,.analysis-map-card { border-radius:var(--radius); }
+    .analysis-sidebar,.analysis-map-card { border-color:var(--line); box-shadow:var(--shadow); }
+    .analysis-summary { background:#fff; }
+    .modal-card { border-radius:20px; }
+    .toast { border-radius:12px; box-shadow:0 10px 30px rgba(15,23,42,.25); }
+    /* giriş ekranı */
+    .login { background:linear-gradient(135deg,var(--brand2),var(--brand3) 60%,#f28c00 140%); }
+    .login-card { border-radius:22px; box-shadow:0 20px 60px rgba(15,23,42,.3); }
+    .login-card button { min-height:48px; }
+    @media (max-width:1050px) { .toolbar { padding:10px 8px 0; } .panel { border-radius:14px; } .detail { padding:14px; } .admin-tabs { width:100%; overflow-x:auto; flex-wrap:nowrap; } .admin-tab { white-space:nowrap; } }
+  </style>
+</head>
+<body class="locked">
+  <div id="login" class="login">
+    <form id="loginForm" class="login-card">
+      <img class="login-logo" src="assets/logo.png" alt="AK Parti Kepez İlçe Başkanlığı logosu">
+      <h2>AK Parti Kepez İlçe Başkanlığı</h2>
+      <p class="subtle">Üye çağrı takip ekranına giriş yap</p>
+      <input id="usernameInput" type="text" placeholder="Kullanıcı adı" autocomplete="username" autocapitalize="none">
+      <input id="passwordInput" type="password" placeholder="Şifre" autocomplete="current-password">
+      <label class="remember"><input id="rememberInput" type="checkbox" checked> Bu cihazda açık kalsın</label>
+      <button>Giriş Yap</button>
+      <div id="loginError" class="login-error"></div>
+    </form>
+  </div>
+  <div class="app">
+    <header><div class="brand-lockup"><button id="menuBtn" class="menu-btn" aria-label="Menüyü aç"><span></span></button><img class="logo" src="assets/logo.png" alt="AK Parti Kepez İlçe Başkanlığı logosu"><div><h1>AK Parti Kepez İlçe Başkanlığı</h1><div class="sub">Üye çağrı ve mahalle takip ekranı</div></div></div><button id="exportBtn" class="secondary">Logları İndir</button></header>
+    <aside id="drawer" class="drawer" aria-hidden="true">
+      <div class="drawer-panel">
+        <div class="drawer-head"><div class="drawer-user"><div class="drawer-avatar" id="drawerAvatar">AK</div><div><strong id="drawerName">Menü</strong><span id="drawerRole"></span></div></div><button id="closeMenuBtn" class="drawer-close" type="button" aria-label="Menüyü kapat"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg></button></div>
+        <nav class="drawer-nav">
+          <button class="nav-item " data-mode="home" type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg><span class="nav-label">Duyurular</span><span class="nav-badge" id="navBadgeHome" hidden></span></button>
+          <div class="nav-section">Üyeler</div>
+          <button class="nav-item " data-mode="list" type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="nav-label">Üye Listeleri</span></button>
+          <button class="nav-item " data-mode="mine" type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg><span class="nav-label">Üyelerim</span></button>
+          <button class="nav-item " data-mode="check" type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/><path d="M8 11h6"/><path d="M11 8v6"/></svg><span class="nav-label">Üye Sorgula</span></button>
+          <button class="nav-item " data-mode="auto" type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg><span class="nav-label">Otomatik Arama</span></button>
+          <div class="nav-section">Teşkilat</div>
+          <button class="nav-item " data-mode="yurutme" type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/><path d="M19 3l1.5 1.5L23 2"/></svg><span class="nav-label">Yürütme Kurulu</span></button>
+          <button class="nav-item " data-mode="board" type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/></svg><span class="nav-label">Yönetim Kurulu</span></button>
+          <button class="nav-item " data-mode="leaders" type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V4"/><path d="M4 4h13l-2 4 2 4H4"/></svg><span class="nav-label">Mahalle Başkanları</span></button>
+          <button class="nav-item " data-mode="ilkoord" type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><span class="nav-label">İl Koordinatörleri</span></button>
+          <div class="nav-section" id="navSectionMgmt" hidden>Yönetim</div>
+          <button class="nav-item " data-mode="analysis" id="analysisNavBtn" hidden type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3-6-3z"/><path d="M9 3v15"/><path d="M15 6v15"/></svg><span class="nav-label">Kepez Analiz</span></button>
+          <button class="nav-item " data-mode="admin" id="adminNavBtn" hidden type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg><span class="nav-label">Hasan Demir Paneli</span><span class="nav-badge" id="navBadgeAdmin" hidden></span></button>
+          <div class="nav-section">İletişim</div>
+          <button class="nav-item nav-request" data-mode="requests" type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M8 9h8M8 13h5"/></svg><span class="nav-label">Talep ve Öneriler</span></button>
+        </nav>
+        <div class="drawer-foot">
+          <button class="nav-item nav-small" id="locationBtn" type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg><span class="nav-label">Konumumu Paylaş</span></button>
+          <button class="nav-item nav-small" id="pushBtn" type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path d="M19 3l2-1M5 3 3 2"/></svg><span class="nav-label">Bildirimleri Aç</span></button>
+          <button class="nav-item nav-small" id="passwordBtn" type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.3-9.3"/><path d="m16 7 3 3"/><path d="m19 4 2 2"/></svg><span class="nav-label">Şifremi Değiştir</span></button>
+          <button class="nav-item nav-small nav-danger" id="logoutBtn" type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></svg><span class="nav-label">Çıkış Yap</span></button>
+        </div>
+      </div>
+    
+    </aside>
+    <section class="toolbar">
+      <select id="neighborhoodSelect" aria-label="Mahalle seçimi"></select>
+      <input id="searchInput" type="search" placeholder="Üye adı, telefon, adres ara">
+      <select id="statusFilter" aria-label="Durum filtresi"><option value="all">Tüm durumlar</option><option value="new">Yeni</option><option value="called">Görüşüldü</option><option value="noanswer">Cevap yok</option><option value="later">Tekrar aranacak</option><option value="wrong">Hatalı numara</option></select>
+      <button id="nextBtn">Sıradaki</button>
+    </section>
+    <div id="notice" class="notice"></div>
+    <main class="wrap">
+      <section class="panel panel-list"><div class="panel-head"><h2 class="panel-title">Üyeler</h2><span id="countText" class="small"></span></div><div id="memberList" class="list"></div></section>
+      <section class="panel"><div id="detail" class="detail"></div></section>
+      <section class="panel panel-logs"><div class="panel-head"><h2 class="panel-title">Arama Logları</h2><span id="logCount" class="small"></span></div><div id="logs" class="logs"></div></section>
+    </main>
+  </div>
+  <div id="pullRefresh" class="pull-refresh">Yenilemek için bırak</div>
+  <div id="pwModal" class="modal" hidden>
+    <form id="pwForm" class="modal-card">
+      <h2>Şifre Değiştir</h2>
+      <p id="pwForced" class="small">Güvenliğiniz için ortak başlangıç şifresini kendinize özel bir şifreyle değiştirmeniz gerekiyor.</p>
+      <input id="pwCurrent" type="password" placeholder="Mevcut şifre" autocomplete="current-password">
+      <input id="pwNew" type="password" placeholder="Yeni şifre (en az 6 karakter)" autocomplete="new-password">
+      <input id="pwNew2" type="password" placeholder="Yeni şifre (tekrar)" autocomplete="new-password">
+      <div id="pwError" class="login-error"></div>
+      <div class="actions"><button>Kaydet</button><button type="button" class="secondary" id="pwCancel">Vazgeç</button></div>
+    </form>
+  </div>
+  <div id="toast" class="toast"></div>
+  <script>const CHAIRMAN_PHOTO='assets/hasan-demir.jpg';</script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
+  <script>
+    // Kişisel veriler (üyeler, başkanlar, kullanıcılar) bu dosyada YOK; giriş yapıldıktan sonra
+    // Cloudflare sunucusundan yalnızca kullanıcının yetkili olduğu kısım indirilir.
+    const key='uye-cagri-v3';
+    const tokenKey='uye-cagri-token-v2';
+    const legacyLoginKey='uye-cagri-login-v1';
+    const API_BASE='https://ak-parti-kepez-push.aytride.workers.dev';
+    const PUSH_PUBLIC_KEY='BDF-DNF3ase4Th9_1FYDC3hlLrM_POPq-HwBV6NL7rt-3PvtYodySS22FP57vVD1rBvlmKVRRQbfIaI3XxQEBLU';
+    const XLSX_URL='vendor/xlsx.full.min.js';
+    const REF_SHARDS=64;
+    const statusLabels={new:'Yeni',called:'Görüşüldü',noanswer:'Cevap yok',later:'Tekrar aranacak',wrong:'Hatalı numara'};
+    const requestStatusLabels={new:'Yeni',reviewed:'İnceleniyor',done:'Tamamlandı'};
+    const LEADER_BRANCHES=['Yönetim Kurulu','Ana Kademe','Kadın Kolları','Gençlik Kolları'];
+    const state={org:null,members:[],memberById:new Map(),memberHoods:[],memberIndex:null,memberEdits:{},mine:[],mineLoaded:false,leaders:[],users:[],logs:[],locations:[],requests:[],selected:null,selectedLeader:null,selectedLeaderNeighborhood:null,memberTab:'members',selectedStreet:null,selectedAnalysisNeighborhood:null,analysisQuery:'',neighborhood:'all',query:'',status:'all',limit:180,mode:'home',adminTab:'genel',adminMemberQuery:'',adminMemberHood:'',adminLeaderQuery:'',adminLeaderBranch:'',logFilter:{from:'',to:'',user:'',status:'',hood:'',q:''},user:null,token:'',announcements:[],lastSeenAnnouncement:'',map:null,mapLayers:null,locationWatch:null,locationTimer:null};
+    let analysisSearchTimer=null;
+    const $=id=>document.getElementById(id);
+    const memberLogs=new Map();
+
+    // ------------------------------------------------------------------ yardımcılar
+    function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+    function announcementBodyHtml(body){const lines=String(body||'').split(/\r?\n/); const html=[]; const links=[]; let lastVisit=''; lines.forEach(raw=>{const line=raw.trim(); if(!line){html.push('<br>'); return;} const numbered=line.match(/^(\d+)\.\s*(.*?)\s*\|/); if(numbered)lastVisit=numbered[2].trim(); const map=line.match(/^(Konum|Rota|Toplu rota):\s*(https?:\/\/\S+)/i); if(map){const isRoute=map[1].toLocaleLowerCase('tr-TR').includes('rota'); const label=isRoute?'Toplu Rotayı Aç':`${lastVisit||'Ziyaret'} ziyaretinin konumu`; links.push(`<a class="announcement-map-btn ${isRoute?'route':''}" href="${esc(map[2])}" target="_blank" rel="noopener">${esc(label)}</a>`); return;} if(line==='YENİ ZİYARET PROGRAMI'){html.push(`<strong>${esc(line)}</strong>`); return;} if(line==='Ziyaret akışı:'){html.push(`<div class="announce-section">${esc(line)}</div>`); return;} html.push(`<div class="announce-row">${esc(line)}</div>`);}); return html.join('')+(links.length?`<div class="announcement-links">${links.join('')}</div>`:'');}
+    function norm(v){return String(v||'').toLocaleLowerCase('tr-TR').normalize('NFD').replace(/[̀-ͯ]/g,'').trim();}
+    function normalizeUser(v){return String(v||'').trim().toLocaleLowerCase('tr-TR').replace(/ç/g,'c').replace(/ğ/g,'g').replace(/[ıi]/g,'i').replace(/ö/g,'o').replace(/ş/g,'s').replace(/ü/g,'u').replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'');}
+    function refKey(v){return normalizeUser(v).replace(/_/g,' ');}
+    function refShard(name){let h=0x811c9dc5; for(let i=0;i<name.length;i++){h^=name.charCodeAt(i); h=Math.imul(h,0x01000193)>>>0;} return h%REF_SHARDS;}
+    function cleanPhone(v){let d=String(v||'').replace(/\D/g,''); if(d.length===10&&d[0]==='5')d='0'+d; if(d.length===12&&d.startsWith('90'))d='0'+d.slice(2); return d;}
+    function fmtDate(v){if(!v)return '-'; const d=new Date(v); return isNaN(d)?String(v):d.toLocaleString('tr-TR');}
+    function fmtDay(v){if(!v)return '-'; const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})/); return m?`${m[3]}.${m[2]}.${m[1]}`:String(v);}
+    function mapUrlFor(x){const q=[x.address,x.neighborhood,'Kepez Antalya'].filter(Boolean).join(' '); return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q);}
+    function toast(msg){const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toast.timer); toast.timer=setTimeout(()=>t.classList.remove('show'),2600);}
+    function updateDrawer(){if(!state.user)return; const n=state.user.name||''; $('drawerName').textContent=n; $('drawerAvatar').textContent=n.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toLocaleUpperCase('tr-TR')||'AK'; const nh=(state.user.neighborhoods||[]).length; $('drawerRole').textContent=[state.user.allHoods?'':nh>1?`${nh} mahalle`:firstHood(),titleForUser()].filter(Boolean).join(' • '); $('navSectionMgmt').hidden=!(isAdmin()||canUseAnalysis()); const pl=$('adminNavBtn').querySelector('.nav-label'); if(pl)pl.textContent=panelName(); $('navSectionMgmt').textContent=isAdmin()?'Yönetim':'Analiz'; const al=$('analysisNavBtn').querySelector('.nav-label'); if(al)al.textContent=isManagement()?'Kepez Analiz':'Mahalle Analizi'; updateNavBadges();}
+    function isUnread(a){if(!a)return false; if(state.lastSeenAt)return new Date(a.createdAt)>new Date(state.lastSeenAt); return a.id!==state.lastSeenAnnouncement&&!state.lastSeenAnnouncement;}
+    function markSeen(a){if(!a)return; state.lastSeenAnnouncement=a.id; if(!state.lastSeenAt||new Date(a.createdAt)>new Date(state.lastSeenAt))state.lastSeenAt=a.createdAt; save();}
+    function updateNavBadges(){if(!state.user)return; const unread=state.announcements.filter(a=>isUnread(a)).length; const h=$('navBadgeHome'); h.textContent=unread; h.hidden=!unread; const req=isAdmin()?state.requests.filter(r=>r.status==='new').length:0; const ad=$('navBadgeAdmin'); ad.textContent=req; ad.hidden=!req;}
+    function closeDrawer(){$('drawer').classList.remove('open'); $('drawer').setAttribute('aria-hidden','true');}
+
+    // ------------------------------------------------------------------ sunucu bağlantısı
+    async function api(path,opts={}){
+      const headers={...(opts.headers||{})};
+      if(state.token)headers.Authorization='Bearer '+state.token;
+      if(opts.json!==undefined){headers['Content-Type']='application/json'; opts.body=JSON.stringify(opts.json);}
+      const res=await fetch(API_BASE+path,{method:opts.method||'GET',headers,body:opts.body,cache:'no-store',signal:opts.signal});
+      let data={}; try{data=await res.json();}catch(e){}
+      if(res.status===401&&state.user&&path!=='/auth/login'){logout(); toast('Oturum süresi doldu, lütfen tekrar giriş yapın.'); throw new Error('unauthorized');}
+      if(!res.ok){const err=new Error(data.error||('http_'+res.status)); err.status=res.status; throw err;}
+      return data;
+    }
+    function storeToken(token,remember){state.token=token; localStorage.removeItem(tokenKey); sessionStorage.removeItem(tokenKey); (remember?localStorage:sessionStorage).setItem(tokenKey,token);}
+    function savedToken(){return localStorage.getItem(tokenKey)||sessionStorage.getItem(tokenKey)||'';}
+
+    // ------------------------------------------------------------------ yetkiler
+    function isAdmin(){return !!(state.user&&state.user.isAdmin);}
+    function canUseAnalysis(){return !!(state.user&&state.user.canAnalysis);}
+    function canSeeLiveLocations(){return isAdmin();}
+    function isManagement(){return !!(state.user&&(state.user.allHoods!==undefined?state.user.allHoods:state.user.role==='management'));}
+    function canSeeNeighborhood(n){return isManagement()||(state.user&&(state.user.neighborhoods||[]).includes(n));}
+
+    // ------------------------------------------------------------------ yerel durum
+    function save(){try{localStorage.setItem(key,JSON.stringify({selected:state.selected,neighborhood:state.neighborhood,mode:state.mode,adminTab:state.adminTab,autoScope:state.autoScope,lastSeenAnnouncement:state.lastSeenAnnouncement,lastSeenAt:state.lastSeenAt,localLogs:isAdmin()?[]:state.logs.slice(0,300)}));}catch(e){}}
+    function load(){try{const s=JSON.parse(localStorage.getItem(key)||'{}'); state.selected=s.selected||null; state.neighborhood=s.neighborhood||'all'; state.mode=s.mode||'home'; if(state.mode==='logs'){state.mode='admin'; state.adminTab='loglar';} state.adminTab=s.adminTab||state.adminTab; state.autoScope=s.autoScope||'new'; state.lastSeenAnnouncement=s.lastSeenAnnouncement||''; state.lastSeenAt=s.lastSeenAt||''; state.logs=Array.isArray(s.localLogs)?s.localLogs:[];}catch(e){} localStorage.removeItem('uye-cagri-v2');}
+    function indexLogs(){memberLogs.clear(); state.logs.forEach(l=>{if(!memberLogs.has(l.memberId))memberLogs.set(l.memberId,[]); memberLogs.get(l.memberId).push(l);});}
+    function logsFor(id){return memberLogs.get(id)||[];}
+    function statusFor(id){return (logsFor(id)[0]||{status:'new'}).status;}
+
+    // ------------------------------------------------------------------ veri yükleme
+    // Üye listesi cihazda (IndexedDB) saklanır; sayfa yenilenince yeniden indirilmez,
+    // sadece sunucudaki liste değiştiyse indirilir. Çıkış yapınca silinir.
+    function cacheDb(){return new Promise((resolve,reject)=>{const r=indexedDB.open('kepez-cache',1); r.onupgradeneeded=()=>r.result.createObjectStore('kv'); r.onsuccess=()=>resolve(r.result); r.onerror=()=>reject(r.error);});}
+    async function cacheGet(k){try{const db=await cacheDb(); return await new Promise(res=>{const q=db.transaction('kv').objectStore('kv').get(k); q.onsuccess=()=>res(q.result||null); q.onerror=()=>res(null);});}catch(e){return null;}}
+    async function cacheSet(k,v){try{const db=await cacheDb(); await new Promise(res=>{const t=db.transaction('kv','readwrite'); t.objectStore('kv').put(v,k); t.oncomplete=res; t.onerror=res;});}catch(e){}}
+    async function cacheClear(){try{const db=await cacheDb(); await new Promise(res=>{const t=db.transaction('kv','readwrite'); t.objectStore('kv').clear(); t.oncomplete=res; t.onerror=res;});}catch(e){}}
+    function applyMembers(dataObj,version,updatedAt,hoods,edits){
+      state.rawMembers=dataObj||{};
+      state.memberIndex=version?{version,updatedAt}:null;
+      state.memberEdits=edits||{};
+      const list=[];
+      Object.entries(dataObj||{}).forEach(([hood,rows])=>rows.forEach(r=>list.push({id:r[0],name:r[1],phone:r[2],address:r[3],joined:r[4],refs:r[5]||[],neighborhood:hood})));
+      list.forEach(m=>{const e=state.memberEdits[m.id]; if(e)Object.assign(m,e);});
+      state.members=list.filter(m=>!m.deleted);
+      state.memberById=new Map(state.members.map(m=>[m.id,m]));
+      state.memberHoods=(hoods||[]).map(h=>h.name);
+    }
+    async function loadMembers(){
+      const cacheKey='members:'+state.user.username;
+      const cached=state.members.length?null:await cacheGet(cacheKey);
+      if(cached&&cached.version&&!state.members.length){applyMembers(cached.data,cached.version,cached.updatedAt,cached.hoods,cached.edits); indexLogs(); fillNeighborhoods(); render();}
+      const have=(state.memberIndex&&state.memberIndex.version)||'';
+      const data=await api('/members'+(have?'?have='+encodeURIComponent(have):''));
+      const nameIndex=!!data.nameIndex;
+      if(data.unchanged){applyMembers(state.rawMembers,data.version,data.updatedAt,data.hoods,data.edits); if(cached)cacheSet(cacheKey,{...cached,edits:data.edits,hoods:data.hoods});}
+      else {applyMembers(data.data,data.version,data.updatedAt,data.hoods,data.edits); cacheSet(cacheKey,{version:data.version,updatedAt:data.updatedAt,hoods:data.hoods,edits:data.edits,data:data.data});}
+      if(state.memberIndex)state.memberIndex.nameIndex=nameIndex;
+      if(isAdmin()&&state.memberIndex&&!nameIndex&&isManagement())buildNameIndex();
+    }
+    async function loadMine(force=false){if(state.mineLoaded&&!force)return; try{const data=await api('/members/mine'); state.mine=data.members||[]; state.mineLoaded=true;}catch(e){if(e.message!=='unauthorized')toast('Üyeleriniz alınamadı.');}}
+    async function loadOrg(){try{const d=await api('/org'); state.org=d.org||null;}catch(e){}}
+    async function loadLeaders(){try{const data=await api('/leaders'); state.leaders=data.leaders||[];}catch(e){}}
+    async function loadUsers(){if(!isAdmin())return; try{const data=await api('/access'); state.users=data.users||[];}catch(e){}}
+    async function loadLogs(){try{const data=await api(isAdmin()?'/logs':'/logs/scope'); const server=data.logs||[]; const ids=new Set(server.map(l=>l.id)); const local=queuedLogs().filter(l=>!ids.has(l.id)); state.logs=[...local,...server].sort((a,b)=>String(b.time).localeCompare(String(a.time))); indexLogs();}catch(e){}}
+    async function loadRequests(){try{const data=await api('/requests'); state.requests=data.requests||[];}catch(e){}}
+    async function loadLocations(){if(!canSeeLiveLocations()){state.locations=[]; return;} try{const data=await api('/locations'); state.locations=data.locations||[];}catch(e){}}
+
+    // ------------------------------------------------------------------ listeler
+    function isKepezNeighborhood(n){return !!n&&n!=='Mahalle Yok';}
+    function neighborhoods(){const all=Array.from(new Set(state.members.map(m=>m.neighborhood||'Mahalle Yok'))).filter(isKepezNeighborhood).filter(canSeeNeighborhood).sort((a,b)=>a.localeCompare(b,'tr')); return isManagement()?['all',...all]:all;}
+    function fillNeighborhoods(){const items=neighborhoods(); $('neighborhoodSelect').innerHTML=items.map(n=>`<option value="${esc(n)}">${n==='all'?'Tüm mahalleler':esc(n)}</option>`).join(''); if(!items.includes(state.neighborhood)) state.neighborhood=items[0]||'all'; $('neighborhoodSelect').value=state.neighborhood;}
+    function memberText(m){return norm([m.name,m.phone,m.neighborhood,m.address].join(' '));}
+    function filtered(){const q=norm(state.query); return state.members.filter(m=>{const hasPhone=!!String(m.phone||'').trim(); const n=state.neighborhood==='all'||m.neighborhood===state.neighborhood; const s=state.status==='all'||statusFor(m.id)===state.status; const t=!q||memberText(m).includes(q); return hasPhone&&isKepezNeighborhood(m.neighborhood)&&n&&s&&t;});}
+    function mineList(){const q=norm(state.query); return state.mine.filter(m=>(!q||memberText(m).includes(q))&&(state.status==='all'||statusFor(m.id)===state.status));}
+    function analysisList(){const q=norm(state.query); return state.members.filter(m=>{const hasPhone=!!String(m.phone||'').trim(); const s=state.status==='all'||statusFor(m.id)===state.status; const t=!q||memberText(m).includes(q); return isKepezNeighborhood(m.neighborhood)&&hasPhone&&s&&t;});}
+    const AUTO_SCOPES=[['new','Aranmamış'],['later','Tekrar aranacak'],['noanswer','Cevap vermeyen'],['all','Tümü']];
+    function autoList(scope=state.autoScope||'new'){const q=norm(state.query); return state.members.filter(m=>{if(!String(m.phone||'').trim()||!isKepezNeighborhood(m.neighborhood))return false; if(state.neighborhood!=='all'&&m.neighborhood!==state.neighborhood)return false; if(q&&!memberText(m).includes(q))return false; const st=statusFor(m.id); return scope==='all'||st===scope;});}
+    function currentList(){if(state.mode==='auto')return autoList(); return state.memberTab==='mine'?mineList():filtered();}
+    function isNeighborhoodLeader(l){const r=String(l.role||'').toLocaleLowerCase('tr-TR'); return isKepezNeighborhood(l.neighborhood)&&r.includes('mahalle başkanı');}
+    // Mahalle başkanları tüm kademelere açık: kullanıcının kendi mahallesiyle sınırlanmaz.
+    function leaderList(){const q=norm(state.query); return state.leaders.filter(l=>isNeighborhoodLeader(l)&&(!q||norm([l.name,l.phone,l.neighborhood,l.address,l.role,l.branch].join(' ')).includes(q))).sort((a,b)=>(a.neighborhood||'').localeCompare(b.neighborhood||'','tr')||String(a.branch).localeCompare(String(b.branch),'tr')||a.name.localeCompare(b.name,'tr'));}
+    function isBoardTab(t=state.memberTab){return t==='board'||t==='yurutme'||t==='ilkoord';}
+    function leaderByName(name){const k=refKey(name); return state.leaders.find(l=>l.branch==='Yönetim Kurulu'&&refKey(l.name)===k)||state.leaders.find(l=>refKey(l.name)===k);}
+    function orgAccess(username){return (state.org&&state.org.access&&state.org.access[username])||[];}
+    function boardList(kind=state.memberTab){
+      const q=norm(state.query); const org=state.org; let list=[];
+      if(kind==='yurutme'){list=(org&&org.yurutme||[]).map((y,i)=>{const l=leaderByName(y.name)||{}; return {...l,id:'y-'+y.username,name:y.name,role:y.role||l.role||'',branch:'Yürütme Kurulu',username:y.username,order:i};});}
+      else if(kind==='ilkoord'){list=(org&&org.bolgeler||[]).map((b,i)=>{const l=leaderByName(b.ilKoord)||{}; return {...l,id:'ik-'+i,name:b.ilKoord,role:`${b.bolge} İl Koordinatörü`,branch:'İl Koordinatörü',username:b.ilKoordUsername,bolge:b,order:i};});}
+      else {const order=new Map((org&&org.yonetim||[]).map((y,i)=>[refKey(y.name),y])); list=state.leaders.filter(l=>l.branch==='Yönetim Kurulu').map(l=>{const y=order.get(refKey(l.name)); return {...l,username:y&&y.username,order:y?(org.yonetim.indexOf(y)):999};}).sort((a,b)=>a.order-b.order||a.name.localeCompare(b.name,'tr'));}
+      return list.filter(l=>!q||norm([l.name,l.phone,l.role,l.address].join(' ')).includes(q));
+    }
+    function leaderNeighborhoods(list){const map=new Map(); list.forEach(l=>{const hood=l.neighborhood; if(!map.has(hood))map.set(hood,{name:hood,count:0,branches:new Set()}); const item=map.get(hood); item.count+=1; item.branches.add(l.branch);}); return Array.from(map.values()).map(x=>({name:x.name,count:x.count,branchCount:x.branches.size})).sort((a,b)=>a.name.localeCompare(b.name,'tr'));}
+    function selectNext(){const list=currentList(); if(!list.length){state.selected=null; save(); render(); return;} const i=list.findIndex(m=>m.id===state.selected); state.selected=list[(i+1+list.length)%list.length].id; save(); render();}
+    function selectedMember(){return state.memberById.get(state.selected)||state.mine.find(x=>x.id===state.selected);}
+
+    // ------------------------------------------------------------------ mod / görünüm
+    function setBodyMode(...modes){['home-mode','auto-mode','admin-mode','analysis-mode','board-mode'].forEach(c=>document.body.classList.toggle(c,modes.includes(c)));}
+    function setMode(mode){
+      closeDrawer();
+      if(mode==='logs'){mode='admin'; state.adminTab='loglar';}
+      if(mode==='requests'&&isAdmin()){mode='admin'; state.adminTab='talepler';}
+      if(mode==='admin'&&!isAdmin()) mode='home';
+      if(mode==='analysis'&&!canUseAnalysis()) mode='home';
+      state.selectedLeaderNeighborhood=null; state.selectedLeader=null;
+      if(mode==='board'||mode==='yurutme'||mode==='ilkoord'){state.mode='list'; state.memberTab=mode; if(!state.org)loadOrg().then(render);}
+      else if(mode==='leaders'){state.mode='list'; state.memberTab='leaders';}
+      else if(mode==='list'){state.mode='list'; state.memberTab='members';}
+      else if(mode==='mine'){state.mode='list'; state.memberTab='mine'; state.selected=null; loadMine().then(render);}
+      else if(mode==='requests'){state.mode='requests'; loadRequests().then(render);}
+      else if(mode==='check'){state.mode='check';}
+      else state.mode=mode;
+      const active=state.mode==='list'?({board:'board',yurutme:'yurutme',ilkoord:'ilkoord',leaders:'leaders',mine:'mine'}[state.memberTab]||'list'):state.mode;
+      document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===active));
+      save(); render();
+    }
+    function render(){
+      if(!state.user)return;
+      document.body.classList.toggle('hide-toolbar',!(state.mode==='auto'||(state.mode==='list'&&(state.memberTab==='members'||state.memberTab==='mine'))));
+      // Excel yükleme ekranındayken arka plan yenilemeleri seçilen dosyayı/ilerlemeyi silmesin
+      if(state.mode==='admin'&&state.adminTab==='yukle'&&$('importFile'))return;
+      renderNotice();
+      if(state.mode==='analysis'&&canUseAnalysis()){setBodyMode('analysis-mode'); renderAnalysis(); clearLogsPanel(); return;}
+      if(state.mode==='admin'&&isAdmin()){setBodyMode('admin-mode'); renderAdmin(); renderLogs(); return;}
+      if(state.mode==='check'){setBodyMode('admin-mode'); if(!$('checkForm'))renderCheck(); if(isAdmin())renderLogs(); else clearLogsPanel(); return;}
+      if(state.mode==='requests'){setBodyMode('admin-mode'); if($('requestForm'))renderMyRequests(); else renderRequests(); clearLogsPanel(); return;}
+      if(state.mode==='home'){setBodyMode('home-mode'); renderHome(); if(isAdmin())renderLogs(); else clearLogsPanel(); return;}
+      if(state.mode==='list'&&(state.memberTab==='leaders'||isBoardTab())){
+        setBodyMode(isBoardTab()?'board-mode':'');
+        const leaders=isBoardTab()?boardList():leaderList(); const hoods=leaderNeighborhoods(leaders);
+        if(!isBoardTab()&&state.selectedLeaderNeighborhood&&!hoods.some(h=>h.name===state.selectedLeaderNeighborhood))state.selectedLeaderNeighborhood=null;
+        const scoped=state.selectedLeaderNeighborhood?leaders.filter(l=>l.neighborhood===state.selectedLeaderNeighborhood):[];
+        renderLeaders(leaders,scoped,hoods); renderLeaderDetail(scoped); if(isAdmin())renderLogs(); else clearLogsPanel(); return;
+      }
+      const list=currentList();
+      if(!state.selected||!list.some(m=>m.id===state.selected)) state.selected=(list[0]||{}).id||null;
+      setBodyMode(state.mode==='auto'?'auto-mode':'');
+      renderList(list); renderDetail(list); if(isAdmin())renderLogs(); else clearLogsPanel();
+    }
+    function renderNotice(){updateNavBadges(); const n=$('notice'); const latest=state.announcements[0]; if(latest&&state.mode!=='home'&&isUnread(latest)){n.innerHTML=`<span class="notice-text">Yeni duyuru: ${esc(String(latest.body).replace(/\s+/g,' '))}</span><button type="button" class="notice-close" aria-label="Kapat">✕</button>`; n.classList.add('show');} else {n.innerHTML=''; n.classList.remove('show');}}
+    function dismissNotice(){const latest=state.announcements[0]; if(!latest)return; markSeen(latest); renderNotice(); api('/announcements/read',{method:'POST',json:{announcementId:latest.id}}).catch(()=>{});}
+    function listTabs(){if(state.mode!=='list')return ''; const t=state.memberTab; return `<div class="list-tabs"><button type="button" class="list-tab ${t==='members'?'active':''}" data-list-tab="members">Üyeler</button><button type="button" class="list-tab ${t==='mine'?'active':''}" data-list-tab="mine">Üyelerim</button><button type="button" class="list-tab ${t==='leaders'?'active':''}" data-list-tab="leaders">Mahalle Başkanları</button></div>`;}
+    function renderList(list){
+      const mine=state.memberTab==='mine';
+      $('countText').textContent=mine?`${list.length} üyem`:`${list.length} üye`;
+      const shown=list.slice(0,state.limit);
+      const intro=mine?`<div class="mine-note">Referans olarak sizin adınızın (${esc(state.user.refName||state.user.name)}) yazılı olduğu güncel üyeler.</div>`:'';
+      const empty=mine?(state.mineLoaded?'<div class="empty">Referansı adınızla eşleşen üye bulunamadı. Eşleşme yanlışsa yönetim panelinden referans adınız düzenlenebilir.</div>':'<div class="empty">Üyeleriniz yükleniyor…</div>'):'<div class="empty">Bu filtrede üye bulunamadı.</div>';
+      $('memberList').innerHTML=listTabs()+intro+(shown.map(m=>`<div class="member ${m.id===state.selected?'active':''}" data-id="${esc(m.id)}" role="button" tabindex="0"><strong>${esc(m.name)}</strong>${mine?`<span class="meta">${esc(m.neighborhood)}${m.phone?'':' • Telefon yok'}</span>`:''}</div>`).join('')+(list.length>shown.length?`<button class="member" id="moreBtn"><strong>Daha fazla göster</strong><span class="small">${list.length-shown.length} kayıt daha var</span></button>`:'')||empty);
+      const more=$('moreBtn'); if(more) more.onclick=()=>{state.limit+=180; render();};
+    }
+    function renderLeaders(all,scoped,hoods){
+      if(isBoardTab()){renderBoard(boardList()); return;}
+      $('countText').textContent=state.selectedLeaderNeighborhood?`${scoped.length} başkan`:`${hoods.length} mahalle • ${all.length} başkan`;
+      const body=state.selectedLeaderNeighborhood?`<button type="button" class="member" data-leader-back><strong>← Mahallelere dön</strong><span class="meta">${all.length} başkan içinde gezin</span></button>`+(scoped.map(l=>`<div class="member ${l.id===state.selectedLeader?'active':''}" data-leader-id="${esc(l.id)}" role="button" tabindex="0"><strong>${esc(l.name)}</strong><span class="meta">${esc(l.branch)} • ${esc(l.role)}${l.phone?' • '+esc(l.phone):''}</span></div>`).join('')||'<div class="empty">Bu mahallede başkan bulunamadı.</div>'):hoods.map(h=>`<div class="member" data-leader-hood="${esc(h.name)}" role="button" tabindex="0"><strong>${esc(h.name)}</strong><span class="meta">${h.count} başkan • ${h.branchCount} birim</span></div>`).join('')||'<div class="empty">Başkan kaydı bulunamadı.</div>';
+      $('memberList').innerHTML=listTabs()+body;
+    }
+    const BOARD_LABELS={board:'yönetim kurulu üyesi',yurutme:'yürütme kurulu üyesi',ilkoord:'il koordinatörü'};
+    function renderBoard(list){$('countText').textContent=`${list.length} ${BOARD_LABELS[state.memberTab]||''}`; const empty=state.org||state.memberTab==='board'?'<div class="empty">Kayıt bulunamadı.</div>':'<div class="empty">Teşkilat listesi henüz yüklenmedi.</div>'; $('memberList').innerHTML=list.map(l=>`<div class="member ${l.id===state.selectedLeader?'active':''}" data-board-id="${esc(l.id)}" role="button" tabindex="0"><strong>${esc(l.name)}</strong><span class="meta">${esc(l.role)}${l.phone?' • '+esc(l.phone):' • Telefon yok'}</span></div>`).join('')||empty;}
+    function hoodChips(hoods){return hoods&&hoods.length?`<div class="hood-chips">${hoods.map(h=>`<span class="chip">${esc(String(h).replace(/ MAH\.$/,''))}</span>`).join('')}</div>`:'-';}
+    function orgFacts(l){const org=state.org; if(!org)return ''; const rows=[];
+      if(l.bolge){const b=l.bolge; rows.push(['Bölge',b.bolge],['Bölge Koordinatörü',b.bolgeKoord],['Meclis Üyeleri',b.meclis],['Mahalleler',null,hoodChips(b.hoods)]);}
+      else if(l.username&&state.memberTab!=='leaders'){const acc=orgAccess(l.username); const g=org.groups&&org.groups[l.username]; rows.push(['Yetki',g==='yurutme'||g==='il_koord'?'Tüm mahalleler':acc.length?`${acc.length} mahalle`:'Atanmış mahalle yok']); if(g!=='yurutme'&&g!=='il_koord'&&acc.length)rows.push(['Sorumlu Mahalleler',null,hoodChips(acc)]);}
+      if(state.memberTab==='leaders'&&l.neighborhood&&org.hoods&&org.hoods[l.neighborhood]){const h=org.hoods[l.neighborhood]; rows.push(['Bölge',h.bolge],['Mahalle Koordinatörü',h.mahalleKoord||'-'],['Bölge Koordinatörü',h.bolgeKoord],['İl Koordinatörü',h.ilKoord]);}
+      return rows.length?`<div class="facts org-facts">${rows.map(([k,v,html])=>`<div class="fact"><div>${esc(k)}</div><div>${html||esc(v||'-')}</div></div>`).join('')}</div>`:'';}
+    function leaderCard(l,withHood){return `<div class="log-top"><h2>${esc(l.name)}</h2><span class="badge new">${esc(l.branch)}</span></div><div class="detail-actions">${l.phone?`<a class="phone" href="tel:${esc(l.phone)}">Ara: ${esc(l.phone)}</a>`:'<div class="phone" style="background:#94a3b8">Telefon yok</div>'}${l.phone?`<a class="map-link" href="https://wa.me/90${esc(cleanPhone(l.phone).replace(/^0/,''))}" target="_blank" rel="noopener">WhatsApp</a>`:''}${l.address?`<a class="map-link" href="${esc(mapUrlFor(l))}" target="_blank" rel="noopener">Konum Aç</a>`:''}</div><div class="facts"><div class="fact"><div>Görev</div><div>${esc(l.role)}</div></div><div class="fact"><div>Birim</div><div>${esc(l.branch)}</div></div>${withHood?`<div class="fact"><div>Mahalle</div><div>${esc(l.neighborhood||'-')}</div></div>`:''}<div class="fact"><div>Telefon</div><div>${esc(l.phone||'-')}</div></div><div class="fact"><div>Adres</div><div>${esc(l.address||'-')}</div></div></div>`;}
+    function renderLeaderDetail(list=[]){
+      if(isBoardTab()){const l=boardList().find(x=>x.id===state.selectedLeader); $('detail').innerHTML=l?leaderCard(l,false)+orgFacts(l):'<div class="empty">Bir kişiye tıklayınca iletişim kartı burada açılacak.</div>'; return;}
+      if(!state.selectedLeaderNeighborhood){$('detail').innerHTML='<div class="empty">Mahalle seçince o mahallenin başkanları burada açılacak.</div>'; return;}
+      const l=list.find(x=>x.id===state.selectedLeader);
+      $('detail').innerHTML=l?leaderCard(l,true)+orgFacts(l):'<div class="empty">Bir başkana tıklayınca iletişim kartı burada açılacak.</div>';
+    }
+    function titleForUser(){if(!state.user)return ''; if(state.user.title)return state.user.title; return state.user.groupLabel||(state.user.role==='neighborhood'?'Mahalle Başkanı':'Yönetim Kurulu');}
+    function panelName(){return state.user&&state.user.username==='hasan_demir'?'Hasan Demir Paneli':'Yönetim Paneli';}
+    function displayName(n){return String(n||'').toLocaleLowerCase('tr-TR').split(/\s+/).filter(Boolean).map(w=>w[0].toLocaleUpperCase('tr-TR')+w.slice(1)).join(' ');}
+    function authorAvatar(a){const n=a.authorName||'Hasan Demir'; return /hasan\s+demir/i.test(n.toLocaleLowerCase('tr-TR'))?`<img class="announcement-avatar" src="${CHAIRMAN_PHOTO}" alt="">`:`<div class="announcement-avatar initials-avatar">${esc(initials(n))}</div>`;}
+    function firstHood(){return state.user&&state.user.neighborhoods&&state.user.neighborhoods[0]?state.user.neighborhoods[0]:'';}
+    function announcementLiked(a){return (a.likes||[]).some(x=>x.username===(state.user&&state.user.username));}
+    function renderHome(){const unread=state.announcements.filter(a=>isUnread(a)).length; $('countText').textContent=unread?`${unread} yeni duyuru`:'Duyurular'; $('memberList').innerHTML=''; const composer=isAdmin()?`<form id="homeAnnounceForm" class="composer"><select id="homeAnnouncementTarget"><option value="all">Herkes</option><option value="management">Ana kademe / yönetim</option><option value="neighborhood">Mahalle başkanları</option></select><textarea id="homeAnnouncementInput" placeholder="Ne duyurmak istersiniz?"></textarea><button>Duyuruyu Paylaş</button></form>`:''; const cards=state.announcements.map(a=>{const adminTools=isAdmin()?`<div class="actions"><button type="button" class="danger" data-delete-announcement="${esc(a.id)}">Duyuruyu Sil</button></div><details><summary>Görüntüleyenler</summary><p class="small">${(a.reads||[]).map(x=>esc(x.name||x.username)).join(', ')||'Henüz görüntüleyen yok.'}</p><p class="small"><strong>Beğenenler:</strong> ${(a.likes||[]).map(x=>esc(x.name||x.username)).join(', ')||'Henüz beğenen yok.'}</p></details>`:''; return `<article class="announcement-card ${isUnread(a)?'unread':''}"><div class="announcement-author">${authorAvatar(a)}<div><strong>${esc(a.authorName||'Hasan Demir')}</strong><div class="small">${esc(fmtDate(a.createdAt))} • ${a.target==='management'?'Yönetim':a.target==='neighborhood'?'Mahalle başkanları':'Herkes'}</div></div></div><div class="announcement-body">${announcementBodyHtml(a.body)}</div><div class="announcement-meta"><span>${(a.reads||[]).length} görüldü • ${(a.likes||[]).length} beğeni</span><button class="like-btn ${announcementLiked(a)?'active':''}" data-like-announcement="${esc(a.id)}" type="button">${announcementLiked(a)?'Beğenildi':'Beğen'}</button></div>${adminTools}</article>`;}).join('')||'<div class="empty">Henüz duyuru yok.</div>'; $('detail').innerHTML=`<div class="home"><section class="welcome text-only"><div><h2>Hoş geldiniz Sayın ${esc(state.user.name)}</h2><p>${esc(firstHood()?firstHood()+' '+titleForUser():titleForUser())}</p></div></section>${composer}<section class="announcement-list">${cards}</section></div>`; const form=$('homeAnnounceForm'); if(form)form.onsubmit=createAnnouncement; markAnnouncementsRead();}
+    function memberEditForm(m){if(!isAdmin())return ''; return `<details class="edit-box"><summary>Üye bilgilerini düzenle</summary><form class="form" data-member-edit="${esc(m.id)}"><div class="grid2"><div class="field"><label>Ad soyad</label><input name="name" value="${esc(m.name)}"></div><div class="field"><label>Telefon</label><input name="phone" value="${esc(m.phone||'')}" inputmode="tel"></div></div><div class="field"><label>Adres</label><input name="address" value="${esc(m.address||'')}"></div><div class="field"><label>Mahalle</label><select name="neighborhood">${hoodOptions(m.neighborhood)}</select></div><div class="actions"><button>Kaydet</button></div></form></details>`;}
+    function hoodOptions(selected){const hoods=Array.from(new Set([...(state.memberHoods||[]),...state.members.map(m=>m.neighborhood),selected])).filter(Boolean).sort((a,b)=>a.localeCompare(b,'tr')); return hoods.map(h=>`<option value="${esc(h)}" ${h===selected?'selected':''}>${esc(h)}</option>`).join('');}
+    function memberFacts(m){return `<div class="facts"><div class="fact"><div>Telefon</div><div>${esc(m.phone||'-')}</div></div><div class="fact"><div>Mahalle</div><div>${esc(m.neighborhood)}</div></div><div class="fact"><div>Adres</div><div>${esc(m.address||'-')}</div></div><div class="fact"><div>Üyelik Tarihi</div><div>${esc(fmtDay(m.joined))}</div></div><div class="fact"><div>Referans</div><div>${esc((m.refs||[]).join(', ')||'-')}</div></div>${m.updatedAt?`<div class="fact"><div>Son düzenleme</div><div>${esc(fmtDate(m.updatedAt))}${m.updatedBy?' • '+esc(m.updatedBy):''}</div></div>`:''}</div>`;}
+    function renderDetail(list=currentList()){
+      const m=selectedMember();
+      if(!m){$('detail').innerHTML=`<div class="empty">${state.memberTab==='mine'?'Listeden bir üyenize dokunun.':'Bu mahallede aranacak numara bulunamadı.'}</div>`; return;}
+      const st=statusFor(m.id);
+      if(state.mode==='auto'){renderAuto(list); return;}
+      $('detail').innerHTML=`<div class="log-top"><h2>${esc(m.name)}</h2><span class="badge ${st}">${statusLabels[st]}</span></div><div class="detail-actions">${m.phone?`<a class="phone" href="tel:${esc(m.phone)}">Ara: ${esc(m.phone)}</a>`:'<div class="phone" style="background:#94a3b8">Telefon yok</div>'}<a class="map-link" href="${esc(mapUrlFor(m))}" target="_blank" rel="noopener">Konum Aç</a></div>${memberFacts(m)}${m.phone?`<div class="quick"><button data-quick="called">Görüşüldü</button><button data-quick="noanswer">Cevap yok</button><button data-quick="later">Tekrar aranacak</button><button data-quick="wrong">Hatalı numara</button></div><form id="noteForm" class="form"><div class="grid2"><div class="field"><label>Durum</label><select id="noteStatus"><option value="called">Görüşüldü</option><option value="noanswer">Cevap yok</option><option value="later">Tekrar aranacak</option><option value="wrong">Hatalı numara</option></select></div><div class="field"><label>Arayan</label><input id="agent" placeholder="Adın" value="${esc(state.user.name)}"></div></div><div class="field"><label>Not</label><textarea id="note" placeholder="Görüşme notu"></textarea></div><div class="actions"><button>Log Kaydet</button><button type="button" class="secondary" id="copyBtn">Telefonu Kopyala</button></div></form>`:''}${memberEditForm(m)}`;
+      if(m.phone){$('noteStatus').value=st==='new'?'called':st; $('noteForm').onsubmit=e=>{e.preventDefault(); addLog($('noteStatus').value,$('note').value,$('agent').value);}; document.querySelectorAll('[data-quick]').forEach(b=>b.onclick=()=>addLog(b.dataset.quick,'',$('agent')?$('agent').value:'')); $('copyBtn').onclick=()=>navigator.clipboard.writeText(m.phone).then(()=>toast('Telefon kopyalandı.'));}
+    }
+
+    // ------------------------------------------------------------------ otomatik arama
+    function initials(n){return String(n||'').split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toLocaleUpperCase('tr-TR');}
+    function waLink(phone){const d=cleanPhone(phone).replace(/^0/,''); return d?`https://wa.me/90${d}`:'';}
+    function todayStats(){const me=state.user.username; const day=new Date().toDateString(); const mine=state.logs.filter(l=>l.username===me&&new Date(l.time).toDateString()===day); const c=k=>mine.filter(l=>l.status===k).length; return {total:mine.length,called:c('called'),noanswer:c('noanswer'),later:c('later'),wrong:c('wrong')};}
+    function renderAuto(list){
+      const m=selectedMember(); const scope=state.autoScope||'new';
+      const counts=Object.fromEntries(AUTO_SCOPES.map(([k])=>[k,autoList(k).length]));
+      const chips=`<div class="scope-chips">${AUTO_SCOPES.map(([k,v])=>`<button type="button" class="scope-chip ${scope===k?'active':''}" data-auto-scope="${k}">${v}<span>${counts[k].toLocaleString('tr-TR')}</span></button>`).join('')}</div>`;
+      const t=todayStats();
+      const head=`<div class="auto-head"><div><h2>Otomatik Arama</h2><div class="small">${esc(state.neighborhood==='all'?'Tüm mahalleler':state.neighborhood)} • sıradaki kişiler: ${list.length.toLocaleString('tr-TR')}</div></div><div class="auto-today"><span title="Bugün aradıklarınız"><b>${t.total}</b> bugün</span><span class="ok"><b>${t.called}</b> görüşüldü</span><span class="na"><b>${t.noanswer}</b> cevap yok</span><span class="lt"><b>${t.later}</b> tekrar</span></div></div>`;
+      if(!m){$('detail').innerHTML=`<div class="auto2">${head}${chips}<div class="auto-done"><div class="auto-done-ic">✓</div><h3>Bu listede aranacak kimse kalmadı</h3><p class="small">Üstten başka bir liste seçebilir ya da mahalle filtresini değiştirebilirsiniz.</p></div></div>`; return;}
+      const idx=Math.max(0,list.findIndex(x=>x.id===m.id)); const pct=list.length?Math.round(idx/list.length*100):0;
+      const st=statusFor(m.id); const hist=logsFor(m.id).slice(0,3);
+      const next=list.slice(idx+1,idx+7);
+      const waiting=sessionStorage.getItem('pending-auto-call')===m.id;
+      $('detail').innerHTML=`<div class="auto2">${head}${chips}
+        <div class="auto-progress"><span style="width:${pct}%"></span></div>
+        <div class="auto-grid">
+          <article class="ap-card">
+            <div class="ap-head"><div class="ap-avatar">${esc(initials(m.name))}</div><div class="ap-who"><h2>${esc(m.name)}</h2><div class="small">${esc(m.neighborhood)} • ${esc(doorText(m))}</div></div><span class="badge ${st}">${statusLabels[st]}</span></div>
+            <div class="ap-call"><a class="ap-phone" href="tel:${esc(m.phone)}" data-auto-call="${esc(m.id)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg><span>Ara</span><strong>${esc(m.phone)}</strong></a>${waLink(m.phone)?`<a class="ap-wa" href="${esc(waLink(m.phone))}" target="_blank" rel="noopener">WhatsApp</a>`:''}</div>
+            <div class="auto-prompt ${waiting?'show':''}" id="autoPrompt">Arama nasıl geçti? Aşağıdan sonucu seçin.</div>
+            <div class="ap-results">
+              <button type="button" class="r-ok" data-auto-status="called"><b>Görüşüldü</b><kbd>1</kbd></button>
+              <button type="button" class="r-na" data-auto-status="noanswer"><b>Cevap yok</b><kbd>2</kbd></button>
+              <button type="button" class="r-lt" data-auto-status="later"><b>Tekrar ara</b><kbd>3</kbd></button>
+              <button type="button" class="r-wr" data-auto-status="wrong"><b>Hatalı numara</b><kbd>4</kbd></button>
+            </div>
+            <textarea id="autoNote" placeholder="Görüşme notu (isteğe bağlı) — sonuçla birlikte kaydedilir"></textarea>
+            <div class="ap-nav"><button type="button" class="secondary" id="autoPrev" ${idx===0?'disabled':''}>← Önceki</button><span class="small">${(idx+1).toLocaleString('tr-TR')} / ${list.length.toLocaleString('tr-TR')}</span><button type="button" class="secondary" id="skipBtn">Atla →</button></div>
+            <div class="facts"><div class="fact"><div>Adres</div><div>${esc(m.address||'-')}</div></div><div class="fact"><div>Referans</div><div>${esc((m.refs||[]).join(', ')||'-')}</div></div><div class="fact"><div>Üyelik</div><div>${esc(fmtDay(m.joined))}</div></div></div>
+            ${hist.length?`<div class="ap-hist"><div class="small"><b>Önceki aramalar</b></div>${hist.map(l=>`<div class="ap-hist-row"><span class="badge ${esc(l.status)}">${esc(statusLabels[l.status]||l.status)}</span><span class="small">${esc(fmtDate(l.time))} • ${esc(l.agent||l.username||'')}</span>${l.note?`<div>${esc(l.note)}</div>`:''}</div>`).join('')}</div>`:''}
+          </article>
+          <aside class="ap-next"><h3>Sıradakiler</h3>${next.map((x,k)=>`<button type="button" class="ap-next-row" data-auto-jump="${esc(x.id)}"><span class="ap-num">${idx+k+2}</span><span><strong>${esc(x.name)}</strong><span class="small">${esc(x.neighborhood)}</span></span></button>`).join('')||'<div class="small">Listenin sonu.</div>'}<p class="small kbd-hint">Klavye: 1–4 sonuç, → atla, ← önceki</p></aside>
+        </div></div>`;
+      document.querySelectorAll('[data-auto-status]').forEach(b=>b.onclick=()=>autoResult(b.dataset.autoStatus));
+      $('skipBtn').onclick=()=>autoMove(1); $('autoPrev').onclick=()=>autoMove(-1);
+    }
+    function autoMove(step){const list=currentList(); if(!list.length)return; const i=list.findIndex(x=>x.id===state.selected); const n=Math.min(Math.max(0,(i<0?0:i)+step),list.length-1); state.selected=list[n].id; sessionStorage.removeItem('pending-auto-call'); save(); render();}
+    async function autoResult(status){
+      const before=currentList(); const i=Math.max(0,before.findIndex(x=>x.id===state.selected));
+      sessionStorage.removeItem('pending-auto-call');
+      await addLog(status,($('autoNote')||{}).value||'','',false,true);
+      const after=currentList(); // sonuçlanan kişi listeden çıktıysa aynı sıradaki kişi, çıkmadıysa bir sonraki
+      const stillThere=after.findIndex(x=>x.id===state.selected);
+      const nextIdx=stillThere>=0?stillThere+1:i;
+      state.selected=after.length?after[Math.min(nextIdx,after.length-1)].id:null; save(); render();
+    }
+
+    // ------------------------------------------------------------------ Kepez analiz (değişmedi)
+    function streetName(address){const text=String(address||'').toLocaleUpperCase('tr-TR').replace(/[,\n]+/g,' ').replace(/\s+/g,' ').trim(); if(!text)return 'Adres bilgisi yok'; const parts=text.split(' '); for(let i=0;i<parts.length;i++){const token=parts[i].replace(/[.]/g,''); if(['SOK','SOKAK','SK','CAD','CADDE','CADDESİ','CD','BULVAR','BULVARI','BLV'].includes(token)){return (parts.slice(Math.max(0,i-3),i+1).join(' ')||token).replace(/\s+/g,' ');}} return text.split(' ').slice(0,5).join(' ');}
+    function streetGroups(){const groups=new Map(); analysisList().forEach(m=>{const street=streetName(m.address); const key=(m.neighborhood||'Mahalle Yok')+'|'+street; if(!groups.has(key))groups.set(key,{key,neighborhood:m.neighborhood||'Mahalle Yok',street,members:[]}); groups.get(key).members.push(m);}); return Array.from(groups.values()).sort((a,b)=>b.members.length-a.members.length||a.street.localeCompare(b.street,'tr'));}
+    function neighborhoodGroups(groups){const map=new Map(); groups.forEach(g=>{if(!map.has(g.neighborhood))map.set(g.neighborhood,{name:g.neighborhood,members:0,streets:0}); const h=map.get(g.neighborhood); h.members+=g.members.length; h.streets+=1;}); return Array.from(map.values()).sort((a,b)=>a.name.localeCompare(b.name,'tr'));}
+    function startLocationPolling(){if(state.locationTimer||!canSeeLiveLocations())return; state.locationTimer=setInterval(async()=>{if(state.mode!=='analysis')return; await loadLocations(); const groups=streetGroups(); const selected=groups.find(g=>g.key===state.selectedStreet); drawMap(selected);},120000);}
+    function renderAnalysis(){
+      $('countText').textContent='Kepez Analiz'; $('memberList').innerHTML=''; startLocationPolling();
+      mapDrawSeq++; if(state.map){state.map.remove(); state.map=null; state.mapLayers=null;}
+      const allAnalysis=analysisList(); const groups=streetGroups(); const hoods=neighborhoodGroups(groups);
+      if(state.selectedAnalysisNeighborhood&&!hoods.some(h=>h.name===state.selectedAnalysisNeighborhood))state.selectedAnalysisNeighborhood=null;
+      const singleHood=hoods.length===1; if(singleHood)state.selectedAnalysisNeighborhood=hoods[0].name;
+      if(!state.selectedAnalysisNeighborhood)state.selectedStreet=null;
+      const q=norm(state.analysisQuery||'');
+      const hood=state.selectedAnalysisNeighborhood;
+      const visibleGroups=hood?groups.filter(g=>g.neighborhood===hood):[];
+      const filteredGroups=visibleGroups.filter(g=>!q||norm(g.street).includes(q)).sort((a,b)=>b.members.length-a.members.length||a.street.localeCompare(b.street,'tr'));
+      const filteredHoods=hoods.filter(h=>!q||norm(h.name).includes(q));
+      if(state.selectedStreet&&!visibleGroups.some(g=>g.key===state.selectedStreet))state.selectedStreet=null;
+      const selected=visibleGroups.find(g=>g.key===state.selectedStreet)||null;
+      const active=canSeeLiveLocations()?state.locations.filter(l=>Date.now()-new Date(l.time).getTime()<1000*60*15):[];
+      const hoodOpts=`<option value="">Tüm mahalleler (${hoods.length})</option>${hoods.map(h=>`<option value="${esc(h.name)}" ${hood===h.name?'selected':''}>${esc(h.name)} • ${h.members} üye</option>`).join('')}`;
+      const listHtml=hood
+        ? (singleHood?'':`<button type="button" class="analysis-back" data-back-hood>← Tüm mahalleler</button>`)+(filteredGroups.map(g=>`<button type="button" class="street-row ${g.key===state.selectedStreet?'active':''}" data-street="${esc(g.key)}"><strong>${esc(streetLabel(g))}</strong><span class="street-count">${g.members.length}</span></button>`).join('')||'<div class="analysis-empty-note">Aramaya uyan sokak/cadde yok.</div>')
+        : (filteredHoods.map(h=>`<button type="button" class="street-row" data-analysis-hood="${esc(h.name)}"><strong>${esc(h.name)}</strong><span class="street-count">${h.members}</span><span class="street-meta">${h.streets} sokak/cadde</span></button>`).join('')||'<div class="analysis-empty-note">Aramaya uyan mahalle yok.</div>');
+      const stats=`<div class="analysis-stats"><div><strong>${hood?visibleGroups.reduce((a,g)=>a+g.members.length,0).toLocaleString('tr-TR'):allAnalysis.length.toLocaleString('tr-TR')}</strong><span>üye</span></div><div><strong>${hood?visibleGroups.length:hoods.length}</strong><span>${hood?'sokak/cadde':'mahalle'}</span></div>${canSeeLiveLocations()?`<div><strong>${active.length}</strong><span>aktif konum</span></div>`:''}</div>`;
+      $('detail').innerHTML=`<div class="analysis-shell">
+        <aside class="analysis-sidebar">
+          <div class="analysis-summary"><div class="analysis-title"><h2>${singleHood?'Mahalle Analizi':'Kepez Analiz'}</h2><button type="button" class="secondary small-btn" id="refreshMapBtn" title="Haritayı yenile">↻ Yenile</button></div>${stats}</div>
+          <div class="analysis-controls">${singleHood?`<div class="single-hood">📍 ${esc(hood)}</div>`:`<select id="analysisHoodSelect">${hoodOpts}</select>`}<input id="analysisSearchInput" type="search" placeholder="${hood?'Sokak / cadde ara (örn. 2627)':'Mahalle ara'}" value="${esc(state.analysisQuery||'')}" autocomplete="off"></div>
+          <div class="street-list">${listHtml}</div>
+        </aside>
+        <section class="analysis-map-card"><div class="map-wrap"><div id="kepezMap"></div><div id="mapStatus" class="map-status" hidden></div></div><div id="streetMembers" class="street-members">${selected?streetMembersHtml(selected):`<div class="analysis-hint">${hood?'Soldaki listeden bir sokak/cadde seçin; üyeler haritada ve burada görünür.':'Bir mahalle seçerek başlayın.'}</div>`}</div></section>
+      </div>`;
+      if($('analysisHoodSelect'))$('analysisHoodSelect').onchange=e=>{state.selectedAnalysisNeighborhood=e.target.value||null; state.selectedStreet=null; state.analysisQuery=''; save(); renderAnalysis();};
+      $('analysisSearchInput').oninput=e=>{state.analysisQuery=e.target.value; clearTimeout(analysisSearchTimer); analysisSearchTimer=setTimeout(()=>{save(); renderAnalysis(); const i=$('analysisSearchInput'); i.focus(); i.setSelectionRange(i.value.length,i.value.length);},260);};
+      $('refreshMapBtn').onclick=async()=>{await loadLocations(); drawMap(selected); toast('Harita yenilendi.');};
+      const act=document.querySelector('.street-row.active'); if(act)act.scrollIntoView({block:'nearest'});
+      setTimeout(()=>drawMap(selected),80);
+    }
+    function streetMembersHtml(group){const members=group.members.slice().sort((x,y)=>(parseInt(doorInfo(x).door)||9999)-(parseInt(doorInfo(y).door)||9999)||String(doorInfo(x).flat).localeCompare(String(doorInfo(y).flat),'tr',{numeric:true})).slice(0,200); return `<div class="street-members-head"><div><strong>${esc(streetLabel(group))}</strong><div class="small">${esc(group.neighborhood)} • ${group.members.length} üye</div></div></div><div class="street-member-grid">`+members.map(m=>{const st=statusFor(m.id); return `<article class="street-member"><div class="street-member-top"><strong>${esc(m.name)}</strong>${st!=='new'?`<span class="badge ${st}">${statusLabels[st]}</span>`:''}</div><span class="small" title="${esc(m.address||'')}">${esc(doorText(m))}</span><div class="street-member-actions"><a class="phone" href="tel:${esc(m.phone)}">Ara</a><a class="map-link" href="${esc(mapUrlFor(m))}" target="_blank" rel="noopener">Konum</a></div></article>`;}).join('')+`</div>`+(group.members.length>members.length?`<div class="small">${group.members.length-members.length} üye daha var.</div>`:'');}
+    // ---- Harita: sokak ve bina konumları (ArcGIS), cihazda önbelleklenir
+    const GEO_URL='https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?f=json&maxLocations=1&outFields=Score&SingleLine=';
+    let mapDrawSeq=0;
+    function geoCacheGet(k){try{const c=JSON.parse(localStorage.getItem(k)||'null'); return c&&c.lat?c:(c&&c.miss?c:null);}catch(e){return null;}}
+    function geoCacheSet(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}
+    async function geocodeQuery(query){try{const res=await fetch(GEO_URL+encodeURIComponent(query)); const data=await res.json(); const c=data.candidates&&data.candidates[0]; if(c&&c.location)return {lat:c.location.y,lng:c.location.x,score:c.score||0};}catch(e){} return null;}
+    function streetLabel(g){const t=String(g.street||'').replace(String(g.neighborhood||''),'').trim(); return t||g.street;}
+    async function geocodeGroup(group){if(!group)return null; const cacheKey='geo2:'+group.key; const cached=geoCacheGet(cacheKey); if(cached&&cached.lat)return cached; const p=await geocodeQuery([streetLabel(group),group.neighborhood,'Kepez Antalya Türkiye'].join(' ')); if(p){geoCacheSet(cacheKey,p); return p;} return null;}
+    // Adresteki sokaktan sonraki kısım: kapı no ve daire no
+    function doorInfo(m){const addr=String(m.address||'').toLocaleUpperCase('tr-TR').replace(/\s+/g,' ').trim(); const street=streetName(m.address); const idx=addr.indexOf(street); const rest=idx>=0?addr.slice(idx+street.length).trim():''; const parts=rest.split(' ').filter(Boolean); return {door:parts[0]||'',flat:parts.slice(1).join(' ')};}
+    function doorText(m){const d=doorInfo(m); return d.door?`No: ${d.door}${d.flat?' • Daire: '+d.flat:''}`:String(m.address||'-').replace(/^ANTALYA KEPEZ\s+/,'');}
+    function distanceM(a,b){const R=6371000,toR=x=>x*Math.PI/180; const dLat=toR(b.lat-a.lat),dLng=toR(b.lng-a.lng); const h=Math.sin(dLat/2)**2+Math.cos(toR(a.lat))*Math.cos(toR(b.lat))*Math.sin(dLng/2)**2; return 2*R*Math.asin(Math.sqrt(h));}
+    async function geocodeBuilding(group,door,streetPoint){const cacheKey='geo2b:'+group.key+'|'+door; const cached=geoCacheGet(cacheKey); if(cached)return cached.lat?cached:null; const p=await geocodeQuery(`${streetLabel(group)} No:${door} ${group.neighborhood} Kepez Antalya Türkiye`); // sokaktan çok uzak ya da düşük güvenilirlikli sonuçları kullanma
+      const ok=p&&p.score>=80&&(!streetPoint||distanceM(p,streetPoint)<1200); geoCacheSet(cacheKey,ok?p:{miss:1}); return ok?p:null;}
+    function buildingIcon(count,approx){return L.divIcon({className:'bmarker-wrap',html:`<div class="bmarker ${approx?'approx':''}">${count}</div>`,iconSize:[30,30],iconAnchor:[15,15]});}
+    // Sokak konumunu sunucudan al (OpenStreetMap + ArcGIS, sunucuda saklanır).
+    // Sunucu eski sürümdeyse tarayıcıdan doğrudan aranır.
+    async function streetGeo(group,doors,onProgress){
+      let res=null;
+      for(let round=0;round<4;round++){
+        try{res=await api('/geo',{method:'POST',json:{street:streetLabel(group),hood:group.neighborhood,doors}});}catch(e){res=null; break;}
+        onProgress&&onProgress(res);
+        if(!res.pending)break;
+      }
+      if(res)return res;
+      const point=await geocodeGroup(group); if(!point)return {point:null,line:null,source:'none',doors:{}};
+      const out={point,line:null,source:'arcgis',doors:{}};
+      const queue=doors.filter(d=>d!=='?'); const work=async()=>{while(queue.length){const d=queue.shift(); const p=await geocodeBuilding(group,d,point); out.doors[d]=p?[p.lat,p.lng]:0; onProgress&&onProgress({...out,pending:queue.length});}};
+      await Promise.all(Array.from({length:6},work)); return out;
+    }
+    // Konumu bulunamayan binaları sokak çizgisi boyunca kapı numarası sırasıyla yerleştir
+    function pointAlong(line,t){if(!line||line.length<2)return null; const segs=[]; let total=0; for(let i=1;i<line.length;i++){const a={lat:line[i-1][0],lng:line[i-1][1]},b={lat:line[i][0],lng:line[i][1]}; const d=distanceM(a,b); segs.push([a,b,d]); total+=d;} let want=t*total; for(const [a,b,d] of segs){if(want<=d||d===0&&want===0){const f=d?want/d:0; return {lat:a.lat+(b.lat-a.lat)*f,lng:a.lng+(b.lng-a.lng)*f};} want-=d;} const last=line[line.length-1]; return {lat:last[0],lng:last[1]};}
+    async function drawMap(group){
+      const el=$('kepezMap'); if(!el||!window.L)return; const seq=++mapDrawSeq;
+      if(!state.map){state.map=L.map(el).setView([36.95,30.69],12); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(state.map); state.mapLayers=L.layerGroup().addTo(state.map);} else {state.map.invalidateSize(); state.mapLayers.clearLayers();}
+      const layers=state.mapLayers, map=state.map;
+      if(canSeeLiveLocations())state.locations.forEach(l=>{const age=Math.round((Date.now()-new Date(l.time).getTime())/60000); L.circleMarker([l.lat,l.lng],{radius:8,color:'#123c7c',fillColor:'#f28c00',fillOpacity:.9,className:'location-dot'}).addTo(layers).bindPopup(`<strong>${esc(l.name)}</strong><br>${esc(l.neighborhood||l.role||'')}<br>${age} dk önce`);});
+      if(!group){
+        const hood=state.selectedAnalysisNeighborhood; if(!hood){map.setView([36.95,30.69],12); return;}
+        let g=null; try{g=await api('/geo',{method:'POST',json:{street:'',hood}});}catch(e){}
+        if(seq!==mapDrawSeq||!g||!g.point){if(seq===mapDrawSeq)map.setView([36.95,30.69],12); return;}
+        if(g.line&&g.line.length>2){L.polygon(g.line,{color:'#f28c00',weight:3,fillColor:'#f28c00',fillOpacity:.08}).addTo(layers); map.fitBounds(g.line,{padding:[20,20]});} else map.setView([g.point.lat,g.point.lng],15);
+        return;
+      }
+      const status=$('mapStatus'); const setStatus=t=>{if(status&&seq===mapDrawSeq){status.textContent=t; status.hidden=!t;}};
+      const buildings=new Map(); group.members.forEach(m=>{const d=doorInfo(m).door||'?'; if(!buildings.has(d))buildings.set(d,[]); buildings.get(d).push(m);});
+      const doors=[...buildings.keys()].filter(d=>d!=='?');
+      setStatus('Sokak haritada bulunuyor…');
+      let centered=false;
+      const geo=await streetGeo(group,doors,r=>{if(seq!==mapDrawSeq||!r||!r.point)return; if(!centered){centered=true; map.setView([r.point.lat,r.point.lng],r.source==='hood'?15:17);} const known=Object.keys(r.doors||{}).length; if(r.pending)setStatus(`Bina konumları yükleniyor… ${Math.min(known,doors.length)}/${doors.length}`);});
+      if(seq!==mapDrawSeq)return;
+      if(!geo||!geo.point){setStatus('Harita servisine ulaşılamadı. Üye listesi aşağıda.'); return;}
+      const {point,line,source}=geo;
+      if(line&&line.length>1)L.polyline(line,{color:'#123c7c',weight:6,opacity:.35}).addTo(layers);
+      // kapı numarası sırası (yaklaşık yerleşim için)
+      const ordered=[...buildings.keys()].sort((a,b)=>(parseInt(a)||9999)-(parseInt(b)||9999));
+      const bounds=[]; let approx=0;
+      ordered.forEach((door,idx)=>{
+        const members=buildings.get(door); const exact=geo.doors&&Array.isArray(geo.doors[door])?{lat:geo.doors[door][0],lng:geo.doors[door][1]}:null;
+        let p=exact;
+        if(!p){approx++; p=(source==='osm'&&line)?pointAlong(line,ordered.length>1?idx/(ordered.length-1):.5):null; if(!p){const ang=approx*2.4, r=.00012+.00004*Math.sqrt(approx); p={lat:point.lat+Math.sin(ang)*r,lng:point.lng+Math.cos(ang)*r};}}
+        const rows=members.map(m=>`<div class="pop-row"><strong>${esc(m.name)}</strong>${m.phone?` <a href="tel:${esc(m.phone)}">Ara</a>`:''}<br><span>${esc(doorInfo(m).flat?'Daire '+doorInfo(m).flat:'')}</span></div>`).join('');
+        L.marker([p.lat,p.lng],{icon:buildingIcon(members.length,!exact)}).addTo(layers).bindPopup(`<strong>${esc(streetLabel(group))} No: ${esc(door)}</strong>${exact?'':'<br><em>Yaklaşık konum</em>'}<div class="pop-list">${rows}</div><a href="${esc(mapUrlFor(members[0]))}" target="_blank" rel="noopener">Google Haritalar'da aç</a>`);
+        bounds.push([p.lat,p.lng]);
+      });
+      if(line)line.forEach(x=>bounds.push(x));
+      if(bounds.length>1)map.fitBounds(bounds,{padding:[30,30],maxZoom:18}); else map.setView([point.lat,point.lng],17);
+      if(source==='hood')setStatus('Sokak haritada bulunamadı; üyeler mahalle merkezinde yaklaşık gösteriliyor.');
+      else if(source==='kepez')setStatus('Sokak ve mahalle bulunamadı. Üye listesi aşağıda.');
+      else setStatus(approx?`${buildings.size} bina • ${approx} tanesi sokak üzerinde yaklaşık (gri)`:'');
+    }
+
+    async function postLocation(pos,auto=false){const last=Number(localStorage.getItem('uye-last-location-post')||0); if(auto&&Date.now()-last<1000*60*5)return; await api('/locations',{method:'POST',json:{lat:pos.coords.latitude,lng:pos.coords.longitude,accuracy:pos.coords.accuracy}}); localStorage.setItem('uye-last-location-post',String(Date.now())); if(!auto)toast('Konum paylaşıldı ve canlı takip açık.');}
+    function startLocationWatch(auto=false){if(!state.user||!navigator.geolocation)return; if(state.locationWatch!==null)return; state.locationWatch=navigator.geolocation.watchPosition(pos=>postLocation(pos,true).catch(()=>{}),err=>{if(!auto)toast('Canlı konum izni verilmedi.');},{enableHighAccuracy:false,timeout:15000,maximumAge:300000});}
+    async function shareLocation(auto=false){if(!state.user||!navigator.geolocation){if(!auto)toast('Bu cihaz konum desteklemiyor.'); return;} navigator.geolocation.getCurrentPosition(async pos=>{try{await postLocation(pos,auto); startLocationWatch(auto);}catch(e){if(!auto)toast('Konum gönderilemedi.');}},err=>{if(!auto)toast('Konum izni verilmedi.');},{enableHighAccuracy:true,timeout:12000,maximumAge:30000});}
+
+    // ------------------------------------------------------------------ loglar
+    function clearLogsPanel(){$('logCount').textContent=''; $('logs').innerHTML='<div class="empty">Log kayıtlarını sadece yöneticiler görebilir.</div>';}
+    function logMember(l){return state.memberById.get(l.memberId)||{name:l.memberName||'Silinmiş üye',phone:l.memberPhone||'',neighborhood:l.neighborhood||''};}
+    function logCard(l){const m=logMember(l); return `<article class="log"><div class="log-top"><strong>${esc(m.name)}</strong><span class="badge ${esc(l.status)}">${esc(statusLabels[l.status]||l.status)}</span></div><span class="small">${esc(fmtDate(l.time))}${l.agent?' • '+esc(l.agent):''}${l.username?' • '+esc(l.username):''}</span><p>${esc(l.note||'Not girilmedi.')}</p><span class="small">${esc(m.phone||'')} ${esc(m.neighborhood||'')}</span></article>`;}
+    function renderLogs(){if(!isAdmin()){clearLogsPanel(); return;} $('logCount').textContent=state.logs.length+' kayıt'; $('logs').innerHTML=state.logs.slice(0,150).map(logCard).join('')||'<div class="empty">Henüz arama logu yok.</div>';}
+    function filteredLogs(){const f=state.logFilter; const q=norm(f.q); const from=f.from?new Date(f.from+'T00:00:00'):null; const to=f.to?new Date(f.to+'T23:59:59'):null; return state.logs.filter(l=>{const t=new Date(l.time); const m=logMember(l); return (!from||t>=from)&&(!to||t<=to)&&(!f.user||l.username===f.user)&&(!f.status||l.status===f.status)&&(!f.hood||(m.neighborhood||l.neighborhood)===f.hood)&&(!q||norm([m.name,m.phone,l.note,l.agent].join(' ')).includes(q));});}
+    function exportLogs(list){const rows=[['Tarih','Üye','Telefon','Mahalle','Durum','Not','Arayan','Kullanıcı']].concat(list.map(l=>{const m=logMember(l); return [fmtDate(l.time),m.name||'',m.phone||'',m.neighborhood||l.neighborhood||'',statusLabels[l.status]||l.status,l.note||'',l.agent||'',l.username||''];})); const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(';')).join('\n'); const blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='arama-loglari.csv'; a.click(); URL.revokeObjectURL(a.href);}
+    function queuedLogs(){try{return JSON.parse(localStorage.getItem('pending-call-logs')||'[]');}catch(e){return [];}}
+    function setQueuedLogs(items){localStorage.setItem('pending-call-logs',JSON.stringify(items.slice(0,200)));}
+    async function flushQueuedLogs(){const queue=queuedLogs(); if(!queue.length)return; const remaining=[]; for(const item of queue){if(/^\d{11}$/.test(String(item.memberId)))continue; try{await api('/logs',{method:'POST',json:item});}catch(e){remaining.push(item);}} setQueuedLogs(remaining);}
+    async function addLog(status,note,agent,advance=false,quiet=false){if(!state.selected)return; const m=selectedMember()||{}; const item={id:crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random(),memberId:state.selected,memberName:m.name||'',memberPhone:m.phone||'',neighborhood:m.neighborhood||'',status,note:(note||'').trim(),agent:(agent||state.user?.name||'').trim(),username:state.user?state.user.username:'',time:new Date().toISOString()}; state.logs=state.logs.filter(l=>l.id!==item.id); state.logs.unshift(item); indexLogs(); save(); let saved=false; try{await api('/logs',{method:'POST',json:item}); saved=true;}catch(e){} if(!saved){const queue=queuedLogs().filter(l=>l.id!==item.id); queue.unshift(item); setQueuedLogs(queue); toast('Log cihazda kaydedildi, internet gelince tekrar gönderilecek.');} else toast('Log kaydedildi.'); if(quiet)return; if(advance){selectNext(); return;} render();}
+
+    // ------------------------------------------------------------------ talep ve öneriler
+    function requestCard(r,adminView){const reply=r.reply?`<div class="reply"><strong>Yanıt:</strong> ${esc(r.reply)}</div>`:''; if(!adminView)return `<article class="log"><div class="log-top"><strong>${esc(r.category||'Talep')}</strong><span class="badge ${r.status==='done'?'called':r.status==='reviewed'?'later':'new'}">${esc(requestStatusLabels[r.status]||r.status)}</span></div><span class="small">${esc(fmtDate(r.time))}</span><p>${esc(r.text)}</p>${reply}</article>`; return `<article class="log ${r.status==='new'?'unread-request':''}"><div class="log-top"><div><strong>${esc(r.name||r.username)}</strong><div class="small">${esc(r.category||'Talep')} • ${esc(r.neighborhood||(r.role==='management'?'Yönetim':''))} • ${esc(fmtDate(r.time))}</div></div><select data-request-status="${esc(r.id)}">${Object.entries(requestStatusLabels).map(([k,v])=>`<option value="${k}" ${r.status===k?'selected':''}>${v}</option>`).join('')}</select></div><p>${esc(r.text)}</p><form class="reply-form" data-request-reply="${esc(r.id)}"><input name="reply" value="${esc(r.reply||'')}" placeholder="Yanıt yazın (talep sahibi görür)"><button>Yanıtla</button><button type="button" class="danger" data-request-delete="${esc(r.id)}">Sil</button></form></article>`;}
+    function renderRequests(){
+      const form=`<form id="requestForm" class="form"><div class="grid2"><div class="field"><label>Tür</label><select id="requestCategory"><option>Talep</option><option>Öneri</option><option>Şikayet</option></select></div><div class="field"><label>Gönderen</label><input value="${esc(state.user.name)}" disabled></div></div><div class="field"><label>Talep veya öneriniz</label><textarea id="requestText" placeholder="Talep ve önerinizi yazın"></textarea></div><button>Gönder</button></form>`;
+      $('countText').textContent='Talep ve Öneriler'; $('memberList').innerHTML='';
+      $('detail').innerHTML=`<div class="admin-shell"><div class="admin-section-head"><h2>Talep ve Öneriler</h2><span class="small">Talepleriniz doğrudan ilçe yönetim paneline iletilir.</span></div><section class="admin-section">${form}</section><section class="admin-section"><h3>Gönderdiklerim</h3><div id="myRequests"></div></section></div>`;
+      renderMyRequests();
+      $('requestForm').onsubmit=async e=>{e.preventDefault(); const text=$('requestText').value.trim(); if(!text){toast('Lütfen talebinizi yazın.'); return;} const btn=e.target.querySelector('button'); btn.disabled=true; try{await api('/requests',{method:'POST',json:{text,category:$('requestCategory').value}}); $('requestText').value=''; await loadRequests(); renderMyRequests(); toast('Talebiniz iletildi.');}catch(err){toast('Talep gönderilemedi.');}finally{btn.disabled=false;}};
+    }
+    function renderMyRequests(){const el=$('myRequests'); if(el)el.innerHTML=state.requests.map(r=>requestCard(r,false)).join('')||'<div class="empty small-empty">Henüz bir talep göndermediniz.</div>';}
+
+    // ------------------------------------------------------------------ admin paneli (Hasan Demir)
+    const ADMIN_TABS=[['genel','Genel'],['talepler','Talepler'],['loglar','Arama Logları'],['uyeler','Üye Düzenle'],['yonetim','Yönetim ve Başkanlar'],['kullanicilar','Kullanıcılar'],['yukle','Üye Listesi Yükle']];
+    function renderAdmin(){
+      const newRequests=state.requests.filter(r=>r.status==='new').length;
+      $('countText').textContent='Admin'; $('memberList').innerHTML='';
+      const tabs=`<div class="admin-tabs">${ADMIN_TABS.map(([k,v])=>`<button type="button" class="admin-tab ${state.adminTab===k?'active':''}" data-admin-tab="${k}">${v}${k==='talepler'&&newRequests?` <span class="count-pill">${newRequests}</span>`:''}</button>`).join('')}</div>`;
+      const body={genel:adminGeneral,talepler:adminRequests,loglar:adminLogs,uyeler:adminMembers,yonetim:adminLeaders,kullanicilar:adminUsers,yukle:adminImport}[state.adminTab]||adminGeneral;
+      $('detail').innerHTML=`<div class="admin-shell"><div class="admin-section-head"><h2>${esc(panelName())}</h2><button type="button" class="secondary" id="adminRefresh">Yenile</button></div>${tabs}<div id="adminBody">${body()}</div></div>`;
+      $('adminRefresh').onclick=async()=>{await Promise.all([loadLogs(),loadRequests(),loadUsers(),loadLeaders()]); render(); toast('Panel yenilendi.');};
+      bindAdmin();
+    }
+    function adminGeneral(){const called=state.logs.filter(l=>l.status==='called').length; const activeUsers=state.users.filter(u=>!u.disabled).length; const idx=state.memberIndex; return `<div class="admin-grid"><div class="admin-card"><strong>Toplam üye</strong><h2>${state.members.length.toLocaleString('tr-TR')}</h2><span class="small">${state.members.filter(m=>m.phone).length.toLocaleString('tr-TR')} telefonlu</span></div><div class="admin-card"><strong>Toplam log</strong><h2>${state.logs.length}</h2><span class="small">${called} görüşüldü</span></div><div class="admin-card"><strong>Yeni talep</strong><h2>${state.requests.filter(r=>r.status==='new').length}</h2><span class="small">${activeUsers} aktif kullanıcı</span></div></div><p class="small">Üye listesi son güncelleme: ${idx?esc(fmtDate(idx.updatedAt)):'henüz yüklenmedi'}</p><section class="admin-section"><div class="admin-section-head"><h2>Ek Bildirim</h2><span class="small">Duyuru dışında anlık bildirim gönder</span></div><form id="pushForm" class="form"><div class="field"><label>Hedef kitle</label><select id="pushTarget"><option value="all">Herkes</option><option value="management">Ana kademe / yönetim</option><option value="neighborhood">Mahalle başkanları</option></select></div><div class="field"><label>Başlık</label><input id="pushTitle" value="AK Parti Kepez"></div><div class="field"><label>Mesaj</label><textarea id="pushBody" placeholder="Tüm cihazlara gidecek mesaj"></textarea></div><button>Bildirim Gönder</button></form></section>`;}
+    function adminRequests(){const counts=Object.keys(requestStatusLabels).map(k=>`${requestStatusLabels[k]}: ${state.requests.filter(r=>r.status===k).length}`).join(' • '); return `<section class="admin-section"><div class="admin-section-head"><h2>Talep ve Öneriler</h2><span class="small">${counts}</span></div>${state.requests.map(r=>requestCard(r,true)).join('')||'<div class="empty">Henüz talep veya öneri yok.</div>'}</section>`;}
+    function adminLogs(){const f=state.logFilter; const list=filteredLogs(); const users=Array.from(new Map(state.logs.map(l=>[l.username,l.agent||l.username])).entries()).filter(([u])=>u).sort((a,b)=>String(a[1]).localeCompare(String(b[1]),'tr')); const hoods=Array.from(new Set(state.logs.map(l=>logMember(l).neighborhood||l.neighborhood).filter(Boolean))).sort((a,b)=>a.localeCompare(b,'tr')); const byStatus=Object.keys(statusLabels).filter(k=>k!=='new').map(k=>`<div class="admin-card"><strong>${statusLabels[k]}</strong><h2>${list.filter(l=>l.status===k).length}</h2></div>`).join(''); const byUser=Object.entries(list.reduce((a,l)=>{const k=l.agent||l.username||'-'; a[k]=(a[k]||0)+1; return a;},{})).sort((a,b)=>b[1]-a[1]).slice(0,10).map(([k,v])=>`<span class="chip">${esc(k)}: ${v}</span>`).join(''); return `<section class="admin-section"><div class="admin-section-head"><h2>Arama Logları</h2><button type="button" class="secondary" id="logsExport">Excel'e (CSV) indir</button></div><form id="logFilterForm" class="log-filters"><input type="date" name="from" value="${esc(f.from)}" title="Başlangıç"><input type="date" name="to" value="${esc(f.to)}" title="Bitiş"><select name="user"><option value="">Tüm arayanlar</option>${users.map(([u,n])=>`<option value="${esc(u)}" ${f.user===u?'selected':''}>${esc(n)}</option>`).join('')}</select><select name="status"><option value="">Tüm durumlar</option>${Object.entries(statusLabels).filter(([k])=>k!=='new').map(([k,v])=>`<option value="${k}" ${f.status===k?'selected':''}>${v}</option>`).join('')}</select><select name="hood"><option value="">Tüm mahalleler</option>${hoods.map(h=>`<option ${f.hood===h?'selected':''}>${esc(h)}</option>`).join('')}</select><input type="search" name="q" value="${esc(f.q)}" placeholder="Üye, telefon, not ara"><button type="button" class="secondary" id="logFilterClear">Temizle</button></form><div class="admin-grid four">${byStatus}</div><div class="chips">${byUser}</div><div class="small">${list.length} kayıt gösteriliyor</div><div class="log-table">${list.slice(0,300).map(logCard).join('')||'<div class="empty">Bu filtrede log yok.</div>'}</div>${list.length>300?'<div class="small">İlk 300 kayıt gösteriliyor; tamamı için CSV indirin.</div>':''}</section>`;}
+    function adminMembers(){const q=norm(state.adminMemberQuery); const hood=state.adminMemberHood; const results=(q.length>=2||hood)?state.members.filter(m=>(!hood||m.neighborhood===hood)&&(!q||memberText(m).includes(q))).slice(0,40):[]; return `<section class="admin-section"><div class="admin-section-head"><h2>Üye Bilgilerini Düzenle</h2><span class="small">Telefon, adres, ad ve mahalle düzenlenebilir. Düzenlemeler yeni Excel yüklemesinde de korunur.</span></div><div class="log-filters"><input id="adminMemberSearch" type="search" placeholder="Ad, telefon veya adres ile ara (en az 2 harf)" value="${esc(state.adminMemberQuery)}"><select id="adminMemberHood"><option value="">Tüm mahalleler</option>${hoodOptions(hood)}</select></div><div id="adminMemberResults">${results.map(m=>`<form class="edit-row" data-member-edit="${esc(m.id)}"><input name="name" value="${esc(m.name)}" placeholder="Ad soyad"><input name="phone" value="${esc(m.phone||'')}" placeholder="Telefon" inputmode="tel"><input name="address" value="${esc(m.address||'')}" placeholder="Adres"><select name="neighborhood">${hoodOptions(m.neighborhood)}</select><button>Kaydet</button></form>`).join('')||`<div class="empty small-empty">${q.length>=2||hood?'Sonuç bulunamadı.':'Aramak için yazmaya başlayın.'}</div>`}${results.length===40?'<div class="small">İlk 40 sonuç gösteriliyor, aramayı daraltın.</div>':''}</div></section>`;}
+    function leaderRow(l){return `<form class="edit-row leader-row" data-leader-edit="${esc(l.id)}"><input name="name" value="${esc(l.name)}" placeholder="Ad soyad"><input name="role" value="${esc(l.role)}" placeholder="Görev"><select name="branch">${Array.from(new Set([...LEADER_BRANCHES,l.branch])).filter(Boolean).map(b=>`<option ${b===l.branch?'selected':''}>${esc(b)}</option>`).join('')}</select><input name="phone" value="${esc(l.phone||'')}" placeholder="Telefon" inputmode="tel"><input name="address" value="${esc(l.address||'')}" placeholder="Adres"><select name="neighborhood"><option value="">Mahalle yok</option>${hoodOptions(l.neighborhood)}</select><button>Kaydet</button><button type="button" class="danger" data-leader-delete="${esc(l.id)}">Sil</button></form>`;}
+    function adminLeaders(){const q=norm(state.adminLeaderQuery); const b=state.adminLeaderBranch; const list=state.leaders.filter(l=>(!b||l.branch===b)&&(!q||norm([l.name,l.role,l.phone,l.neighborhood].join(' ')).includes(q))).sort((x,y)=>String(x.branch).localeCompare(String(y.branch),'tr')||String(x.neighborhood||'').localeCompare(String(y.neighborhood||''),'tr')||x.name.localeCompare(y.name,'tr')); const branches=Array.from(new Set([...LEADER_BRANCHES,...state.leaders.map(l=>l.branch)])).filter(Boolean); return `<section class="admin-section"><div class="admin-section-head"><h2>Yönetim ve Mahalle Başkanları</h2><span class="small">${state.leaders.length} kayıt</span></div><details class="edit-box"><summary>+ Yeni kişi ekle</summary>${leaderRow({id:'',name:'',role:'Mahalle Başkanı',branch:'Ana Kademe',phone:'',address:'',neighborhood:''}).replace('data-leader-edit=""','data-leader-new').replace(/<button type="button" class="danger"[^>]*>Sil<\/button>/,'')}</details><div class="log-filters"><input id="adminLeaderSearch" type="search" placeholder="Ad, görev, telefon, mahalle ara" value="${esc(state.adminLeaderQuery)}"><select id="adminLeaderBranch"><option value="">Tüm birimler</option>${branches.map(x=>`<option ${x===b?'selected':''}>${esc(x)}</option>`).join('')}</select></div><div class="edit-head leader-row"><span>Ad soyad</span><span>Görev</span><span>Birim</span><span>Telefon</span><span>Adres</span><span>Mahalle</span><span></span><span></span></div>${list.map(leaderRow).join('')||'<div class="empty small-empty">Kayıt bulunamadı.</div>'}</section>`;}
+    const GROUP_OPTS=[['yurutme','Yürütme Kurulu (tüm mahalleler)'],['il_koord','İl Koordinatörü (tüm mahalleler)'],['yonetim','Yönetim Kurulu (seçili mahalleler)'],['mahalle','Mahalle Başkanı']];
+    function adminUsers(){const hoods=Array.from(new Set([...(state.memberHoods||[]),...Object.keys((state.org&&state.org.hoods)||{}),...state.users.flatMap(u=>u.neighborhoods||[])])).filter(isKepezNeighborhood).sort((a,b)=>a.localeCompare(b,'tr')); const q=norm(state.adminUserQuery||''); const g=state.adminUserGroup||''; const list=state.users.filter(u=>(!g||u.group===g)&&(!q||norm([u.name,u.loginUsername,(u.neighborhoods||[]).join(' ')].join(' ')).includes(q)));
+      const counts=Object.fromEntries(GROUP_OPTS.map(([k])=>[k,state.users.filter(u=>u.group===k).length]));
+      return `<section class="admin-section"><div class="admin-section-head"><h2>Kullanıcılar ve Yetkiler</h2><span class="small">Yürütme ve il koordinatörleri tüm mahalleleri, yönetim kurulu yalnızca seçili mahalleleri, mahalle başkanları kendi mahallesini görür.</span></div>
+      <div class="scope-chips"><button type="button" class="scope-chip ${!g?'active':''}" data-user-group="">Tümü<span>${state.users.length}</span></button>${GROUP_OPTS.map(([k,v])=>`<button type="button" class="scope-chip ${g===k?'active':''}" data-user-group="${k}">${esc(v.replace(/ \(.*\)/,''))}<span>${counts[k]}</span></button>`).join('')}</div>
+      <input id="adminUserSearch" type="search" placeholder="Ad, kullanıcı adı veya mahalle ara" value="${esc(state.adminUserQuery||'')}">
+      ${list.map(a=>{const scoped=a.group==='yonetim'||a.group==='mahalle'; const sel=new Set(a.neighborhoods||[]); return `<div class="user-card ${a.disabled?'disabled':''}" data-user="${esc(a.username)}">
+        <div class="user-card-head"><strong>${esc(a.name)}</strong><span class="badge ${a.group==='yurutme'||a.group==='il_koord'?'called':a.group==='mahalle'?'later':'new'}">${esc((GROUP_OPTS.find(x=>x[0]===a.group)||['',''])[1].replace(/ \(.*\)/,''))}</span><span class="small">${a.group==='yurutme'||a.group==='il_koord'||a.allHoods?'Tüm mahalleler':(a.neighborhoods||[]).length+' mahalle'}</span></div>
+        <div class="user-card-grid"><label>Kullanıcı adı<input data-login-username value="${esc(a.loginUsername)}"></label><label>Ad soyad<input data-display-name value="${esc(a.name)}"></label><label>Şifre<input data-password value="${esc(a.password)}"></label><label>Referans adı<input data-ref-name value="${esc(a.refName||'')}" placeholder="Boşsa ad soyad"></label><label>Grup<select data-group>${GROUP_OPTS.map(([k,v])=>`<option value="${k}" ${a.group===k?'selected':''}>${esc(v)}</option>`).join('')}</select></label></div>
+        <details class="hood-picker" ${scoped?'':'hidden'}><summary>Sorumlu mahalleler: <b data-hood-count>${sel.size}</b></summary><div class="hood-grid">${hoods.map(h=>`<label class="hood-opt"><input type="checkbox" data-hood-opt value="${esc(h)}" ${sel.has(h)?'checked':''}>${esc(h.replace(/ MAH\.$/,''))}</label>`).join('')}</div></details>
+        <div class="actions"><button type="button" data-save-user>Kaydet</button><button type="button" class="${a.disabled?'secondary':'danger'}" data-toggle-user>${a.disabled?'Geri Al':'Pasifleştir'}</button></div></div>`;}).join('')||'<div class="empty small-empty">Kullanıcı bulunamadı.</div>'}</section>`;}
+    function adminImport(){const idx=state.memberIndex; return `<section class="admin-section"><div class="admin-section-head"><h2>Güncel Üye Listesini Yükle</h2></div><p>AKBİS'ten alınan Excel dosyasını seçin. Listede olmayan üyeler sistemden kaldırılır, yeni üyeler eklenir. Elle yapılmış telefon/adres düzenlemeleri korunur.</p><p class="small">Beklenen sütunlar: TC Kimlik No, Adı, Soyadı, Cep Telefonu, Referanslar, Üyelik Tarihi, Seçmen Adres. TC numaraları sunucuya gönderilmez; tarayıcıda geri çevrilemez bir koda dönüştürülür ve hiçbir ekranda gösterilmez.</p><p class="small">Şu anki liste: ${idx?`${state.members.length.toLocaleString('tr-TR')} üye • ${esc(fmtDate(idx.updatedAt))}`:'henüz yüklenmedi'}</p><input type="file" id="importFile" accept=".xlsx,.xls,.csv"><div id="importPreview"></div><div id="importProgress" class="small"></div></section>`;}
+    function bindAdmin(){
+      document.querySelectorAll('[data-admin-tab]').forEach(b=>b.onclick=()=>{state.adminTab=b.dataset.adminTab; save(); renderAdmin(); if(state.adminTab==='talepler'||state.adminTab==='genel')loadRequests().then(()=>{if(state.mode==='admin')renderAdmin();});});
+      const push=$('pushForm'); if(push)push.onsubmit=sendAdminPush;
+      const lf=$('logFilterForm'); if(lf){const apply=()=>{const fd=new FormData(lf); state.logFilter=Object.fromEntries(['from','to','user','status','hood','q'].map(k=>[k,String(fd.get(k)||'')])); const pos=lf.querySelector('[name=q]').selectionStart; renderAdmin(); const qi=document.querySelector('#logFilterForm [name=q]'); if(document.activeElement!==qi&&state.logFilter.q){qi.focus(); try{qi.setSelectionRange(pos,pos);}catch(e){}}}; lf.onchange=apply; lf.querySelector('[name=q]').oninput=()=>{clearTimeout(bindAdmin.t); bindAdmin.t=setTimeout(apply,300);}; $('logFilterClear').onclick=()=>{state.logFilter={from:'',to:'',user:'',status:'',hood:'',q:''}; renderAdmin();}; $('logsExport').onclick=()=>exportLogs(filteredLogs());}
+      const ms=$('adminMemberSearch'); if(ms){ms.oninput=()=>{state.adminMemberQuery=ms.value; clearTimeout(bindAdmin.t); bindAdmin.t=setTimeout(()=>{renderAdmin(); const i=$('adminMemberSearch'); i.focus(); i.setSelectionRange(i.value.length,i.value.length);},250);}; $('adminMemberHood').onchange=e=>{state.adminMemberHood=e.target.value; renderAdmin();};}
+      const ls=$('adminLeaderSearch'); if(ls){ls.oninput=()=>{state.adminLeaderQuery=ls.value; clearTimeout(bindAdmin.t); bindAdmin.t=setTimeout(()=>{renderAdmin(); const i=$('adminLeaderSearch'); i.focus(); i.setSelectionRange(i.value.length,i.value.length);},250);}; $('adminLeaderBranch').onchange=e=>{state.adminLeaderBranch=e.target.value; renderAdmin();};}
+      const us=$('adminUserSearch'); if(us)us.oninput=()=>{state.adminUserQuery=us.value; clearTimeout(bindAdmin.t); bindAdmin.t=setTimeout(()=>{renderAdmin(); const i=$('adminUserSearch'); i.focus(); i.setSelectionRange(i.value.length,i.value.length);},250);};
+      document.querySelectorAll('[data-user-group]').forEach(b=>b.onclick=()=>{state.adminUserGroup=b.dataset.userGroup; renderAdmin();});
+      const f=$('importFile'); if(f)f.onchange=()=>{if(f.files[0])prepareImport(f.files[0]);};
+    }
+    async function saveMemberEdit(form){const id=form.dataset.memberEdit; const fd=new FormData(form); const payload={name:String(fd.get('name')||'').trim(),phone:cleanPhone(fd.get('phone')),address:String(fd.get('address')||'').trim(),neighborhood:String(fd.get('neighborhood')||'')}; if(!payload.name){toast('Ad soyad boş olamaz.'); return;} try{const data=await api('/members/'+encodeURIComponent(id),{method:'PUT',json:payload}); state.memberEdits[id]=data.edit; const m=state.memberById.get(id); if(m)Object.assign(m,data.edit); const mm=state.mine.find(x=>x.id===id); if(mm)Object.assign(mm,data.edit); fillNeighborhoods(); render(); toast('Üye bilgileri kaydedildi.');}catch(e){toast('Üye kaydedilemedi.');}}
+    async function saveLeader(form,isNew){const fd=new FormData(form); const payload=Object.fromEntries(['name','role','branch','phone','address','neighborhood'].map(k=>[k,String(fd.get(k)||'').trim()])); if(!payload.name){toast('Ad soyad gerekli.'); return;} try{const data=isNew?await api('/leaders',{method:'POST',json:payload}):await api('/leaders/'+encodeURIComponent(form.dataset.leaderEdit),{method:'PUT',json:payload}); state.leaders=data.leaders||state.leaders; renderAdmin(); toast(isNew?'Kişi eklendi.':'Kaydedildi.');}catch(e){toast('Kaydedilemedi.');}}
+    async function deleteLeader(id){const l=state.leaders.find(x=>x.id===id); if(!l||!confirm(`${l.name} (${l.role}) silinsin mi?`))return; try{const data=await api('/leaders/'+encodeURIComponent(id),{method:'DELETE'}); state.leaders=data.leaders||[]; renderAdmin(); toast('Silindi.');}catch(e){toast('Silinemedi.');}}
+    async function updateRequest(id,patch){try{await api('/requests/'+encodeURIComponent(id),{method:'PUT',json:patch}); await loadRequests(); renderAdmin(); toast('Talep güncellendi.');}catch(e){toast('Talep güncellenemedi.');}}
+    async function deleteRequest(id){if(!confirm('Bu talep silinsin mi?'))return; try{await api('/requests/'+encodeURIComponent(id),{method:'DELETE'}); await loadRequests(); renderAdmin(); toast('Talep silindi.');}catch(e){toast('Talep silinemedi.');}}
+    async function saveUserRow(row,toggleDisabled){if(!row)return; const u=state.users.find(x=>x.username===row.dataset.user)||{}; const group=row.querySelector('[data-group]').value; const hoods=[...row.querySelectorAll('[data-hood-opt]:checked')].map(x=>x.value); if(group==='mahalle'&&hoods.length!==1){toast('Mahalle başkanı için tek mahalle seçin.'); return;} if(group==='yonetim'&&!hoods.length&&!confirm('Hiç mahalle seçilmedi; bu kişi üye listesi göremeyecek. Devam edilsin mi?'))return; const payload={username:row.dataset.user,loginUsername:normalizeUser(row.querySelector('[data-login-username]').value)||row.dataset.user,name:row.querySelector('[data-display-name]').value.trim(),password:row.querySelector('[data-password]').value.trim(),refName:row.querySelector('[data-ref-name]').value.trim(),group,neighborhoods:hoods,disabled:toggleDisabled?!u.disabled:!!u.disabled}; try{const data=await api('/access',{method:'POST',json:payload}); state.users=data.users||state.users; renderAdmin(); toast(payload.disabled?'Kullanıcı pasifleştirildi.':'Kullanıcı kaydedildi.');}catch(e){toast('Kullanıcı kaydedilemedi.');}}
+
+    // ------------------------------------------------------------------ Excel'den üye listesi yükleme
+    function loadScript(src){return new Promise((resolve,reject)=>{if(window.XLSX)return resolve(); const s=document.createElement('script'); s.src=src; s.onload=resolve; s.onerror=()=>reject(new Error('script_load')); document.head.appendChild(s);});}
+    function pickColumn(headers,tests){return headers.find(h=>tests.some(t=>t(normalizeUser(h))));}
+    let pendingImport=null;
+    async function prepareImport(file){
+      const out=$('importPreview'), prog=$('importProgress'); out.innerHTML=''; prog.textContent='Dosya okunuyor…'; pendingImport=null;
+      try{
+        await loadScript(XLSX_URL);
+        const wb=XLSX.read(await file.arrayBuffer(),{type:'array',cellDates:false});
+        const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:'',raw:true});
+        if(!rows.length)throw new Error('Dosyada satır bulunamadı.');
+        const headers=Object.keys(rows[0]);
+        const col={tc:pickColumn(headers,[h=>h.includes('tc')||h.includes('kimlik')]),first:pickColumn(headers,[h=>h==='adi'||h==='ad'||h==='isim']),last:pickColumn(headers,[h=>h.startsWith('soyad')]),phone:pickColumn(headers,[h=>h.includes('cep')||h.includes('telefon')]),refs:pickColumn(headers,[h=>h.startsWith('referans')]),joined:pickColumn(headers,[h=>h.includes('uyelik')||h.includes('tarih')]),address:pickColumn(headers,[h=>h.includes('adres')])};
+        const missing=Object.entries(col).filter(([k,v])=>!v&&['tc','first','last','address'].includes(k)).map(([k])=>k);
+        if(missing.length)throw new Error('Gerekli sütun bulunamadı: '+missing.join(', '));
+        prog.textContent='Sunucudan anahtar alınıyor…';
+        const {secret}=await api('/admin/id-secret');
+        const keyBytes=new Uint8Array(secret.match(/../g).map(h=>parseInt(h,16)));
+        const hmacKey=await crypto.subtle.importKey('raw',keyBytes,{name:'HMAC',hash:'SHA-256'},false,['sign']);
+        const enc=new TextEncoder();
+        const byHood={}; const shards=Array.from({length:REF_SHARDS},()=>({})); const ids=new Set(); let skipped=0, withPhone=0;
+        for(let i=0;i<rows.length;i+=500){
+          const batch=rows.slice(i,i+500);
+          const sigs=await Promise.all(batch.map(r=>{const tc=String(r[col.tc]||'').replace(/\D/g,''); return tc.length===11?crypto.subtle.sign('HMAC',hmacKey,enc.encode('member:'+tc)):null;}));
+          batch.forEach((r,j)=>{
+            if(!sigs[j]){skipped++; return;}
+            const id=Array.from(new Uint8Array(sigs[j])).map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,20);
+            if(ids.has(id))return; ids.add(id);
+            const address=String(r[col.address]||'').replace(/\s+/g,' ').trim();
+            const hm=address.match(/KEPEZ\s+(.+?MAH\.)/i); const hood=hm?hm[1].trim().toLocaleUpperCase('tr-TR'):'Mahalle Yok';
+            const name=[r[col.first],r[col.last]].map(x=>String(x||'').trim()).filter(Boolean).join(' ').toLocaleUpperCase('tr-TR');
+            const phone=col.phone?cleanPhone(r[col.phone]):''; if(phone)withPhone++;
+            const refs=col.refs?String(r[col.refs]||'').split(',').map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean):[];
+            const jv=col.joined?r[col.joined]:''; let joined=''; if(typeof jv==='number'&&jv>1000&&jv<100000){const dc=XLSX.SSF.parse_date_code(jv); joined=`${dc.y}-${String(dc.m).padStart(2,'0')}-${String(dc.d).padStart(2,'0')}`;} else {joined=String(jv||'').trim(); const dm=joined.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})/); if(dm)joined=`${dm[3]}-${dm[2].padStart(2,'0')}-${dm[1].padStart(2,'0')}`; else if(!/^\d{4}-\d{2}-\d{2}/.test(joined)){const d=new Date(joined); joined=isNaN(d)?'':`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}} joined=joined.slice(0,10);
+            const row=[id,name,phone,address,joined,refs];
+            (byHood[hood]=byHood[hood]||[]).push(row);
+            new Set(refs.map(refKey).filter(Boolean)).forEach(k=>{const s=shards[refShard(k)]; (s[k]=s[k]||[]).push([hood,row]);});
+          });
+          prog.textContent=`Hazırlanıyor… ${Math.min(i+500,rows.length).toLocaleString('tr-TR')} / ${rows.length.toLocaleString('tr-TR')}`;
+        }
+        const oldIds=new Set(state.members.map(m=>m.id)); const added=[...ids].filter(id=>!oldIds.has(id)).length; const removed=[...oldIds].filter(id=>!ids.has(id)).length;
+        pendingImport={byHood,shards,nameShards:nameShardsFrom(byHood),ids,total:ids.size};
+        prog.textContent='';
+        out.innerHTML=`<div class="admin-grid four"><div class="admin-card"><strong>Dosyadaki üye</strong><h2>${ids.size.toLocaleString('tr-TR')}</h2><span class="small">${withPhone.toLocaleString('tr-TR')} telefonlu</span></div><div class="admin-card"><strong>Yeni eklenecek</strong><h2>${added.toLocaleString('tr-TR')}</h2></div><div class="admin-card"><strong>Kaldırılacak</strong><h2>${removed.toLocaleString('tr-TR')}</h2><span class="small">listede olmayanlar</span></div><div class="admin-card"><strong>Mahalle</strong><h2>${Object.keys(byHood).length}</h2>${skipped?`<span class="small">${skipped} satır TC hatalı, atlandı</span>`:''}</div></div><button type="button" id="importConfirm">Listeyi Yükle ve Güncelle</button>`;
+        $('importConfirm').onclick=runImport;
+      }catch(e){prog.textContent=''; out.innerHTML=`<div class="login-error">Dosya okunamadı: ${esc(e.message||e)}</div>`;}
+    }
+    async function runImport(){
+      if(!pendingImport)return; const {byHood,shards,nameShards,ids,total}=pendingImport; const btn=$('importConfirm'); btn.disabled=true; const prog=$('importProgress');
+      try{
+        const {version}=await api('/admin/import/start',{method:'POST',json:{}});
+        const hoodNames=Object.keys(byHood).sort((a,b)=>a.localeCompare(b,'tr')); const steps=hoodNames.length+REF_SHARDS*2; let done=0;
+        const send=async(kind,key,payload)=>{for(let attempt=0;attempt<3;attempt++){try{await api(`/admin/import/part?version=${encodeURIComponent(version)}&kind=${kind}&key=${encodeURIComponent(key)}`,{method:'POST',body:payload,headers:{'Content-Type':'text/plain;charset=utf-8'}}); done++; prog.textContent=`Yükleniyor… %${Math.round(done/steps*100)}`; return;}catch(e){if(attempt===2)throw e; await new Promise(r=>setTimeout(r,1500));}}};
+        for(const h of hoodNames)await send('hood',h,JSON.stringify(byHood[h]));
+        for(let i=0;i<REF_SHARDS;i++)await send('ref',String(i),JSON.stringify(shards[i]));
+        for(let i=0;i<REF_SHARDS;i++)await send('name',String(i),JSON.stringify(nameShards[i]));
+        await api('/admin/import/finish',{method:'POST',json:{version,nameIndex:true,total,hoods:hoodNames.map(h=>({name:h,count:byHood[h].length})),ids:Object.keys(state.memberEdits).filter(id=>ids.has(id))}});
+        prog.textContent='Liste güncellendi, yeniden yükleniyor…'; pendingImport=null;
+        await loadMembers(); state.mineLoaded=false; fillNeighborhoods(); renderAdmin(); toast(`Üye listesi güncellendi: ${total.toLocaleString('tr-TR')} üye.`);
+      }catch(e){btn.disabled=false; prog.textContent='Yükleme tamamlanamadı: '+(e.message||e)+'. Mevcut liste değişmedi; tekrar deneyebilirsiniz.';}
+    }
+
+    // ------------------------------------------------------------------ üye sorgulama
+    function surnameKey(name){const t=refKey(name).split(' ').filter(Boolean); return t[t.length-1]||'';}
+    function nameShardsFrom(byHood){const shards=Array.from({length:REF_SHARDS},()=>({})); Object.entries(byHood).forEach(([hood,rows])=>rows.forEach(row=>{const k=surnameKey(row[1]); if(!k)return; const sh=shards[refShard(k)]; (sh[k]=sh[k]||[]).push([hood,row]);})); return shards;}
+    let nameIndexBuilding=false;
+    // Eski yüklemelerde sorgu dizini yoksa admin tarayıcısı bir kez oluşturur (arka planda)
+    async function buildNameIndex(){if(nameIndexBuilding||!state.memberIndex)return; nameIndexBuilding=true; const version=state.memberIndex.version; try{const shards=nameShardsFrom(state.rawMembers||{}); for(let i=0;i<REF_SHARDS;i++)await api(`/admin/import/part?version=${encodeURIComponent(version)}&kind=name&key=${i}`,{method:'POST',body:JSON.stringify(shards[i]),headers:{'Content-Type':'text/plain;charset=utf-8'}}); await api('/admin/import/name-done',{method:'POST',json:{version}}); state.memberIndex.nameIndex=true;}catch(e){}finally{nameIndexBuilding=false;}}
+    const CHECK_TEXT={
+      active:['ok','AKTİF ÜYE','Bu kişi Kepez\'de kayıtlı aktif üyedir.'],
+      not_member:['no','ÜYE DEĞİL','Kepez\'de bu ad soyadla kayıtlı üye yok. İkametgâhı Kepez\'de ise üye yapılabilir.'],
+      need_phone:['warn','AYNI İSİMDE BİRDEN FAZLA KİŞİ VAR','Kesin sonuç için telefon numarasını da yazıp tekrar sorgulayın.'],
+      uncertain:['warn','KESİNLİK YOK','Aynı isimde birden fazla kayıt var ve telefon numarasıyla netleşmedi. Lütfen Bilgi İşlem\'e ulaşın.']
+    };
+    function checkResultHtml(r){
+      if(!r)return '';
+      if(r.error)return `<div class="check-result warn"><strong>Sorgu yapılamadı</strong><p>${esc(r.error)}</p></div>`;
+      const [cls,title,text]=CHECK_TEXT[r.result]||['warn','KESİNLİK YOK','Lütfen Bilgi İşlem\'e ulaşın.'];
+      const m=r.member;
+      const facts=m?`<div class="facts"><div class="fact"><div>Ad Soyad</div><div>${esc(m.name)}</div></div><div class="fact"><div>Mahalle</div><div>${esc(m.neighborhood||'-')}</div></div><div class="fact"><div>Üyelik Tarihi</div><div>${esc(fmtDay(m.joined))}</div></div><div class="fact"><div>Kayıtlı Telefon</div><div>${esc(m.phone||'Yok')}</div></div></div>`:'';
+      const extra=[r.nameMatches>1?`Bu isimde Kepez'de ${r.nameMatches} kayıt bulundu${r.byPhone?', telefon numarasıyla eşleşti':''}.`:'', r.phoneMismatch?'Not: Girilen telefon, kayıtlı telefonla eşleşmiyor. Kişinin aynı olduğundan emin olun.':''].filter(Boolean).map(x=>`<p class="small">${esc(x)}</p>`).join('');
+      return `<div class="check-result ${cls}"><div class="check-badge">${esc(title)}</div><p>${esc(text)}</p>${extra}${facts}</div>`;
+    }
+    function renderCheck(){
+      $('countText').textContent='Üye Sorgula'; $('memberList').innerHTML='';
+      const c=state.check||{name:'',phone:'',result:null};
+      $('detail').innerHTML=`<div class="admin-shell check-shell"><div class="admin-section-head"><h2>Üye Sorgula</h2></div>
+        <div class="check-warning"><strong>Dikkat:</strong> Bu sorgu yalnızca <strong>Kepez ilçesi</strong> üyeliklerini gösterir. Kişinin ikametgâhının Kepez'de olduğundan emin olun; başka ilçelerdeki üyelikler burada görünmez.</div>
+        <form id="checkForm" class="form check-form"><div class="field"><label>Ad Soyad</label><input id="checkName" value="${esc(c.name)}" placeholder="Örn. Mehmet Yılmaz" autocomplete="off" required></div><div class="field"><label>Telefon</label><input id="checkPhone" value="${esc(c.phone)}" placeholder="05xx xxx xx xx" inputmode="tel" autocomplete="off"></div><div class="actions"><button>Sorgula</button><button type="button" class="secondary" id="checkClear">Temizle</button></div></form>
+        <div id="checkResult">${checkResultHtml(c.result)}</div></div>`;
+      $('checkForm').onsubmit=async e=>{e.preventDefault(); const name=$('checkName').value.trim(), phone=$('checkPhone').value.trim(); if(name.split(/\s+/).filter(Boolean).length<2){toast('Lütfen ad ve soyadı birlikte yazın.'); return;} const btn=e.target.querySelector('button'); btn.disabled=true; $('checkResult').innerHTML='<div class="small">Sorgulanıyor…</div>'; let result; try{result=await api('/members/check',{method:'POST',json:{name,phone}});}catch(err){result={error:err.message==='no_member_list'?'Üye listesi henüz yüklenmemiş.':err.message==='not_found'?'Sunucu henüz güncellenmemiş. Yöneticinin "npx wrangler deploy" komutunu çalıştırması gerekiyor.':'Sunucuya ulaşılamadı, tekrar deneyin.'};} btn.disabled=false; state.check={name,phone,result}; $('checkResult').innerHTML=checkResultHtml(result);};
+      $('checkClear').onclick=()=>{state.check=null; renderCheck(); $('checkName').focus();};
+    }
+
+    // ------------------------------------------------------------------ duyurular
+    async function loadAnnouncements(showToast=false){try{const data=await api('/announcements'); state.announcements=data.announcements||[]; renderNotice(); if(showToast)toast('Duyurular yenilendi.'); if(state.mode==='home')render();}catch(e){if(showToast)toast('Duyurular alınamadı.');}}
+    async function createAnnouncement(e){e.preventDefault(); if(!isAdmin())return; const input=$('homeAnnouncementInput'); const target=($('homeAnnouncementTarget')||{value:'all'}).value; const body=input?input.value.trim():''; if(!body){toast('Duyuru metni gerekli.'); return;} try{await api('/announcements',{method:'POST',json:{body,target,authorName:displayName(state.user.name),url:location.href}}); input.value=''; await loadAnnouncements(); toast('Duyuru yayınlandı ve hedef kitleye bildirim gönderildi.');}catch(err){toast('Duyuru yayınlanamadı.');}}
+    async function deleteAnnouncement(id){if(!confirm('Duyuru silinsin mi?'))return; try{await api('/announcements/'+encodeURIComponent(id),{method:'DELETE'}); await loadAnnouncements(); toast('Duyuru silindi.');}catch(e){toast('Duyuru silinemedi.');}}
+    async function markAnnouncementsRead(){if(!state.user||!state.announcements.length)return; const latest=state.announcements[0]; if(state.lastSeenAnnouncement===latest.id&&state.lastSeenAt)return; markSeen(latest); updateNavBadges(); try{await api('/announcements/read',{method:'POST',json:{announcementId:latest.id}}); await loadAnnouncements();}catch(e){}}
+    async function toggleAnnouncementLike(id){try{await api('/announcements/like',{method:'POST',json:{announcementId:id}}); await loadAnnouncements(); toast('Beğeni kaydedildi.');}catch(e){toast('Beğeni kaydedilemedi.');}}
+
+    // ------------------------------------------------------------------ giriş / çıkış
+    function showLoginMessage(text){$('loginError').textContent=text||'';}
+    async function startSession(token,user,remember){
+      storeToken(token,remember); state.user=user; load();
+      indexLogs();
+      document.body.classList.remove('locked'); showLoginMessage('');
+      $('memberList').innerHTML='<div class="empty">Üye listesi yükleniyor…</div>';
+      loadMembers().then(()=>{indexLogs(); fillNeighborhoods(); render();}).catch(e=>{if(e.message!=='unauthorized'&&!state.members.length)toast('Üye listesi alınamadı. Sayfayı aşağı çekerek yenileyin.');});
+      document.body.classList.toggle('no-logs',!isAdmin()); updateDrawer(); $('adminNavBtn').hidden=!isAdmin(); $('analysisNavBtn').hidden=!canUseAnalysis(); $('exportBtn').hidden=!isAdmin();
+      fillNeighborhoods(); setMode(state.mode||'home');
+      if(user.mustChangePassword)openPasswordModal(true);
+      void Promise.allSettled([loadOrg(),loadLeaders(),flushQueuedLogs(),loadAnnouncements(),loadLogs(),loadLocations(),loadRequests(),loadUsers()]).then(()=>{if(state.user){renderNotice(); render();}});
+    }
+    async function login(username,password,remember){const data=await api('/auth/login',{method:'POST',json:{username,password}}); localStorage.removeItem(legacyLoginKey); await startSession(data.token,data.user,remember);}
+    function logout(){cacheClear(); localStorage.removeItem(tokenKey); sessionStorage.removeItem(tokenKey); localStorage.removeItem(legacyLoginKey); if(state.locationWatch!==null&&navigator.geolocation)navigator.geolocation.clearWatch(state.locationWatch); state.locationWatch=null; Object.assign(state,{members:[],memberById:new Map(),mine:[],mineLoaded:false,leaders:[],users:[],logs:[],requests:[],user:null,token:'',selected:null}); memberLogs.clear(); document.body.classList.add('locked'); closeDrawer(); $('usernameInput').value=''; $('passwordInput').value=''; showLoginMessage(''); $('adminNavBtn').hidden=true; $('analysisNavBtn').hidden=true; $('exportBtn').hidden=true; $('detail').innerHTML='<div class="empty">Giriş yapınca üyeler açılacak.</div>'; $('memberList').innerHTML='<div class="empty">Üye listesi giriş sonrası yüklenir.</div>'; $('logs').innerHTML='<div class="empty">Loglar girişten sonra görünür.</div>';}
+    async function tryAutoLogin(){try{await tryAutoLoginInner();}finally{document.body.classList.remove('resuming');}}
+    async function tryAutoLoginInner(){
+      const token=savedToken();
+      try{
+        if(token){state.token=token; document.body.classList.add('resuming'); showLoginMessage('Oturum açılıyor…'); const data=await api('/auth/me'); await startSession(token,data.user,!!localStorage.getItem(tokenKey)); return;}
+        const legacy=JSON.parse(localStorage.getItem(legacyLoginKey)||'null');
+        if(legacy&&legacy.username&&legacy.password){showLoginMessage('Oturum açılıyor…'); await login(legacy.username,legacy.password,true);}
+      }catch(e){
+        if(e.status===401||e.message==='login_failed'||e.message==='unauthorized'){localStorage.removeItem(tokenKey); sessionStorage.removeItem(tokenKey); localStorage.removeItem(legacyLoginKey); state.token=''; showLoginMessage('Oturum süresi doldu. Lütfen giriş yapın.');}
+        else showLoginMessage('Sunucuya bağlanılamadı. İnternet bağlantınızı kontrol edip sayfayı yenileyin.');
+      }
+    }
+    function openPasswordModal(forced){$('pwModal').hidden=false; $('pwForced').hidden=!forced; $('pwCancel').hidden=forced; $('pwCurrent').value=''; $('pwNew').value=''; $('pwNew2').value=''; $('pwError').textContent=''; setTimeout(()=>$('pwCurrent').focus(),50);}
+    async function submitPassword(e){e.preventDefault(); const cur=$('pwCurrent').value, a=$('pwNew').value.trim(), b=$('pwNew2').value.trim(); if(a.length<6){$('pwError').textContent='Yeni şifre en az 6 karakter olmalı.'; return;} if(a!==b){$('pwError').textContent='Yeni şifreler aynı değil.'; return;} try{const data=await api('/auth/password',{method:'POST',json:{currentPassword:cur,newPassword:a}}); storeToken(data.token,!!localStorage.getItem(tokenKey)); state.user=data.user; $('pwModal').hidden=true; toast('Şifreniz değiştirildi.');}catch(err){$('pwError').textContent=err.message==='wrong_password'?'Mevcut şifre hatalı.':err.message==='weak_password'?'Bu şifre kullanılamaz, başka bir şifre seçin.':'Şifre değiştirilemedi.';}}
+
+    // ------------------------------------------------------------------ bildirimler
+    function urlBase64ToUint8Array(value){const padded=value+'='.repeat((4-value.length%4)%4); const raw=atob(padded.replace(/-/g,'+').replace(/_/g,'/')); return Uint8Array.from(raw,c=>c.charCodeAt(0));}
+    async function enablePush(){if(!('serviceWorker' in navigator)||!('PushManager' in window)){toast('Bu cihaz bildirim desteklemiyor.'); return;} const permission=await Notification.requestPermission(); if(permission!=='granted'){toast('Bildirim izni verilmedi.'); return;} const registration=await navigator.serviceWorker.register('./sw.js'); const existing=await registration.pushManager.getSubscription(); const subscription=existing||await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(PUSH_PUBLIC_KEY)}); try{await api('/subscribe',{method:'POST',json:{subscription}}); toast('Bildirimler açıldı.');}catch(e){toast('Bildirim kaydı yapılamadı.');}}
+    async function sendAdminPush(e){e.preventDefault(); const body=$('pushBody').value.trim(); if(!body){toast('Mesaj gerekli.'); return;} try{const data=await api('/send',{method:'POST',json:{title:$('pushTitle').value.trim()||'AK Parti Kepez',body,target:$('pushTarget').value,url:location.href}}); toast(`Bildirim gönderildi: ${data.sent||0} cihaz`);}catch(err){toast('Bildirim gönderilemedi.');}}
+    async function refreshApp(){if(!state.user)return; await flushQueuedLogs(); await Promise.allSettled([loadAnnouncements(),loadLogs(),loadLocations(),loadRequests(),loadLeaders()]); if(state.memberTab==='mine')await loadMine(true); render(); toast('Sayfa yenilendi.');}
+    function scrollDetailIntoView(){if(!window.matchMedia('(max-width:1050px)').matches)return; const panel=$('detail').closest('.panel'); if(panel) setTimeout(()=>panel.scrollIntoView({behavior:'smooth',block:'start'}),60);}
+    function setupPullRefresh(){let startY=0,tracking=false,ready=false; const indicator=$('pullRefresh'); window.addEventListener('touchstart',e=>{if(window.scrollY>0||document.body.classList.contains('locked'))return; startY=e.touches[0].clientY; tracking=true; ready=false;},{passive:true}); window.addEventListener('touchmove',e=>{if(!tracking)return; const diff=e.touches[0].clientY-startY; if(diff>70){ready=true; indicator.classList.add('show');} else if(diff<20){ready=false; indicator.classList.remove('show');}},{passive:true}); window.addEventListener('touchend',()=>{if(!tracking)return; tracking=false; indicator.classList.remove('show'); if(ready)refreshApp();},{passive:true});}
+
+    // ------------------------------------------------------------------ olaylar
+    $('menuBtn').onclick=()=>{updateDrawer(); $('drawer').classList.add('open'); $('drawer').setAttribute('aria-hidden','false');};
+    $('closeMenuBtn').onclick=closeDrawer;
+    $('drawer').onclick=e=>{if(e.target.id==='drawer') closeDrawer(); const mode=e.target.closest('[data-mode]'); if(mode)setMode(mode.dataset.mode);};
+    $('logoutBtn').onclick=logout;
+    $('pushBtn').onclick=enablePush;
+    $('locationBtn').onclick=()=>shareLocation(false);
+    $('passwordBtn').onclick=()=>{closeDrawer(); openPasswordModal(false);};
+    $('pwForm').onsubmit=submitPassword;
+    $('pwCancel').onclick=()=>{$('pwModal').hidden=true;};
+    $('detail').addEventListener('submit',e=>{const f=e.target; if(f.matches('[data-member-edit]')){e.preventDefault(); saveMemberEdit(f);} else if(f.matches('[data-leader-edit]')){e.preventDefault(); saveLeader(f,false);} else if(f.matches('[data-leader-new]')){e.preventDefault(); saveLeader(f,true);} else if(f.matches('[data-request-reply]')){e.preventDefault(); updateRequest(f.dataset.requestReply,{reply:new FormData(f).get('reply')});}});
+    $('detail').addEventListener('change',e=>{const s=e.target.closest('[data-request-status]'); if(s)updateRequest(s.dataset.requestStatus,{status:s.value}); const gs=e.target.closest('[data-group]'); if(gs){const card=gs.closest('[data-user]'); const hp=card.querySelector('.hood-picker'); hp.hidden=!(gs.value==='yonetim'||gs.value==='mahalle'); if(!hp.hidden)hp.open=true;} const ho=e.target.closest('[data-hood-opt]'); if(ho){const card=ho.closest('[data-user]'); card.querySelector('[data-hood-count]').textContent=card.querySelectorAll('[data-hood-opt]:checked').length;}});
+    $('detail').addEventListener('click',e=>{
+      const t=e.target;
+      const del=t.closest('[data-delete-announcement]'); if(del){deleteAnnouncement(del.dataset.deleteAnnouncement); return;}
+      const like=t.closest('[data-like-announcement]'); if(like){toggleAnnouncementLike(like.dataset.likeAnnouncement); return;}
+      const su=t.closest('[data-save-user]'); if(su){saveUserRow(su.closest('[data-user]'),false); return;}
+      const tu=t.closest('[data-toggle-user]'); if(tu){saveUserRow(tu.closest('[data-user]'),true); return;}
+      const dl=t.closest('[data-leader-delete]'); if(dl){deleteLeader(dl.dataset.leaderDelete); return;}
+      const dr=t.closest('[data-request-delete]'); if(dr){deleteRequest(dr.dataset.requestDelete); return;}
+      const call=t.closest('[data-auto-call]'); if(call){sessionStorage.setItem('pending-auto-call',call.dataset.autoCall); setTimeout(()=>{const p=$('autoPrompt'); if(p)p.classList.add('show');},800); return;}
+      const sc=t.closest('[data-auto-scope]'); if(sc){state.autoScope=sc.dataset.autoScope; state.selected=null; save(); render(); return;}
+      const jm=t.closest('[data-auto-jump]'); if(jm){state.selected=jm.dataset.autoJump; sessionStorage.removeItem('pending-auto-call'); save(); render(); return;}
+      const ah=t.closest('[data-analysis-hood]'); if(ah){state.selectedAnalysisNeighborhood=ah.dataset.analysisHood; state.selectedStreet=null; state.analysisQuery=''; save(); renderAnalysis(); return;}
+      if(t.closest('[data-back-hood]')){state.selectedAnalysisNeighborhood=null; state.selectedStreet=null; state.analysisQuery=''; save(); renderAnalysis(); return;}
+      const sr=t.closest('[data-street]'); if(sr){state.selectedStreet=sr.dataset.street; save(); renderAnalysis(); if(window.matchMedia('(max-width:1050px)').matches)setTimeout(()=>{const m=$('kepezMap'); if(m)m.scrollIntoView({behavior:'smooth',block:'start'});},120); return;}
+    });
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible'||state.mode!=='auto')return; const pending=sessionStorage.getItem('pending-auto-call'); if(!pending||pending!==state.selected)return; const p=$('autoPrompt'); if(p){p.classList.add('show'); p.scrollIntoView({block:'center',behavior:'smooth'});}});
+    document.addEventListener('keydown',e=>{if(state.mode!=='auto'||document.body.classList.contains('locked')||e.ctrlKey||e.metaKey||e.altKey)return; if(['TEXTAREA','INPUT','SELECT'].includes(document.activeElement&&document.activeElement.tagName))return; const map={'1':'called','2':'noanswer','3':'later','4':'wrong'}; if(map[e.key]){e.preventDefault(); autoResult(map[e.key]);} else if(e.key==='ArrowRight'){e.preventDefault(); autoMove(1);} else if(e.key==='ArrowLeft'){e.preventDefault(); autoMove(-1);}});
+    $('memberList').onclick=e=>{const tab=e.target.closest('[data-list-tab]'); if(tab){const t=tab.dataset.listTab; setMode(t==='members'?'list':t); state.limit=180; return;} const hood=e.target.closest('[data-leader-hood]'); if(hood){state.selectedLeaderNeighborhood=hood.dataset.leaderHood; state.selectedLeader=null; save(); render(); return;} if(e.target.closest('[data-leader-back]')){state.selectedLeaderNeighborhood=null; state.selectedLeader=null; save(); render(); return;} const leader=e.target.closest('[data-leader-id]'); if(leader){state.selectedLeader=leader.dataset.leaderId; render(); scrollDetailIntoView(); return;} const board=e.target.closest('[data-board-id]'); if(board){state.selectedLeader=board.dataset.boardId; render(); scrollDetailIntoView(); return;} const b=e.target.closest('.member[data-id]'); if(!b)return; state.selected=b.dataset.id; save(); render(); scrollDetailIntoView();};
+    $('neighborhoodSelect').onchange=e=>{state.neighborhood=e.target.value; state.limit=180; state.selected=null; save(); render();};
+    $('searchInput').oninput=e=>{state.query=e.target.value; state.limit=180; render();};
+    $('statusFilter').onchange=e=>{state.status=e.target.value; state.limit=180; render();};
+    $('nextBtn').onclick=()=>selectNext();
+    $('notice').onclick=e=>{if(e.target.closest('.notice-close')){dismissNotice(); return;} setMode('home');};
+    $('exportBtn').onclick=async()=>{if(!isAdmin())return; await loadLogs(); exportLogs(state.logs);};
+    $('loginForm').onsubmit=async e=>{e.preventDefault(); const u=$('usernameInput').value, p=$('passwordInput').value; if(!u||!p){showLoginMessage('Kullanıcı adı ve şifre gerekli.'); return;} showLoginMessage('Kontrol ediliyor…'); try{await login(u,p,$('rememberInput').checked); $('passwordInput').value='';}catch(err){showLoginMessage(err.status===401?'Kullanıcı adı veya şifre hatalı ya da kullanıcı pasif.':'Sunucuya bağlanılamadı. İnternet bağlantınızı kontrol edin.');}};
+    $('detail').innerHTML='<div class="empty">Giriş yapınca üyeler açılacak.</div>';
+    $('memberList').innerHTML='<div class="empty">Üye listesi giriş sonrası yüklenir.</div>';
+    $('logs').innerHTML='<div class="empty">Loglar girişten sonra görünür.</div>';
+    setupPullRefresh();
+    tryAutoLogin();
+  </script>
+</body>
+</html>
