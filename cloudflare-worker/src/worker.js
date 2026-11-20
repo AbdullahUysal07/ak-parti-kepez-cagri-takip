@@ -179,6 +179,7 @@ const K = {
 };
 const memberHoodKey = (version, hood) => `__members__:${version}:${hood}`;
 const memberRefKey = (version, shard) => `__members_ref__:${version}:${shard}`;
+const memberNameKey = (version, shard) => `__members_name__:${version}:${shard}`;
 
 function bytesToHex(bytes) {
   return [...new Uint8Array(bytes)].map(b => b.toString(16).padStart(2, '0')).join('');
@@ -310,14 +311,14 @@ async function membersResponse(env, user, have) {
   const allowed = user.role === 'management' ? index.hoods.map(h => h.name) : index.hoods.map(h => h.name).filter(h => user.neighborhoods.includes(h));
   const hoods = index.hoods.filter(h => allowed.includes(h.name));
   // Cihazda aynı sürüm varsa listeyi tekrar gönderme; sadece düzenlemeleri gönder.
-  if (have && have === index.version) return textResponse(`{"ok":true,"unchanged":true,"version":${JSON.stringify(index.version)},"updatedAt":${JSON.stringify(index.updatedAt || '')},"hoods":${JSON.stringify(hoods)},"edits":${edits}}`);
+  if (have && have === index.version) return textResponse(`{"ok":true,"unchanged":true,"nameIndex":${index.nameIndex ? 'true' : 'false'},"version":${JSON.stringify(index.version)},"updatedAt":${JSON.stringify(index.updatedAt || '')},"hoods":${JSON.stringify(hoods)},"edits":${edits}}`);
   // Mahalle verileri KV'den bayt akışı olarak doğrudan yanıta aktarılır; büyük listeyi
   // sunucuda çözüp yeniden üretmeye gerek kalmaz (işlemci süresi düşük kalır).
   const { readable, writable } = new TransformStream();
   const writer = writable.getWriter();
   (async () => {
     try {
-      await writer.write(encoder.encode(`{"ok":true,"version":${JSON.stringify(index.version)},"updatedAt":${JSON.stringify(index.updatedAt || '')},"hoods":${JSON.stringify(hoods)},"edits":${edits},"data":{`));
+      await writer.write(encoder.encode(`{"ok":true,"nameIndex":${index.nameIndex ? 'true' : 'false'},"version":${JSON.stringify(index.version)},"updatedAt":${JSON.stringify(index.updatedAt || '')},"hoods":${JSON.stringify(hoods)},"edits":${edits},"data":{`));
       let first = true;
       // Tüm mahalleleri aynı anda iste, sırayla yanıta yaz
       const streams = allowed.map(hood => env.SUBSCRIPTIONS.get(memberHoodKey(index.version, hood), 'stream'));
@@ -385,6 +386,55 @@ async function migrateLogs(env, logs) {
   }
   await putJson(env, K.logs, logs.slice(0, 5000));
   return logs;
+}
+
+
+// --------------------------- Üye sorgulama --------------------------------
+// Ad soyad (+ telefon) ile Kepez üyeliği kontrolü. Yalnızca karar ve en az bilgi döner.
+function nameTokens(v) { return refKey(v).split(' ').filter(Boolean); }
+function phoneTail(v) { const d = String(v || '').replace(/\D/g, ''); return d.length >= 10 ? d.slice(-10) : ''; }
+function maskPhone(v) { const d = cleanPhone(v); return d.length >= 10 ? d.slice(0, 4) + '***' + d.slice(-2) : ''; }
+function nameMatches(queryTokens, recordName) {
+  const rec = nameTokens(recordName);
+  if (!rec.length || rec[rec.length - 1] !== queryTokens[queryTokens.length - 1]) return false;
+  const first = queryTokens.slice(0, -1);
+  const recFirst = rec.slice(0, -1);
+  return first.every(t => recFirst.includes(t));
+}
+async function checkMember(env, b) {
+  const tokens = nameTokens(b.name);
+  if (tokens.length < 2) return json({ error: 'name_surname_required' }, 400);
+  const tail = phoneTail(b.phone);
+  const index = await getJson(env, K.memberIndex, null);
+  if (!index) return json({ error: 'no_member_list' }, 503);
+  const edits = await getJson(env, K.memberEdits, {});
+  let candidates = [];
+  if (index.nameIndex) {
+    const surname = tokens[tokens.length - 1];
+    const shard = await getJson(env, memberNameKey(index.version, refShard(surname)), {});
+    candidates = (shard[surname] || []).map(([hood, row]) => rowToMember(row, hood));
+  } else {
+    for (const h of index.hoods) {
+      const rows = await getJson(env, memberHoodKey(index.version, h.name), []);
+      for (const row of rows) if (nameTokens(row[1]).slice(-1)[0] === tokens[tokens.length - 1]) candidates.push(rowToMember(row, h.name));
+    }
+  }
+  // Panelden düzenlenen bilgiler (ör. telefon, ad) sorguda da geçerli
+  const all = candidates.map(m => edits[m.id] ? { ...m, ...edits[m.id] } : m);
+  // Ad düzenlenip soyadı değişmiş kayıtları da yakala
+  for (const [id, e] of Object.entries(edits)) if (e.name && !all.some(m => m.id === id) && nameMatches(tokens, e.name)) all.push({ id, ...e });
+  const byName = all.filter(m => nameMatches(tokens, m.name));
+  const brief = m => ({ name: m.name, neighborhood: m.neighborhood || '', joined: m.joined || '', phone: maskPhone(m.phone) });
+  if (!byName.length) return json({ ok: true, result: 'not_member', nameMatches: 0 });
+  if (byName.length === 1) {
+    const m = byName[0];
+    const phoneMismatch = !!tail && !!phoneTail(m.phone) && phoneTail(m.phone) !== tail;
+    return json({ ok: true, result: 'active', nameMatches: 1, member: brief(m), phoneMismatch });
+  }
+  if (!tail) return json({ ok: true, result: 'need_phone', nameMatches: byName.length });
+  const byPhone = byName.filter(m => phoneTail(m.phone) === tail);
+  if (byPhone.length === 1) return json({ ok: true, result: 'active', nameMatches: byName.length, member: brief(byPhone[0]), byPhone: true });
+  return json({ ok: true, result: 'uncertain', nameMatches: byName.length, phoneMatches: byPhone.length });
 }
 
 // --------------------------- Duyurular ------------------------------------
@@ -585,6 +635,7 @@ async function handle(request, env) {
 
   // ---- Üyeler ----
   if (path === '/members' && method === 'GET') return membersResponse(env, user, url.searchParams.get('have') || '');
+  if (path === '/members/check' && method === 'POST') return checkMember(env, await body());
   if (path === '/members/mine' && method === 'GET') return json({ ok: true, members: await myMembers(env, user) });
   if (path.startsWith('/members/') && method === 'PUT') {
     const denied = requireAdmin(); if (denied) return denied;
@@ -621,6 +672,7 @@ async function handle(request, env) {
     const text = await request.text();
     if (kind === 'hood') await env.SUBSCRIPTIONS.put(memberHoodKey(version, key), text);
     else if (kind === 'ref') await env.SUBSCRIPTIONS.put(memberRefKey(version, Number(key) % REF_SHARDS), text);
+    else if (kind === 'name') await env.SUBSCRIPTIONS.put(memberNameKey(version, Number(key) % REF_SHARDS), text);
     else return json({ error: 'bad_kind' }, 400);
     return json({ ok: true });
   }
@@ -629,12 +681,13 @@ async function handle(request, env) {
     const b = await body();
     if (!/^v[a-z0-9]+$/.test(b.version || '') || !Array.isArray(b.hoods)) return json({ error: 'bad_request' }, 400);
     const previous = await getJson(env, K.memberIndex, null);
-    const index = { version: b.version, updatedAt: new Date().toISOString(), updatedBy: user.name, total: Number(b.total) || 0, hoods: b.hoods.map(h => ({ name: clean(h.name, 80), count: Number(h.count) || 0 })) };
+    const index = { version: b.version, nameIndex: !!b.nameIndex, updatedAt: new Date().toISOString(), updatedBy: user.name, total: Number(b.total) || 0, hoods: b.hoods.map(h => ({ name: clean(h.name, 80), count: Number(h.count) || 0 })) };
     await putJson(env, K.memberIndex, index);
     let removed = 0;
     if (previous && previous.version && previous.version !== b.version) {
       removed += await deleteByPrefix(env, `__members__:${previous.version}:`);
       removed += await deleteByPrefix(env, `__members_ref__:${previous.version}:`);
+      removed += await deleteByPrefix(env, `__members_name__:${previous.version}:`);
     }
     // Listeden çıkarılan üyelerin düzenleme kayıtlarını temizle
     if (Array.isArray(b.ids)) {
@@ -649,6 +702,16 @@ async function handle(request, env) {
 
   // ---- Harita ----
   if (path === '/geo' && method === 'POST') return geoForStreet(env, await body());
+
+  if (path === '/admin/import/name-done' && method === 'POST') {
+    const denied = requireAdmin(); if (denied) return denied;
+    const b = await body();
+    const index = await getJson(env, K.memberIndex, null);
+    if (!index || index.version !== b.version) return json({ error: 'version_mismatch' }, 409);
+    index.nameIndex = true;
+    await putJson(env, K.memberIndex, index);
+    return json({ ok: true });
+  }
 
   // ---- Başkanlar / Yönetim ----
   if (path === '/leaders' && method === 'GET') return json({ ok: true, leaders: await getJson(env, K.leaders, []) });
