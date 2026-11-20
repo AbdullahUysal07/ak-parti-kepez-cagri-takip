@@ -1018,8 +1018,7 @@
     function usageMatch(r,f){const st=usageStatus(r); return f==='all'||(f==='never'&&!st.entered)||(f==='nopush'&&!st.push)||(f==='noapp'&&!st.app)||(f==='defaultpw'&&!r.passwordChanged)||(f==='inactive'&&!st.recent);}
     function usagePhone(r){const l=leaderByName(r.name); return l&&phoneValid(l.phone)?l.phone:'';}
     function usageRawPhone(r){const l=leaderByName(r.name); return l&&l.phone||'';}
-    // Bazı mobil operatörler *.workers.dev adreslerini engelliyor; kurulum bağlantısı GitHub üzerinden verilir
-    const INSTALL_LINK='https://abdullahuysal07.github.io/ak-parti-kepez-cagri-takip/kurulum.html';
+    const INSTALL_LINK=API_BASE+'/kur';
     function usageMessage(r){const st=usageStatus(r); const L=[`Merhaba Sayın ${displayName(r.name)},`,''];
       if(!st.app){L.push('AK Parti Kepez Çağrı uygulamamızı telefonunuza kurmak için aşağıdaki bağlantıya dokunun ve açılan sayfadaki adımları izleyin:',INSTALL_LINK,''); L.push(`Kurulumdan sonra uygulamayı ana ekranınızdaki "Kepez Çağrı" simgesinden açın${st.entered?'':`, "${r.loginUsername}" kullanıcı adınız ve size iletilen şifreyle giriş yapın`} ve bildirimlere izin verin.`);}
       else if(!st.push){L.push('Duyurularımızdan anında haberdar olmanız için "Kepez Çağrı" uygulamasını açıp ana sayfadaki "Bildirimleri Aç" düğmesine dokunmanızı rica ederiz.');}
