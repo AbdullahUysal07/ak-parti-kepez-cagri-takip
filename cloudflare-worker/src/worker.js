@@ -153,26 +153,244 @@ async function sendPush(env, subscription) {
   });
 }
 
-async function getAnnouncements(env) {
-  return (await env.SUBSCRIPTIONS.get('__announcements__', 'json')) || [];
+
+// ---------------------------------------------------------------------------
+// Depolama anahtarları (Cloudflare KV - SUBSCRIPTIONS)
+// Kişisel veriler (üyeler, başkanlar, kullanıcılar) artık sayfada değil, burada
+// tutulur ve yalnızca giriş yapmış ve yetkili kullanıcıya gönderilir.
+// ---------------------------------------------------------------------------
+const DEFAULT_PASSWORD = 'kepez2026.';
+const ADMIN_USERNAME = 'hasan_demir';
+const ANALYSIS_USERS = ['ilkaygunesss', 'huseyin_ilkay_gunes'];
+const REF_SHARDS = 64;
+const TOKEN_DAYS = 120;
+const K = {
+  secret: '__server_secret__',
+  users: '__users__',
+  overrides: '__access_overrides__',
+  leaders: '__leaders__',
+  requests: '__requests__',
+  memberIndex: '__members_index__',
+  memberEdits: '__member_edits__',
+  logs: '__call_logs__',
+  locations: '__user_locations__',
+  announcements: '__announcements__',
+  latest: '__latest_notification__'
+};
+const memberHoodKey = (version, hood) => `__members__:${version}:${hood}`;
+const memberRefKey = (version, shard) => `__members_ref__:${version}:${shard}`;
+
+function bytesToHex(bytes) {
+  return [...new Uint8Array(bytes)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function hexToBytes(hex) {
+  const out = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16);
+  return out;
+}
+function textResponse(text, status = 200) {
+  return new Response(text, { status, headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...corsHeaders() } });
 }
 
-async function putAnnouncements(env, announcements) {
-  await env.SUBSCRIPTIONS.put('__announcements__', JSON.stringify(announcements.slice(0, 100)));
+// Türkçe karakterleri sadeleştirip kullanıcı adı biçimine çevirir (istemcideki normalizeUser ile aynı).
+function normalizeUser(v) {
+  return String(v || '').trim().toLocaleLowerCase('tr-TR')
+    .replace(/ç/g, 'c').replace(/ğ/g, 'g').replace(/[ıi]/g, 'i').replace(/ö/g, 'o').replace(/ş/g, 's').replace(/ü/g, 'u')
+    .replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+}
+// Referans isim eşleştirmesi için ad normalleştirme (istemcideki refKey ile aynı).
+function refKey(v) {
+  return normalizeUser(v).replace(/_/g, ' ');
+}
+// FNV-1a: referans adını parçaya (shard) dağıtmak için (istemcideki refShard ile aynı).
+function refShard(name) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < name.length; i++) { h ^= name.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return h % REF_SHARDS;
 }
 
-function upsertPerson(list, body) {
-  const username = String(body.username || '').trim();
-  if (!username) return list || [];
-  const next = (list || []).filter(item => item.username !== username);
-  next.push({ username, name: body.name || username, at: new Date().toISOString() });
+async function getJson(env, key, fallback) {
+  const v = await env.SUBSCRIPTIONS.get(key, 'json');
+  return v == null ? fallback : v;
+}
+async function putJson(env, key, value) {
+  await env.SUBSCRIPTIONS.put(key, JSON.stringify(value));
+}
+
+// Sunucu gizli anahtarı: ilk kullanımda rastgele üretilir, sadece KV'de durur.
+async function getSecret(env) {
+  let s = await env.SUBSCRIPTIONS.get(K.secret);
+  if (!s) {
+    s = bytesToHex(crypto.getRandomValues(new Uint8Array(32)));
+    await env.SUBSCRIPTIONS.put(K.secret, s);
+  }
+  return s;
+}
+async function hmacHex(secretHex, text) {
+  const key = await crypto.subtle.importKey('raw', hexToBytes(secretHex), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+  return bytesToHex(await crypto.subtle.sign('HMAC', key, encoder.encode(text)));
+}
+// TC kimlik numarasından geri çevrilemeyen üye kimliği üretir.
+async function memberIdFromTc(secretHex, tc) {
+  return (await hmacHex(secretHex, 'member:' + String(tc).trim())).slice(0, 20);
+}
+
+// --------------------------- Kullanıcılar ---------------------------------
+async function loadUsers(env) {
+  const [base, overrides] = await Promise.all([getJson(env, K.users, []), getJson(env, K.overrides, {})]);
+  return base.map(u => effectiveUser(u, overrides[u.username]));
+}
+function effectiveUser(u, o) {
+  o = o || {};
+  const role = (o.role || u.role) === 'neighborhood' ? 'neighborhood' : 'management';
+  const neighborhoods = role === 'management' ? [] : (o.neighborhoods && o.neighborhoods.length ? o.neighborhoods : (u.neighborhoods || []));
+  return {
+    username: u.username,
+    loginUsername: normalizeUser(o.loginUsername || u.username) || u.username,
+    name: (o.name || u.name || u.username).trim(),
+    refName: (o.refName || '').trim(),
+    role,
+    neighborhoods,
+    disabled: !!o.disabled,
+    password: String(o.password || DEFAULT_PASSWORD)
+  };
+}
+function publicUser(u) {
+  return {
+    username: u.username,
+    loginUsername: u.loginUsername,
+    name: u.name,
+    refName: u.refName,
+    role: u.role,
+    neighborhoods: u.neighborhoods,
+    isAdmin: u.username === ADMIN_USERNAME,
+    canAnalysis: u.username === ADMIN_USERNAME || ANALYSIS_USERS.includes(normalizeUser(u.username)) || ANALYSIS_USERS.includes(normalizeUser(u.loginUsername)) || ANALYSIS_USERS.includes(normalizeUser(u.name)),
+    mustChangePassword: u.password === DEFAULT_PASSWORD
+  };
+}
+
+// --------------------------- Oturum (token) --------------------------------
+async function passwordVersion(secret, u) {
+  return (await hmacHex(secret, 'pw:' + u.username + ':' + u.password)).slice(0, 12);
+}
+async function createToken(env, u) {
+  const secret = await getSecret(env);
+  const payload = { u: u.username, pv: await passwordVersion(secret, u), exp: Date.now() + TOKEN_DAYS * 864e5 };
+  const body = bytesToBase64Url(encoder.encode(JSON.stringify(payload)));
+  return body + '.' + (await hmacHex(secret, 'tok:' + body));
+}
+async function authUser(request, env) {
+  const header = request.headers.get('Authorization') || '';
+  const token = header.startsWith('Bearer ') ? header.slice(7) : '';
+  const [body, sig] = token.split('.');
+  if (!body || !sig) return null;
+  const secret = await getSecret(env);
+  if ((await hmacHex(secret, 'tok:' + body)) !== sig) return null;
+  let payload;
+  try { payload = JSON.parse(new TextDecoder().decode(base64UrlToBytes(body))); } catch (e) { return null; }
+  if (!payload || payload.exp < Date.now()) return null;
+  const users = await loadUsers(env);
+  const u = users.find(x => x.username === payload.u);
+  if (!u || u.disabled) return null;
+  if ((await passwordVersion(secret, u)) !== payload.pv) return null;
+  return u;
+}
+const isAdminUser = u => !!u && u.username === ADMIN_USERNAME;
+
+// --------------------------- Üyeler ---------------------------------------
+// Üye satırı biçimi (yer tasarrufu için dizi): [id, ad soyad, telefon, adres, üyelik tarihi, referanslar(dizi)]
+function rowToMember(row, hood) {
+  return { id: row[0], name: row[1], phone: row[2], address: row[3], joined: row[4], refs: row[5] || [], neighborhood: hood };
+}
+
+async function membersResponse(env, user) {
+  const index = await getJson(env, K.memberIndex, null);
+  const edits = await env.SUBSCRIPTIONS.get(K.memberEdits) || '{}';
+  if (!index) return textResponse(`{"ok":true,"version":null,"hoods":[],"data":{},"edits":${edits}}`);
+  const allowed = user.role === 'management' ? index.hoods.map(h => h.name) : index.hoods.map(h => h.name).filter(h => user.neighborhoods.includes(h));
+  const hoods = index.hoods.filter(h => allowed.includes(h.name));
+  // Mahalle verileri KV'den bayt akışı olarak doğrudan yanıta aktarılır; büyük listeyi
+  // sunucuda çözüp yeniden üretmeye gerek kalmaz (işlemci süresi düşük kalır).
+  const { readable, writable } = new TransformStream();
+  const writer = writable.getWriter();
+  (async () => {
+    try {
+      await writer.write(encoder.encode(`{"ok":true,"version":${JSON.stringify(index.version)},"updatedAt":${JSON.stringify(index.updatedAt || '')},"hoods":${JSON.stringify(hoods)},"edits":${edits},"data":{`));
+      let first = true;
+      for (const hood of allowed) {
+        const stream = await env.SUBSCRIPTIONS.get(memberHoodKey(index.version, hood), 'stream');
+        if (!stream) continue;
+        await writer.write(encoder.encode((first ? '' : ',') + JSON.stringify(hood) + ':'));
+        first = false;
+        const reader = stream.getReader();
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          await writer.write(value);
+        }
+      }
+      await writer.write(encoder.encode('}}'));
+      await writer.close();
+    } catch (error) {
+      await writer.abort(error);
+    }
+  })();
+  return new Response(readable, { headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...corsHeaders() } });
+}
+
+async function myMembers(env, user) {
+  const index = await getJson(env, K.memberIndex, null);
+  if (!index) return [];
+  const names = [user.name, user.refName].map(refKey).filter(Boolean);
+  const uniqueNames = [...new Set(names)];
+  const edits = await getJson(env, K.memberEdits, {});
+  const out = new Map();
+  for (const name of uniqueNames) {
+    const shard = await getJson(env, memberRefKey(index.version, refShard(name)), {});
+    for (const [hood, row] of (shard[name] || [])) {
+      const m = rowToMember(row, hood);
+      if (edits[m.id]) Object.assign(m, edits[m.id]);
+      if (!m.deleted) out.set(m.id, m);
+    }
+  }
+  return [...out.values()].sort((a, b) => a.name.localeCompare(b.name, 'tr'));
+}
+
+async function deleteByPrefix(env, prefix, keepPrefix) {
+  let cursor;
+  let deleted = 0;
+  do {
+    const page = await env.SUBSCRIPTIONS.list({ prefix, cursor });
+    for (const key of page.keys) {
+      if (keepPrefix && key.name.startsWith(keepPrefix)) continue;
+      await env.SUBSCRIPTIONS.delete(key.name);
+      deleted += 1;
+    }
+    cursor = page.list_complete ? null : page.cursor;
+  } while (cursor);
+  return deleted;
+}
+
+// Eski loglarda üye kimliği TC numarasıydı; bunları yeni kimliğe çevirir.
+async function migrateLogs(env, logs) {
+  if (!logs.some(l => /^\d{11}$/.test(String(l.memberId || '')))) return logs;
+  const secret = await getSecret(env);
+  for (const l of logs) {
+    if (/^\d{11}$/.test(String(l.memberId || ''))) l.memberId = await memberIdFromTc(secret, l.memberId);
+  }
+  await putJson(env, K.logs, logs.slice(0, 5000));
+  return logs;
+}
+
+// --------------------------- Duyurular ------------------------------------
+function upsertPerson(list, user) {
+  const next = (list || []).filter(item => item.username !== user.username);
+  next.push({ username: user.username, name: user.name, at: new Date().toISOString() });
   return next;
 }
-
 function normalizeTarget(value) {
   return value === 'management' || value === 'neighborhood' ? value : 'all';
 }
-
 function matchesTarget(saved, target) {
   const wanted = normalizeTarget(target);
   if (wanted === 'all') return true;
@@ -182,265 +400,361 @@ function matchesTarget(saved, target) {
   return false;
 }
 
-async function getAccessOverrides(env) {
-  return (await env.SUBSCRIPTIONS.get('__access_overrides__', 'json')) || {};
+async function forEachSubscription(env, fn) {
+  let cursor;
+  do {
+    const page = await env.SUBSCRIPTIONS.list({ cursor });
+    for (const key of page.keys) {
+      if (key.name.startsWith('__')) continue;
+      const saved = await env.SUBSCRIPTIONS.get(key.name, 'json');
+      if (saved && saved.subscription) await fn(key.name, saved);
+    }
+    cursor = page.list_complete ? null : page.cursor;
+  } while (cursor);
+}
+async function pushToTarget(env, target) {
+  let sent = 0;
+  let failed = 0;
+  const failures = [];
+  await forEachSubscription(env, async (name, saved) => {
+    if (!matchesTarget(saved, target)) return;
+    const res = await sendPush(env, saved.subscription);
+    if (res.ok) sent += 1;
+    else {
+      failed += 1;
+      failures.push({ status: res.status });
+      if (res.status === 404 || res.status === 410) await env.SUBSCRIPTIONS.delete(name);
+    }
+  });
+  return { sent, failed, failures: failures.slice(0, 5) };
 }
 
-async function putAccessOverrides(env, overrides) {
-  await env.SUBSCRIPTIONS.put('__access_overrides__', JSON.stringify(overrides || {}));
+function clean(v, max = 500) {
+  return String(v == null ? '' : v).trim().slice(0, max);
+}
+function cleanPhone(v) {
+  let d = String(v || '').replace(/\D/g, '');
+  if (d.length === 10 && d[0] === '5') d = '0' + d;
+  if (d.length === 12 && d.startsWith('90')) d = '0' + d.slice(2);
+  return d.slice(0, 15);
 }
 
-async function getCallLogs(env) {
-  return (await env.SUBSCRIPTIONS.get('__call_logs__', 'json')) || [];
-}
-
-async function putCallLogs(env, logs) {
-  await env.SUBSCRIPTIONS.put('__call_logs__', JSON.stringify((logs || []).slice(0, 5000)));
-}
-
-async function getLocations(env) {
-  return (await env.SUBSCRIPTIONS.get('__user_locations__', 'json')) || {};
-}
-
-async function putLocations(env, locations) {
-  await env.SUBSCRIPTIONS.put('__user_locations__', JSON.stringify(locations || {}));
-}
-
-async function requireAdmin(request, env) {
-  const expected = env.ADMIN_TOKEN;
-  const actual = request.headers.get('Authorization') || '';
-  return expected && actual === `Bearer ${expected}`;
-}
-
+// --------------------------- İstek yönlendirme ----------------------------
 export default {
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { headers: corsHeaders() });
-    const url = new URL(request.url);
-
-    if (url.pathname === '/health') {
-      return json({ ok: true });
+    try {
+      return await handle(request, env);
+    } catch (error) {
+      return json({ error: 'server_error', message: String(error && error.message || error) }, 500);
     }
-
-    if (url.pathname === '/latest') {
-      const latest = await env.SUBSCRIPTIONS.get('__latest_notification__', 'json');
-      return json(latest || { title: 'AK Parti Kepez', body: 'Yeni bildirim var.', url: 'https://abdullahuysal07.github.io/ak-parti-kepez-cagri-takip/' });
-    }
-
-    if (url.pathname === '/announcements' && request.method === 'GET') {
-      const role = normalizeTarget(url.searchParams.get('role') || 'all');
-      const announcements = await getAnnouncements(env);
-      return json({ ok: true, announcements: announcements.filter(item => matchesTarget({ role }, item.target || 'all')) });
-    }
-
-    if (url.pathname === '/access' && request.method === 'GET') {
-      return json({ ok: true, overrides: await getAccessOverrides(env) });
-    }
-
-    if (url.pathname === '/access' && request.method === 'POST') {
-      if (!(await requireAdmin(request, env))) return json({ error: 'unauthorized' }, 401);
-      const body = await request.json();
-      const username = String(body.username || '').trim();
-      if (!username) return json({ error: 'username_required' }, 400);
-      const role = body.role === 'neighborhood' ? 'neighborhood' : 'management';
-      const neighborhoods = role === 'management' ? [] : [String(body.neighborhood || '').trim()].filter(Boolean);
-      const overrides = await getAccessOverrides(env);
-      overrides[username] = {
-        role,
-        neighborhoods,
-        disabled: !!body.disabled,
-        loginUsername: String(body.loginUsername || username).trim(),
-        name: String(body.name || '').trim(),
-        password: String(body.password || 'kepez2026.').trim() || 'kepez2026.'
-      };
-      await putAccessOverrides(env, overrides);
-      return json({ ok: true, overrides });
-    }
-
-    if (url.pathname === '/logs' && request.method === 'GET') {
-      if (!(await requireAdmin(request, env))) return json({ error: 'unauthorized' }, 401);
-      return json({ ok: true, logs: await getCallLogs(env) });
-    }
-
-    if (url.pathname === '/logs' && request.method === 'POST') {
-      const body = await request.json();
-      if (!body.memberId) return json({ error: 'member_required' }, 400);
-      const logs = await getCallLogs(env);
-      const item = {
-        id: body.id || crypto.randomUUID(),
-        memberId: String(body.memberId || ''),
-        memberName: String(body.memberName || ''),
-        memberPhone: String(body.memberPhone || ''),
-        neighborhood: String(body.neighborhood || ''),
-        status: String(body.status || 'called'),
-        note: String(body.note || ''),
-        agent: String(body.agent || ''),
-        username: String(body.username || ''),
-        time: body.time || new Date().toISOString()
-      };
-      const existingIndex = logs.findIndex(log => log.id && log.id === item.id);
-      if (existingIndex !== -1) logs.splice(existingIndex, 1);
-      logs.unshift(item);
-      await putCallLogs(env, logs);
-      return json({ ok: true, log: item });
-    }
-
-    if (url.pathname === '/locations' && request.method === 'GET') {
-      if (!(await requireAdmin(request, env))) return json({ error: 'unauthorized' }, 401);
-      const locations = await getLocations(env);
-      return json({ ok: true, locations: Object.values(locations).sort((a, b) => String(b.time).localeCompare(String(a.time))) });
-    }
-
-    if (url.pathname === '/locations' && request.method === 'POST') {
-      const body = await request.json();
-      const username = String(body.username || '').trim();
-      const lat = Number(body.lat);
-      const lng = Number(body.lng);
-      if (!username || !Number.isFinite(lat) || !Number.isFinite(lng)) return json({ error: 'location_required' }, 400);
-      const locations = await getLocations(env);
-      locations[username] = {
-        username,
-        name: String(body.name || username),
-        role: String(body.role || ''),
-        neighborhood: String(body.neighborhood || ''),
-        lat,
-        lng,
-        accuracy: Number(body.accuracy || 0),
-        time: body.time || new Date().toISOString()
-      };
-      await putLocations(env, locations);
-      return json({ ok: true, location: locations[username] });
-    }
-
-    if (url.pathname === '/announcements' && request.method === 'POST') {
-      if (!(await requireAdmin(request, env))) return json({ error: 'unauthorized' }, 401);
-      const body = await request.json();
-      const text = String(body.body || '').trim();
-      if (!text) return json({ error: 'body_required' }, 400);
-      const announcements = await getAnnouncements(env);
-      const announcement = {
-        id: crypto.randomUUID(),
-        body: text,
-        target: normalizeTarget(body.target),
-        authorName: body.authorName || 'Hasan Demir',
-        createdAt: new Date().toISOString(),
-        reads: [],
-        likes: []
-      };
-      announcements.unshift(announcement);
-      await putAnnouncements(env, announcements);
-      await env.SUBSCRIPTIONS.put('__latest_notification__', JSON.stringify({
-        title: announcement.authorName,
-        body: text,
-        url: body.url || 'https://abdullahuysal07.github.io/ak-parti-kepez-cagri-takip/',
-        sentAt: new Date().toISOString()
-      }));
-      const list = await env.SUBSCRIPTIONS.list();
-      let sent = 0;
-      let failed = 0;
-      const target = announcement.target;
-      for (const key of list.keys) {
-        if (key.name.startsWith('__')) continue;
-        const saved = await env.SUBSCRIPTIONS.get(key.name, 'json');
-        if (!saved || !saved.subscription) continue;
-        if (!matchesTarget(saved, target)) continue;
-        const res = await sendPush(env, saved.subscription);
-        if (res.ok) sent += 1;
-        else {
-          failed += 1;
-          if (res.status === 404 || res.status === 410) await env.SUBSCRIPTIONS.delete(key.name);
-        }
-      }
-      return json({ ok: true, announcement, sent, failed });
-    }
-
-    if (url.pathname === '/announcements/read' && request.method === 'POST') {
-      const body = await request.json();
-      const announcements = await getAnnouncements(env);
-      const item = announcements.find(a => a.id === body.announcementId);
-      if (!item) return json({ error: 'not_found' }, 404);
-      item.reads = upsertPerson(item.reads, body);
-      await putAnnouncements(env, announcements);
-      return json({ ok: true });
-    }
-
-    if (url.pathname.startsWith('/announcements/') && request.method === 'PUT') {
-      if (!(await requireAdmin(request, env))) return json({ error: 'unauthorized' }, 401);
-      const id = decodeURIComponent(url.pathname.replace('/announcements/', ''));
-      const body = await request.json();
-      const text = String(body.body || '').trim();
-      if (!text) return json({ error: 'body_required' }, 400);
-      const announcements = await getAnnouncements(env);
-      const item = announcements.find(a => a.id === id);
-      if (!item) return json({ error: 'not_found' }, 404);
-      item.body = text;
-      item.updatedAt = new Date().toISOString();
-      await putAnnouncements(env, announcements);
-      return json({ ok: true, announcement: item });
-    }
-
-    if (url.pathname.startsWith('/announcements/') && request.method === 'DELETE') {
-      if (!(await requireAdmin(request, env))) return json({ error: 'unauthorized' }, 401);
-      const id = decodeURIComponent(url.pathname.replace('/announcements/', ''));
-      const announcements = await getAnnouncements(env);
-      const next = announcements.filter(a => a.id !== id);
-      await putAnnouncements(env, next);
-      return json({ ok: true });
-    }
-
-    if (url.pathname === '/announcements/like' && request.method === 'POST') {
-      const body = await request.json();
-      const announcements = await getAnnouncements(env);
-      const item = announcements.find(a => a.id === body.announcementId);
-      if (!item) return json({ error: 'not_found' }, 404);
-      item.likes = upsertPerson(item.likes, body);
-      item.reads = upsertPerson(item.reads, body);
-      await putAnnouncements(env, announcements);
-      return json({ ok: true });
-    }
-
-    if (url.pathname === '/subscribe' && request.method === 'POST') {
-      const body = await request.json();
-      if (!body.subscription || !body.subscription.endpoint) return json({ error: 'subscription_missing' }, 400);
-      const id = await sha256Hex(body.subscription.endpoint);
-      await env.SUBSCRIPTIONS.put(id, JSON.stringify({
-        subscription: body.subscription,
-        username: body.username || '',
-        role: normalizeTarget(body.role),
-        createdAt: new Date().toISOString()
-      }));
-      return json({ ok: true, id });
-    }
-
-    if (url.pathname === '/send' && request.method === 'POST') {
-      if (!(await requireAdmin(request, env))) return json({ error: 'unauthorized' }, 401);
-      const body = await request.json();
-      const payload = {
-        title: body.title || 'AK Parti Kepez',
-        body: body.body || 'Yeni bildirim var.',
-        url: body.url || 'https://abdullahuysal07.github.io/ak-parti-kepez-cagri-takip/',
-        target: normalizeTarget(body.target)
-      };
-      await env.SUBSCRIPTIONS.put('__latest_notification__', JSON.stringify({ ...payload, sentAt: new Date().toISOString() }));
-      const list = await env.SUBSCRIPTIONS.list();
-      let sent = 0;
-      let failed = 0;
-      const failures = [];
-      for (const key of list.keys) {
-        if (key.name.startsWith('__')) continue;
-        const saved = await env.SUBSCRIPTIONS.get(key.name, 'json');
-        if (!saved || !saved.subscription) continue;
-        if (!matchesTarget(saved, payload.target)) continue;
-        const res = await sendPush(env, saved.subscription);
-        if (res.ok) sent += 1;
-        else {
-          failed += 1;
-          failures.push({ status: res.status, text: await res.text().catch(() => '') });
-          if (res.status === 404 || res.status === 410) await env.SUBSCRIPTIONS.delete(key.name);
-        }
-      }
-      return json({ ok: true, sent, failed, failures: failures.slice(0, 5) });
-    }
-
-    return json({ error: 'not_found' }, 404);
   }
 };
+
+async function handle(request, env) {
+  const url = new URL(request.url);
+  const path = url.pathname.replace(/\/+$/, '') || '/';
+  const method = request.method;
+  const body = async () => { try { return await request.json(); } catch (e) { return {}; } };
+
+  if (path === '/health') return json({ ok: true });
+  if (path === '/latest') {
+    const latest = await env.SUBSCRIPTIONS.get(K.latest, 'json');
+    return json(latest || { title: 'AK Parti Kepez', body: 'Yeni bildirim var.', url: './' });
+  }
+
+  // ---- Giriş ----
+  if (path === '/auth/login' && method === 'POST') {
+    const b = await body();
+    const wanted = normalizeUser(b.username);
+    const users = await loadUsers(env);
+    const u = users.find(x => x.loginUsername === wanted || x.username === wanted);
+    if (!u || u.disabled || String(b.password || '') !== u.password) return json({ error: 'login_failed' }, 401);
+    return json({ ok: true, token: await createToken(env, u), user: publicUser(u) });
+  }
+
+  const user = await authUser(request, env);
+  if (!user) return json({ error: 'unauthorized' }, 401);
+  const admin = isAdminUser(user);
+  const requireAdmin = () => admin ? null : json({ error: 'forbidden' }, 403);
+
+  if (path === '/auth/me' && method === 'GET') return json({ ok: true, user: publicUser(user) });
+
+  if (path === '/auth/password' && method === 'POST') {
+    const b = await body();
+    const next = String(b.newPassword || '').trim();
+    if (String(b.currentPassword || '') !== user.password) return json({ error: 'wrong_password' }, 400);
+    if (next.length < 6 || next === DEFAULT_PASSWORD) return json({ error: 'weak_password' }, 400);
+    const overrides = await getJson(env, K.overrides, {});
+    overrides[user.username] = { ...(overrides[user.username] || {}), password: next };
+    await putJson(env, K.overrides, overrides);
+    const updated = { ...user, password: next };
+    return json({ ok: true, token: await createToken(env, updated), user: publicUser(updated) });
+  }
+
+  // ---- Üyeler ----
+  if (path === '/members' && method === 'GET') return membersResponse(env, user);
+  if (path === '/members/mine' && method === 'GET') return json({ ok: true, members: await myMembers(env, user) });
+  if (path.startsWith('/members/') && method === 'PUT') {
+    const denied = requireAdmin(); if (denied) return denied;
+    const id = decodeURIComponent(path.slice('/members/'.length));
+    const b = await body();
+    const edits = await getJson(env, K.memberEdits, {});
+    const e = { ...(edits[id] || {}) };
+    if ('name' in b) e.name = clean(b.name, 120).toLocaleUpperCase('tr-TR');
+    if ('phone' in b) e.phone = cleanPhone(b.phone);
+    if ('address' in b) e.address = clean(b.address, 300);
+    if ('neighborhood' in b && clean(b.neighborhood)) e.neighborhood = clean(b.neighborhood, 80);
+    e.updatedAt = new Date().toISOString();
+    e.updatedBy = user.name;
+    edits[id] = e;
+    await putJson(env, K.memberEdits, edits);
+    return json({ ok: true, edit: e });
+  }
+
+  // ---- Üye listesi içe aktarma (sadece admin) ----
+  if (path === '/admin/id-secret' && method === 'GET') {
+    const denied = requireAdmin(); if (denied) return denied;
+    return json({ ok: true, secret: await getSecret(env) });
+  }
+  if (path === '/admin/import/start' && method === 'POST') {
+    const denied = requireAdmin(); if (denied) return denied;
+    return json({ ok: true, version: 'v' + Date.now().toString(36) });
+  }
+  if (path === '/admin/import/part' && method === 'POST') {
+    const denied = requireAdmin(); if (denied) return denied;
+    const version = url.searchParams.get('version') || '';
+    const kind = url.searchParams.get('kind');
+    const key = url.searchParams.get('key') || '';
+    if (!/^v[a-z0-9]+$/.test(version) || !key) return json({ error: 'bad_request' }, 400);
+    const text = await request.text();
+    if (kind === 'hood') await env.SUBSCRIPTIONS.put(memberHoodKey(version, key), text);
+    else if (kind === 'ref') await env.SUBSCRIPTIONS.put(memberRefKey(version, Number(key) % REF_SHARDS), text);
+    else return json({ error: 'bad_kind' }, 400);
+    return json({ ok: true });
+  }
+  if (path === '/admin/import/finish' && method === 'POST') {
+    const denied = requireAdmin(); if (denied) return denied;
+    const b = await body();
+    if (!/^v[a-z0-9]+$/.test(b.version || '') || !Array.isArray(b.hoods)) return json({ error: 'bad_request' }, 400);
+    const previous = await getJson(env, K.memberIndex, null);
+    const index = { version: b.version, updatedAt: new Date().toISOString(), updatedBy: user.name, total: Number(b.total) || 0, hoods: b.hoods.map(h => ({ name: clean(h.name, 80), count: Number(h.count) || 0 })) };
+    await putJson(env, K.memberIndex, index);
+    let removed = 0;
+    if (previous && previous.version && previous.version !== b.version) {
+      removed += await deleteByPrefix(env, `__members__:${previous.version}:`);
+      removed += await deleteByPrefix(env, `__members_ref__:${previous.version}:`);
+    }
+    // Listeden çıkarılan üyelerin düzenleme kayıtlarını temizle
+    if (Array.isArray(b.ids)) {
+      const keep = new Set(b.ids);
+      const edits = await getJson(env, K.memberEdits, {});
+      let changed = false;
+      for (const id of Object.keys(edits)) if (!keep.has(id)) { delete edits[id]; changed = true; }
+      if (changed) await putJson(env, K.memberEdits, edits);
+    }
+    return json({ ok: true, index, removedKeys: removed });
+  }
+
+  // ---- Başkanlar / Yönetim ----
+  if (path === '/leaders' && method === 'GET') return json({ ok: true, leaders: await getJson(env, K.leaders, []) });
+  if (path === '/leaders' && method === 'POST') {
+    const denied = requireAdmin(); if (denied) return denied;
+    const b = await body();
+    const leaders = await getJson(env, K.leaders, []);
+    const item = { id: 'l-' + crypto.randomUUID().slice(0, 8), name: clean(b.name, 120).toLocaleUpperCase('tr-TR'), role: clean(b.role, 120), branch: clean(b.branch, 60) || 'Ana Kademe', phone: cleanPhone(b.phone), address: clean(b.address, 300), neighborhood: clean(b.neighborhood, 80) };
+    if (!item.name) return json({ error: 'name_required' }, 400);
+    leaders.push(item);
+    await putJson(env, K.leaders, leaders);
+    return json({ ok: true, leader: item, leaders });
+  }
+  if (path.startsWith('/leaders/') && (method === 'PUT' || method === 'DELETE')) {
+    const denied = requireAdmin(); if (denied) return denied;
+    const id = decodeURIComponent(path.slice('/leaders/'.length));
+    const leaders = await getJson(env, K.leaders, []);
+    const i = leaders.findIndex(l => l.id === id);
+    if (i === -1) return json({ error: 'not_found' }, 404);
+    if (method === 'DELETE') leaders.splice(i, 1);
+    else {
+      const b = await body();
+      const l = leaders[i];
+      if ('name' in b) l.name = clean(b.name, 120).toLocaleUpperCase('tr-TR');
+      if ('role' in b) l.role = clean(b.role, 120);
+      if ('branch' in b) l.branch = clean(b.branch, 60);
+      if ('phone' in b) l.phone = cleanPhone(b.phone);
+      if ('address' in b) l.address = clean(b.address, 300);
+      if ('neighborhood' in b) l.neighborhood = clean(b.neighborhood, 80);
+    }
+    await putJson(env, K.leaders, leaders);
+    return json({ ok: true, leaders });
+  }
+
+  // ---- Talep ve öneriler ----
+  if (path === '/requests' && method === 'GET') {
+    const requests = await getJson(env, K.requests, []);
+    return json({ ok: true, requests: admin ? requests : requests.filter(r => r.username === user.username) });
+  }
+  if (path === '/requests' && method === 'POST') {
+    const b = await body();
+    const text = clean(b.text, 3000);
+    if (!text) return json({ error: 'text_required' }, 400);
+    const requests = await getJson(env, K.requests, []);
+    const item = { id: crypto.randomUUID(), text, category: clean(b.category, 40) || 'Talep', username: user.username, name: user.name, role: user.role, neighborhood: user.neighborhoods[0] || '', status: 'new', time: new Date().toISOString() };
+    requests.unshift(item);
+    await putJson(env, K.requests, requests.slice(0, 2000));
+    return json({ ok: true, request: item });
+  }
+  if (path.startsWith('/requests/') && (method === 'PUT' || method === 'DELETE')) {
+    const denied = requireAdmin(); if (denied) return denied;
+    const id = decodeURIComponent(path.slice('/requests/'.length));
+    const requests = await getJson(env, K.requests, []);
+    const i = requests.findIndex(r => r.id === id);
+    if (i === -1) return json({ error: 'not_found' }, 404);
+    if (method === 'DELETE') requests.splice(i, 1);
+    else {
+      const b = await body();
+      if (['new', 'reviewed', 'done'].includes(b.status)) requests[i].status = b.status;
+      if ('reply' in b) requests[i].reply = clean(b.reply, 2000);
+      requests[i].updatedAt = new Date().toISOString();
+    }
+    await putJson(env, K.requests, requests);
+    return json({ ok: true });
+  }
+
+  // ---- Kullanıcı yetkileri (admin) ----
+  if (path === '/access' && method === 'GET') {
+    const denied = requireAdmin(); if (denied) return denied;
+    return json({ ok: true, users: await loadUsers(env) });
+  }
+  if (path === '/access' && method === 'POST') {
+    const denied = requireAdmin(); if (denied) return denied;
+    const b = await body();
+    const username = clean(b.username, 80);
+    const base = await getJson(env, K.users, []);
+    if (!base.some(u => u.username === username)) return json({ error: 'user_not_found' }, 404);
+    const role = b.role === 'neighborhood' ? 'neighborhood' : 'management';
+    const overrides = await getJson(env, K.overrides, {});
+    overrides[username] = {
+      role,
+      neighborhoods: role === 'management' ? [] : [clean(b.neighborhood, 80)].filter(Boolean),
+      disabled: !!b.disabled,
+      loginUsername: normalizeUser(b.loginUsername || username) || username,
+      name: clean(b.name, 120),
+      refName: clean(b.refName, 120),
+      password: clean(b.password, 80) || DEFAULT_PASSWORD
+    };
+    await putJson(env, K.overrides, overrides);
+    return json({ ok: true, users: await loadUsers(env) });
+  }
+
+  // ---- Arama logları ----
+  if (path === '/logs' && method === 'GET') {
+    const denied = requireAdmin(); if (denied) return denied;
+    return json({ ok: true, logs: await migrateLogs(env, await getJson(env, K.logs, [])) });
+  }
+  if (path === '/logs' && method === 'POST') {
+    const b = await body();
+    if (!b.memberId) return json({ error: 'member_required' }, 400);
+    const logs = await getJson(env, K.logs, []);
+    const item = {
+      id: clean(b.id, 80) || crypto.randomUUID(),
+      memberId: clean(b.memberId, 40),
+      memberName: clean(b.memberName, 120),
+      memberPhone: clean(b.memberPhone, 20),
+      neighborhood: clean(b.neighborhood, 80),
+      status: clean(b.status, 20) || 'called',
+      note: clean(b.note, 2000),
+      agent: clean(b.agent, 120) || user.name,
+      username: user.username,
+      time: b.time || new Date().toISOString()
+    };
+    const existing = logs.findIndex(l => l.id === item.id);
+    if (existing !== -1) logs.splice(existing, 1);
+    logs.unshift(item);
+    await putJson(env, K.logs, logs.slice(0, 5000));
+    return json({ ok: true, log: item });
+  }
+
+  // ---- Canlı konum ----
+  if (path === '/locations' && method === 'GET') {
+    const denied = requireAdmin(); if (denied) return denied;
+    const locations = await getJson(env, K.locations, {});
+    return json({ ok: true, locations: Object.values(locations).sort((a, b) => String(b.time).localeCompare(String(a.time))) });
+  }
+  if (path === '/locations' && method === 'POST') {
+    const b = await body();
+    const lat = Number(b.lat);
+    const lng = Number(b.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return json({ error: 'location_required' }, 400);
+    const locations = await getJson(env, K.locations, {});
+    locations[user.username] = { username: user.username, name: user.name, role: user.role, neighborhood: user.neighborhoods[0] || '', lat, lng, accuracy: Number(b.accuracy || 0), time: new Date().toISOString() };
+    await putJson(env, K.locations, locations);
+    return json({ ok: true });
+  }
+
+  // ---- Duyurular ----
+  if (path === '/announcements' && method === 'GET') {
+    const announcements = await getJson(env, K.announcements, []);
+    return json({ ok: true, announcements: admin ? announcements : announcements.filter(a => matchesTarget({ role: user.role }, a.target || 'all')) });
+  }
+  if (path === '/announcements' && method === 'POST') {
+    const denied = requireAdmin(); if (denied) return denied;
+    const b = await body();
+    const text = clean(b.body, 5000);
+    if (!text) return json({ error: 'body_required' }, 400);
+    const announcements = await getJson(env, K.announcements, []);
+    const announcement = { id: crypto.randomUUID(), body: text, target: normalizeTarget(b.target), authorName: b.authorName || 'Hasan Demir', createdAt: new Date().toISOString(), reads: [], likes: [] };
+    announcements.unshift(announcement);
+    await putJson(env, K.announcements, announcements.slice(0, 100));
+    await putJson(env, K.latest, { title: announcement.authorName, body: text, url: b.url || './', sentAt: new Date().toISOString() });
+    const result = await pushToTarget(env, announcement.target);
+    return json({ ok: true, announcement, ...result });
+  }
+  if ((path === '/announcements/read' || path === '/announcements/like') && method === 'POST') {
+    const b = await body();
+    const announcements = await getJson(env, K.announcements, []);
+    const item = announcements.find(a => a.id === b.announcementId);
+    if (!item) return json({ error: 'not_found' }, 404);
+    if (path.endsWith('/like')) item.likes = upsertPerson(item.likes, user);
+    item.reads = upsertPerson(item.reads, user);
+    await putJson(env, K.announcements, announcements);
+    return json({ ok: true });
+  }
+  if (path.startsWith('/announcements/') && (method === 'PUT' || method === 'DELETE')) {
+    const denied = requireAdmin(); if (denied) return denied;
+    const id = decodeURIComponent(path.slice('/announcements/'.length));
+    const announcements = await getJson(env, K.announcements, []);
+    if (method === 'DELETE') {
+      await putJson(env, K.announcements, announcements.filter(a => a.id !== id));
+      return json({ ok: true });
+    }
+    const b = await body();
+    const item = announcements.find(a => a.id === id);
+    if (!item) return json({ error: 'not_found' }, 404);
+    const text = clean(b.body, 5000);
+    if (!text) return json({ error: 'body_required' }, 400);
+    item.body = text;
+    item.updatedAt = new Date().toISOString();
+    await putJson(env, K.announcements, announcements);
+    return json({ ok: true, announcement: item });
+  }
+
+  // ---- Bildirimler ----
+  if (path === '/subscribe' && method === 'POST') {
+    const b = await body();
+    if (!b.subscription || !b.subscription.endpoint) return json({ error: 'subscription_missing' }, 400);
+    const id = await sha256Hex(b.subscription.endpoint);
+    await env.SUBSCRIPTIONS.put(id, JSON.stringify({ subscription: b.subscription, username: user.username, role: user.role, createdAt: new Date().toISOString() }));
+    return json({ ok: true, id });
+  }
+  if (path === '/send' && method === 'POST') {
+    const denied = requireAdmin(); if (denied) return denied;
+    const b = await body();
+    const payload = { title: clean(b.title, 120) || 'AK Parti Kepez', body: clean(b.body, 2000) || 'Yeni bildirim var.', url: b.url || './', target: normalizeTarget(b.target) };
+    await putJson(env, K.latest, { ...payload, sentAt: new Date().toISOString() });
+    return json({ ok: true, ...(await pushToTarget(env, payload.target)) });
+  }
+
+  return json({ error: 'not_found' }, 404);
+}
+
