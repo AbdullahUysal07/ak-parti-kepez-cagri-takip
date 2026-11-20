@@ -444,6 +444,92 @@ function cleanPhone(v) {
   return d.slice(0, 15);
 }
 
+
+// --------------------------- Harita konumları -----------------------------
+// Sokak konumu OpenStreetMap (Nominatim) ile, bina konumları ArcGIS ile bulunur ve
+// KV'de saklanır; bir sokak bir kez bulununca herkes için anında açılır.
+const GEO_UA = 'ak-parti-kepez-cagri-takip/1.0 (+https://abdullahuysal07.github.io/ak-parti-kepez-cagri-takip/)';
+function hoodBase(hood) { return String(hood || '').replace(/\s*MAH\.?$/i, '').trim(); }
+function trLower(v) { return String(v || '').toLocaleLowerCase('tr-TR'); }
+function streetForOsm(street) {
+  return String(street || '').toLocaleLowerCase('tr-TR')
+    .replace(/\bsok(ak|\.)?\b/g, 'Sokak').replace(/\bcad(desi|\.)?\b/g, 'Caddesi').replace(/\bbulvar(ı)?\b/g, 'Bulvarı')
+    .replace(/(^|\s)(\p{L})/gu, (m, a, b) => a + b.toLocaleUpperCase('tr-TR'));
+}
+function flattenLine(geojson) {
+  if (!geojson) return null;
+  if (geojson.type === 'LineString') return geojson.coordinates.map(([lng, lat]) => [lat, lng]);
+  if (geojson.type === 'MultiLineString') return geojson.coordinates.flat().map(([lng, lat]) => [lat, lng]);
+  return null;
+}
+async function nominatim(params) {
+  const u = new URL('https://nominatim.openstreetmap.org/search');
+  Object.entries({ format: 'jsonv2', countrycodes: 'tr', 'accept-language': 'tr', limit: '5', ...params }).forEach(([k, v]) => u.searchParams.set(k, v));
+  try {
+    const res = await fetch(u.toString(), { headers: { 'User-Agent': GEO_UA, Accept: 'application/json' } });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (e) { return []; }
+}
+async function arcgis(text) {
+  try {
+    const res = await fetch('https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?f=json&maxLocations=1&outFields=Score&SingleLine=' + encodeURIComponent(text));
+    const data = await res.json();
+    const c = data.candidates && data.candidates[0];
+    return c && c.location ? { lat: c.location.y, lng: c.location.x, score: c.score || 0 } : null;
+  } catch (e) { return null; }
+}
+function distM(a, b) {
+  const R = 6371000, r = x => x * Math.PI / 180;
+  const h = Math.sin(r(b.lat - a.lat) / 2) ** 2 + Math.cos(r(a.lat)) * Math.cos(r(b.lat)) * Math.sin(r(b.lng - a.lng) / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+const KEPEZ_CENTER = { lat: 36.95, lng: 30.69 };
+function inKepez(p) { return p && distM(p, KEPEZ_CENTER) < 25000; }
+async function locateStreet(street, hood) {
+  const hb = trLower(hoodBase(hood));
+  const pick = list => {
+    const ok = (list || []).filter(r => inKepez({ lat: +r.lat, lng: +r.lon }));
+    return ok.find(r => trLower(r.display_name).includes(hb)) || ok[0] || null;
+  };
+  const osmStreet = streetForOsm(street);
+  let r = pick(await nominatim({ street: osmStreet, county: 'Kepez', state: 'Antalya', polygon_geojson: '1' }));
+  if (!r) r = pick(await nominatim({ q: `${osmStreet}, ${hoodBase(hood)}, Kepez, Antalya`, polygon_geojson: '1' }));
+  if (r) return { point: { lat: +r.lat, lng: +r.lon }, line: flattenLine(r.geojson), source: 'osm' };
+  const a = await arcgis(`${street} ${hood} Kepez Antalya Türkiye`);
+  if (a && a.score >= 85 && inKepez(a)) return { point: { lat: a.lat, lng: a.lng }, line: null, source: 'arcgis' };
+  const h = pick(await nominatim({ q: `${hoodBase(hood)} Mahallesi, Kepez, Antalya` }));
+  if (h) return { point: { lat: +h.lat, lng: +h.lon }, line: null, source: 'hood' };
+  return { point: { lat: 36.9300, lng: 30.6900 }, line: null, source: 'kepez' };
+}
+async function geoForStreet(env, body) {
+  const street = clean(body.street, 120);
+  const hood = clean(body.hood, 80);
+  if (!street) return json({ error: 'street_required' }, 400);
+  const key = '__geo__:' + (await sha256Hex(trLower(hood) + '|' + trLower(street))).slice(0, 32);
+  let rec = await getJson(env, key, null);
+  let changed = false;
+  if (!rec || (rec.source === 'kepez' && Date.now() - (rec.at || 0) > 864e5) || (rec.source === 'hood' && Date.now() - (rec.at || 0) > 7 * 864e5)) {
+    rec = { street, hood, ...(await locateStreet(street, hood)), doors: {}, at: Date.now() };
+    changed = true;
+  }
+  const doors = [...new Set((Array.isArray(body.doors) ? body.doors : []).map(d => clean(d, 12)).filter(Boolean))];
+  const missing = rec.source === 'kepez' ? [] : doors.filter(d => !(d in rec.doors)).slice(0, 36);
+  const queue = missing.slice();
+  const work = async () => {
+    while (queue.length) {
+      const d = queue.shift();
+      const p = await arcgis(`${street} No:${d} ${hood} Kepez Antalya Türkiye`);
+      rec.doors[d] = p && p.score >= 80 && distM(p, rec.point) < (rec.line ? 900 : 600) ? [+p.lat.toFixed(6), +p.lng.toFixed(6)] : 0;
+    }
+  };
+  await Promise.all(Array.from({ length: 6 }, work));
+  if (missing.length) changed = true;
+  if (changed) await putJson(env, key, rec);
+  const pending = rec.source === 'kepez' ? 0 : doors.filter(d => !(d in rec.doors)).length;
+  return json({ ok: true, point: rec.point, line: rec.line, source: rec.source, doors: rec.doors, pending });
+}
+
 // --------------------------- İstek yönlendirme ----------------------------
 export default {
   async fetch(request, env) {
@@ -560,6 +646,9 @@ async function handle(request, env) {
     }
     return json({ ok: true, index, removedKeys: removed });
   }
+
+  // ---- Harita ----
+  if (path === '/geo' && method === 'POST') return geoForStreet(env, await body());
 
   // ---- Başkanlar / Yönetim ----
   if (path === '/leaders' && method === 'GET') return json({ ok: true, leaders: await getJson(env, K.leaders, []) });
