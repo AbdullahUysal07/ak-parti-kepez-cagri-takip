@@ -172,6 +172,7 @@ const K = {
   users: '__users__',
   overrides: '__access_overrides__',
   leaders: '__leaders__',
+  org: '__org__',
   requests: '__requests__',
   memberIndex: '__members_index__',
   memberEdits: '__member_edits__',
@@ -240,21 +241,36 @@ async function memberIdFromTc(secretHex, tc) {
 }
 
 // --------------------------- Kullanıcılar ---------------------------------
+// Teşkilat grupları:
+//  yurutme  → Yürütme Kurulu, tüm mahalleler
+//  il_koord → İl Koordinatörü, tüm mahalleler
+//  yonetim  → Yönetim Kurulu, yalnızca sorumlu olduğu mahalleler
+//  mahalle  → Mahalle Başkanı, kendi mahallesi
+const GROUP_LABELS = { yurutme: 'Yürütme Kurulu', il_koord: 'İl Koordinatörü', yonetim: 'Yönetim Kurulu', mahalle: 'Mahalle Başkanı' };
 async function loadUsers(env) {
-  const [base, overrides] = await Promise.all([getJson(env, K.users, []), getJson(env, K.overrides, {})]);
-  return base.map(u => effectiveUser(u, overrides[u.username]));
+  const [base, overrides, org] = await Promise.all([getJson(env, K.users, []), getJson(env, K.overrides, {}), getJson(env, K.org, null)]);
+  return base.map(u => effectiveUser(u, overrides[u.username], org));
 }
-function effectiveUser(u, o) {
+function effectiveUser(u, o, org) {
   o = o || {};
-  const role = (o.role || u.role) === 'neighborhood' ? 'neighborhood' : 'management';
-  const neighborhoods = role === 'management' ? [] : (o.neighborhoods && o.neighborhoods.length ? o.neighborhoods : (u.neighborhoods || []));
+  const baseRole = (o.role || u.role) === 'neighborhood' ? 'neighborhood' : 'management';
+  let group = o.group || (org && org.groups && org.groups[u.username]) || (baseRole === 'neighborhood' ? 'mahalle' : 'yonetim');
+  if (!GROUP_LABELS[group]) group = baseRole === 'neighborhood' ? 'mahalle' : 'yonetim';
+  const role = group === 'mahalle' ? 'neighborhood' : 'management';
+  const admin = ADMIN_USERNAMES.includes(u.username);
+  // Teşkilat listesi henüz yüklenmediyse yönetim eskisi gibi tüm mahalleleri görür
+  const allHoods = admin || group === 'yurutme' || group === 'il_koord' || (role === 'management' && !org && !o.group);
+  const assigned = o.neighborhoods && o.neighborhoods.length ? o.neighborhoods
+    : role === 'management' ? ((org && org.access && org.access[u.username]) || []) : (u.neighborhoods || []);
   return {
     username: u.username,
     loginUsername: normalizeUser(o.loginUsername || u.username) || u.username,
     name: (o.name || u.name || u.username).trim(),
     refName: (o.refName || '').trim(),
     role,
-    neighborhoods,
+    group,
+    allHoods,
+    neighborhoods: allHoods ? [] : assigned,
     disabled: !!o.disabled,
     password: String(o.password || DEFAULT_PASSWORD)
   };
@@ -266,13 +282,17 @@ function publicUser(u) {
     name: u.name,
     refName: u.refName,
     role: u.role,
+    group: u.group,
+    groupLabel: GROUP_LABELS[u.group] || '',
+    allHoods: u.allHoods,
     neighborhoods: u.neighborhoods,
     isAdmin: ADMIN_USERNAMES.includes(u.username),
     title: USER_TITLES[u.username] || '',
-    canAnalysis: ADMIN_USERNAMES.includes(u.username) || u.role === 'neighborhood' || ANALYSIS_USERS.includes(normalizeUser(u.username)) || ANALYSIS_USERS.includes(normalizeUser(u.loginUsername)) || ANALYSIS_USERS.includes(normalizeUser(u.name)),
+    canAnalysis: true,
     mustChangePassword: u.password === DEFAULT_PASSWORD
   };
 }
+function userCanSeeHood(u, hood) { return u.allHoods || u.neighborhoods.includes(hood); }
 
 // --------------------------- Oturum (token) --------------------------------
 async function passwordVersion(secret, u) {
@@ -312,7 +332,7 @@ async function membersResponse(env, user, have) {
   const index = await getJson(env, K.memberIndex, null);
   const edits = await env.SUBSCRIPTIONS.get(K.memberEdits) || '{}';
   if (!index) return textResponse(`{"ok":true,"version":null,"hoods":[],"data":{},"edits":${edits}}`);
-  const allowed = user.role === 'management' ? index.hoods.map(h => h.name) : index.hoods.map(h => h.name).filter(h => user.neighborhoods.includes(h));
+  const allowed = index.hoods.map(h => h.name).filter(h => userCanSeeHood(user, h));
   const hoods = index.hoods.filter(h => allowed.includes(h.name));
   // Cihazda aynı sürüm varsa listeyi tekrar gönderme; sadece düzenlemeleri gönder.
   if (have && have === index.version) return textResponse(`{"ok":true,"unchanged":true,"nameIndex":${index.nameIndex ? 'true' : 'false'},"version":${JSON.stringify(index.version)},"updatedAt":${JSON.stringify(index.updatedAt || '')},"hoods":${JSON.stringify(hoods)},"edits":${edits}}`);
@@ -737,6 +757,8 @@ async function handle(request, env) {
     return json({ ok: true });
   }
 
+  if (path === '/org' && method === 'GET') return json({ ok: true, org: await getJson(env, K.org, null) });
+
   // ---- Başkanlar / Yönetim ----
   if (path === '/leaders' && method === 'GET') return json({ ok: true, leaders: await getJson(env, K.leaders, []) });
   if (path === '/leaders' && method === 'POST') {
@@ -813,11 +835,14 @@ async function handle(request, env) {
     const username = clean(b.username, 80);
     const base = await getJson(env, K.users, []);
     if (!base.some(u => u.username === username)) return json({ error: 'user_not_found' }, 404);
-    const role = b.role === 'neighborhood' ? 'neighborhood' : 'management';
+    const group = GROUP_LABELS[b.group] ? b.group : (b.role === 'neighborhood' ? 'mahalle' : 'yonetim');
+    const role = group === 'mahalle' ? 'neighborhood' : 'management';
+    const hoodsIn = Array.isArray(b.neighborhoods) ? b.neighborhoods : [b.neighborhood];
     const overrides = await getJson(env, K.overrides, {});
     overrides[username] = {
       role,
-      neighborhoods: role === 'management' ? [] : [clean(b.neighborhood, 80)].filter(Boolean),
+      group,
+      neighborhoods: group === 'yurutme' || group === 'il_koord' ? [] : hoodsIn.map(h => clean(h, 80)).filter(Boolean).slice(0, 80),
       disabled: !!b.disabled,
       loginUsername: normalizeUser(b.loginUsername || username) || username,
       name: clean(b.name, 120),
@@ -836,7 +861,7 @@ async function handle(request, env) {
   // Kendi kapsamındaki arama durumları (mahalle başkanı: kendi mahallesi; yönetim: tümü)
   if (path === '/logs/scope' && method === 'GET') {
     const logs = await getJson(env, K.logs, []);
-    const scoped = user.role === 'management' ? logs : logs.filter(l => user.neighborhoods.includes(l.neighborhood));
+    const scoped = logs.filter(l => userCanSeeHood(user, l.neighborhood));
     return json({ ok: true, logs: scoped.map(l => ({ id: l.id, memberId: l.memberId, memberName: l.memberName, neighborhood: l.neighborhood, status: l.status, note: l.note, agent: l.agent, username: l.username, time: l.time })) });
   }
   if (path === '/logs' && method === 'POST') {
