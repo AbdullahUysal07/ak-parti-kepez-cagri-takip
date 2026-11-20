@@ -1,23 +1,34 @@
-# Üye Çağrı Takip
+# AK Parti Kepez Üye Çağrı Takip
 
-Bu klasör GitHub Pages için hazırdır.
+Site (`index.html`) GitHub'a her push'ta Cloudflare'de otomatik yayınlanır.
+Sunucu tarafı `cloudflare-worker/` klasöründeki `ak-parti-kepez-push` worker'ıdır.
 
-## Yayınlama
+## Güvenlik
 
-1. GitHub'da yeni bir repository oluştur.
-2. Bu klasördeki `index.html` dosyasını repository'ye yükle.
-3. Repository içinde `Settings > Pages` ekranına gir.
-4. `Source` bölümünde `Deploy from a branch` seç.
-5. Branch olarak `main`, klasör olarak `/root` seç ve kaydet.
-6. GitHub'ın verdiği Pages linkini iPhone Safari'de aç.
-7. Safari'de paylaş menüsünden `Ana Ekrana Ekle` seçeneğiyle uygulama gibi kullan.
+- Üye listesi, mahalle başkanları ve kullanıcı bilgileri **bu repoda tutulmaz**.
+  Hepsi Cloudflare KV'de durur; sunucu yalnızca giriş yapmış kullanıcıya,
+  yetkili olduğu kısmı gönderir (mahalle başkanı yalnızca kendi mahallesini görür).
+- TC kimlik numaraları sunucuya hiç gönderilmez. Excel yüklenirken tarayıcıda,
+  geri çevrilemez bir koda dönüştürülür ve hiçbir ekranda gösterilmez.
+- Ortak başlangıç şifresiyle giren kullanıcılardan kendi şifrelerini belirlemeleri istenir.
 
-## Kullanım
+## Worker'ı yayına alma
 
-- Mahalle seç.
-- Üyeyi ara veya listeden seç.
-- `Ara` butonuyla iPhone arama ekranını aç.
-- Görüşme sonrası durum ve not kaydet.
-- Logları `Logları İndir` butonuyla CSV olarak dışa aktar.
+```
+cd cloudflare-worker
+npx wrangler deploy
+```
 
-Notlar iPhone'daki tarayıcıda saklanır. Farklı cihazlardan aynı logları ortak görmek için sonraki aşamada veritabanı gerekir.
+İlk kurulumda kullanıcı ve başkan listeleri bir kez KV'ye yüklenir
+(dosyalar repoda değildir, ayrıca verilir):
+
+```
+npx wrangler kv key put --binding SUBSCRIPTIONS --remote "__users__" --path users-seed.json
+npx wrangler kv key put --binding SUBSCRIPTIONS --remote "__leaders__" --path leaders-seed.json
+```
+
+## Üye listesini güncelleme
+
+Hasan Demir Paneli → **Üye Listesi Yükle** sekmesinden AKBİS Excel dosyası seçilir.
+Listede olmayan üyeler kaldırılır, yeni üyeler eklenir; panelden yapılan
+telefon/adres düzenlemeleri korunur.
