@@ -809,6 +809,12 @@ async function handle(request, env) {
     const denied = requireAdmin(); if (denied) return denied;
     return json({ ok: true, logs: await migrateLogs(env, await getJson(env, K.logs, [])) });
   }
+  // Kendi kapsamındaki arama durumları (mahalle başkanı: kendi mahallesi; yönetim: tümü)
+  if (path === '/logs/scope' && method === 'GET') {
+    const logs = await getJson(env, K.logs, []);
+    const scoped = user.role === 'management' ? logs : logs.filter(l => user.neighborhoods.includes(l.neighborhood));
+    return json({ ok: true, logs: scoped.map(l => ({ id: l.id, memberId: l.memberId, memberName: l.memberName, neighborhood: l.neighborhood, status: l.status, note: l.note, agent: l.agent, username: l.username, time: l.time })) });
+  }
   if (path === '/logs' && method === 'POST') {
     const b = await body();
     if (!b.memberId) return json({ error: 'member_required' }, 400);

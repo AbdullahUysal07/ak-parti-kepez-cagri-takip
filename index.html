@@ -238,6 +238,8 @@
     .check-badge { font-size:1.35rem; font-weight:900; letter-spacing:.3px; }
     .check-result.ok .check-badge { color:#15803d; } .check-result.no .check-badge { color:#1d4ed8; } .check-result.warn .check-badge { color:#b91c1c; }
     body.hide-toolbar .toolbar { display:none!important; }
+    body.auto-mode #statusFilter,body.auto-mode #nextBtn { display:none; }
+    body.auto-mode .toolbar { grid-template-columns:1fr 1fr; }
     /* ---- Yeni menü ---- */
     .drawer-panel { width:min(300px,86vw); background:#f8fafc; }
     .drawer-head { padding:16px 14px; background:linear-gradient(135deg,var(--brand2),#1d5fb8); }
@@ -260,6 +262,47 @@
     .nav-label { flex:1; }
     .nav-badge { min-width:22px; height:22px; padding:0 7px; border-radius:999px; background:#f28c00; color:#fff; font-size:.75rem; font-weight:800; display:inline-grid; place-items:center; }
     .nav-badge[hidden] { display:none; }
+    /* ---- Otomatik arama ---- */
+    .auto2 { display:grid; gap:12px; }
+    .auto-head { display:flex; justify-content:space-between; align-items:flex-end; gap:12px; flex-wrap:wrap; }
+    .auto-head h2 { margin:0; }
+    .auto-today { display:flex; gap:6px; flex-wrap:wrap; }
+    .auto-today span { background:#f1f5f9; border-radius:999px; padding:4px 10px; font-size:.8rem; color:#475569; }
+    .auto-today .ok { background:#dcfce7; color:#166534; } .auto-today .na { background:#e2e8f0; } .auto-today .lt { background:#fef3c7; color:#92400e; }
+    .scope-chips { display:flex; gap:6px; flex-wrap:wrap; }
+    .scope-chip { width:auto; min-height:34px; padding:0 12px; border-radius:999px; background:#fff; color:#334155; border:1px solid var(--line); font-weight:700; font-size:.85rem; display:inline-flex; gap:6px; align-items:center; }
+    .scope-chip span { background:#f1f5f9; border-radius:999px; padding:0 7px; font-size:.75rem; }
+    .scope-chip.active { background:var(--brand2); color:#fff; border-color:var(--brand2); } .scope-chip.active span { background:rgba(255,255,255,.2); }
+    .auto-progress { height:6px; background:#e2e8f0; border-radius:999px; overflow:hidden; } .auto-progress span { display:block; height:100%; background:#f28c00; }
+    .auto-grid { display:grid; grid-template-columns:minmax(0,1fr) 280px; gap:12px; align-items:start; }
+    .ap-card { border:1px solid var(--line); border-radius:14px; background:#fff; padding:16px; display:grid; gap:12px; box-shadow:0 8px 24px rgba(18,60,124,.06); }
+    .ap-head { display:flex; gap:12px; align-items:center; }
+    .ap-avatar { width:52px; height:52px; border-radius:50%; background:#eef4ff; color:var(--brand2); display:grid; place-items:center; font-weight:900; font-size:1.1rem; flex:0 0 auto; }
+    .ap-who { flex:1; min-width:0; } .ap-who h2 { margin:0; font-size:1.35rem; }
+    .ap-call { display:grid; grid-template-columns:1fr auto; gap:8px; }
+    .ap-phone { display:flex; align-items:center; justify-content:center; gap:10px; min-height:64px; border-radius:12px; background:#16a34a; color:#fff; text-decoration:none; font-size:1.15rem; font-weight:800; }
+    .ap-phone svg { width:24px; height:24px; } .ap-phone strong { letter-spacing:.5px; }
+    .ap-wa { display:flex; align-items:center; justify-content:center; padding:0 16px; border-radius:12px; background:#e7f8ee; color:#15803d; font-weight:800; text-decoration:none; border:1px solid #bbf7d0; }
+    .auto-prompt { display:none; background:#fff4df; color:#7c3f00; border:1px solid #f5c27a; border-radius:10px; padding:10px 12px; font-weight:800; text-align:center; }
+    .auto-prompt.show { display:block; animation:pulse 1.2s ease-in-out 2; }
+    @keyframes pulse { 50% { transform:scale(1.02); } }
+    .ap-results { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+    .ap-results button { min-height:54px; border-radius:12px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; border:0; color:#fff; }
+    .ap-results kbd { font-size:.7rem; opacity:.75; font-family:inherit; }
+    .r-ok { background:#16a34a; } .r-na { background:#64748b; } .r-lt { background:#d97706; } .r-wr { background:#dc2626; }
+    .ap-nav { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+    .ap-nav button { width:auto; min-height:38px; padding:0 14px; }
+    .ap-hist { display:grid; gap:6px; border-top:1px dashed var(--line); padding-top:10px; }
+    .ap-hist-row { display:grid; gap:2px; }
+    .ap-next { border:1px solid var(--line); border-radius:14px; background:#fff; padding:12px; display:grid; gap:6px; }
+    .ap-next h3 { margin:0 0 4px; font-size:.95rem; }
+    .ap-next-row { width:100%; display:flex; gap:10px; align-items:center; text-align:left; background:#f8fafc; color:#1e293b; border:1px solid var(--line); border-radius:10px; padding:8px 10px; min-height:0; }
+    .ap-next-row > span:last-child { display:grid; } .ap-next-row strong { font-size:.88rem; }
+    .ap-num { min-width:28px; height:28px; border-radius:50%; background:#e2e8f0; display:grid; place-items:center; font-size:.75rem; font-weight:800; color:#475569; }
+    .auto-done { text-align:center; padding:40px 10px; border:1px dashed var(--line); border-radius:14px; }
+    .auto-done-ic { width:56px; height:56px; border-radius:50%; background:#dcfce7; color:#16a34a; display:grid; place-items:center; font-size:1.8rem; margin:0 auto 8px; }
+    .scope-chip:hover { background:#f8fafc; color:#334155; } .scope-chip.active:hover { background:var(--brand2); color:#fff; }
+    @media (max-width:1050px) { body.auto-mode .detail { max-height:none; overflow:visible; } body.auto-mode .wrap>.panel { min-height:0; } .ap-phone { font-size:1rem; } .auto-grid { grid-template-columns:1fr; } .ap-results { grid-template-columns:1fr 1fr; } .kbd-hint,.ap-results kbd { display:none; } .ap-next { order:2; } }
     .nav-request { border-top:0; }
     .drawer-foot { border-top:1px solid var(--line); padding:8px 10px 12px; display:grid; gap:2px; background:#fff; }
     .nav-small { min-height:38px; font-size:.88rem; font-weight:500; color:#475569; }
@@ -418,8 +461,8 @@
     function canSeeNeighborhood(n){return isManagement()||(state.user&&(state.user.neighborhoods||[]).includes(n));}
 
     // ------------------------------------------------------------------ yerel durum
-    function save(){try{localStorage.setItem(key,JSON.stringify({selected:state.selected,neighborhood:state.neighborhood,mode:state.mode,adminTab:state.adminTab,lastSeenAnnouncement:state.lastSeenAnnouncement,localLogs:isAdmin()?[]:state.logs.slice(0,300)}));}catch(e){}}
-    function load(){try{const s=JSON.parse(localStorage.getItem(key)||'{}'); state.selected=s.selected||null; state.neighborhood=s.neighborhood||'all'; state.mode=s.mode||'home'; if(state.mode==='logs'){state.mode='admin'; state.adminTab='loglar';} state.adminTab=s.adminTab||state.adminTab; state.lastSeenAnnouncement=s.lastSeenAnnouncement||''; state.logs=Array.isArray(s.localLogs)?s.localLogs:[];}catch(e){} localStorage.removeItem('uye-cagri-v2');}
+    function save(){try{localStorage.setItem(key,JSON.stringify({selected:state.selected,neighborhood:state.neighborhood,mode:state.mode,adminTab:state.adminTab,autoScope:state.autoScope,lastSeenAnnouncement:state.lastSeenAnnouncement,localLogs:isAdmin()?[]:state.logs.slice(0,300)}));}catch(e){}}
+    function load(){try{const s=JSON.parse(localStorage.getItem(key)||'{}'); state.selected=s.selected||null; state.neighborhood=s.neighborhood||'all'; state.mode=s.mode||'home'; if(state.mode==='logs'){state.mode='admin'; state.adminTab='loglar';} state.adminTab=s.adminTab||state.adminTab; state.autoScope=s.autoScope||'new'; state.lastSeenAnnouncement=s.lastSeenAnnouncement||''; state.logs=Array.isArray(s.localLogs)?s.localLogs:[];}catch(e){} localStorage.removeItem('uye-cagri-v2');}
     function indexLogs(){memberLogs.clear(); state.logs.forEach(l=>{if(!memberLogs.has(l.memberId))memberLogs.set(l.memberId,[]); memberLogs.get(l.memberId).push(l);});}
     function logsFor(id){return memberLogs.get(id)||[];}
     function statusFor(id){return (logsFor(id)[0]||{status:'new'}).status;}
@@ -457,7 +500,7 @@
     async function loadMine(force=false){if(state.mineLoaded&&!force)return; try{const data=await api('/members/mine'); state.mine=data.members||[]; state.mineLoaded=true;}catch(e){if(e.message!=='unauthorized')toast('Üyeleriniz alınamadı.');}}
     async function loadLeaders(){try{const data=await api('/leaders'); state.leaders=data.leaders||[];}catch(e){}}
     async function loadUsers(){if(!isAdmin())return; try{const data=await api('/access'); state.users=data.users||[];}catch(e){}}
-    async function loadLogs(){if(!isAdmin())return; try{const data=await api('/logs'); state.logs=data.logs||[]; indexLogs();}catch(e){}}
+    async function loadLogs(){try{const data=await api(isAdmin()?'/logs':'/logs/scope'); const server=data.logs||[]; const ids=new Set(server.map(l=>l.id)); const local=queuedLogs().filter(l=>!ids.has(l.id)); state.logs=[...local,...server].sort((a,b)=>String(b.time).localeCompare(String(a.time))); indexLogs();}catch(e){}}
     async function loadRequests(){try{const data=await api('/requests'); state.requests=data.requests||[];}catch(e){}}
     async function loadLocations(){if(!canSeeLiveLocations()){state.locations=[]; return;} try{const data=await api('/locations'); state.locations=data.locations||[];}catch(e){}}
 
@@ -469,7 +512,9 @@
     function filtered(){const q=norm(state.query); return state.members.filter(m=>{const hasPhone=!!String(m.phone||'').trim(); const n=state.neighborhood==='all'||m.neighborhood===state.neighborhood; const s=state.status==='all'||statusFor(m.id)===state.status; const t=!q||memberText(m).includes(q); return hasPhone&&isKepezNeighborhood(m.neighborhood)&&n&&s&&t;});}
     function mineList(){const q=norm(state.query); return state.mine.filter(m=>(!q||memberText(m).includes(q))&&(state.status==='all'||statusFor(m.id)===state.status));}
     function analysisList(){const q=norm(state.query); return state.members.filter(m=>{const hasPhone=!!String(m.phone||'').trim(); const s=state.status==='all'||statusFor(m.id)===state.status; const t=!q||memberText(m).includes(q); return isKepezNeighborhood(m.neighborhood)&&hasPhone&&s&&t;});}
-    function currentList(){return state.memberTab==='mine'?mineList():filtered();}
+    const AUTO_SCOPES=[['new','Aranmamış'],['later','Tekrar aranacak'],['noanswer','Cevap vermeyen'],['all','Tümü']];
+    function autoList(scope=state.autoScope||'new'){const q=norm(state.query); return state.members.filter(m=>{if(!String(m.phone||'').trim()||!isKepezNeighborhood(m.neighborhood))return false; if(state.neighborhood!=='all'&&m.neighborhood!==state.neighborhood)return false; if(q&&!memberText(m).includes(q))return false; const st=statusFor(m.id); return scope==='all'||st===scope;});}
+    function currentList(){if(state.mode==='auto')return autoList(); return state.memberTab==='mine'?mineList():filtered();}
     function isNeighborhoodLeader(l){const r=String(l.role||'').toLocaleLowerCase('tr-TR'); return isKepezNeighborhood(l.neighborhood)&&r.includes('mahalle başkanı');}
     // Mahalle başkanları tüm kademelere açık: kullanıcının kendi mahallesiyle sınırlanmaz.
     function leaderList(){const q=norm(state.query); return state.leaders.filter(l=>isNeighborhoodLeader(l)&&(!q||norm([l.name,l.phone,l.neighborhood,l.address,l.role,l.branch].join(' ')).includes(q))).sort((a,b)=>(a.neighborhood||'').localeCompare(b.neighborhood||'','tr')||String(a.branch).localeCompare(String(b.branch),'tr')||a.name.localeCompare(b.name,'tr'));}
@@ -558,9 +603,58 @@
       const m=selectedMember();
       if(!m){$('detail').innerHTML=`<div class="empty">${state.memberTab==='mine'?'Listeden bir üyenize dokunun.':'Bu mahallede aranacak numara bulunamadı.'}</div>`; return;}
       const st=statusFor(m.id);
-      if(state.mode==='auto'){const position=Math.max(1,list.findIndex(x=>x.id===m.id)+1); $('detail').innerHTML=`<div class="auto-card"><div><h2>Otomatik Arama</h2><div class="auto-count">${esc(m.neighborhood)} • ${position} / ${list.length} kişi</div></div><div class="auto-person"><h2>${esc(m.name)}</h2><a class="auto-phone" href="tel:${esc(m.phone)}" data-auto-call="${esc(m.id)}">Ara: ${esc(m.phone)}</a><div class="auto-actions"><button data-auto-status="called">Görüşüldü</button><button data-auto-status="noanswer">Cevap yok</button><button data-auto-status="later">Sonra ara</button></div><textarea id="autoNote" placeholder="Not yazılabilir"></textarea><button class="secondary" id="skipBtn" type="button">Aramadan Geç</button></div><div class="facts"><div class="fact"><div>Mahalle</div><div>${esc(m.neighborhood)}</div></div><div class="fact"><div>Adres</div><div>${esc(m.address||'-')}</div></div></div></div>`; document.querySelectorAll('[data-auto-status]').forEach(b=>b.onclick=()=>addLog(b.dataset.autoStatus,$('autoNote').value,'',true)); $('skipBtn').onclick=()=>selectNext(); return;}
+      if(state.mode==='auto'){renderAuto(list); return;}
       $('detail').innerHTML=`<div class="log-top"><h2>${esc(m.name)}</h2><span class="badge ${st}">${statusLabels[st]}</span></div><div class="detail-actions">${m.phone?`<a class="phone" href="tel:${esc(m.phone)}">Ara: ${esc(m.phone)}</a>`:'<div class="phone" style="background:#94a3b8">Telefon yok</div>'}<a class="map-link" href="${esc(mapUrlFor(m))}" target="_blank" rel="noopener">Konum Aç</a></div>${memberFacts(m)}${m.phone?`<div class="quick"><button data-quick="called">Görüşüldü</button><button data-quick="noanswer">Cevap yok</button><button data-quick="later">Tekrar aranacak</button><button data-quick="wrong">Hatalı numara</button></div><form id="noteForm" class="form"><div class="grid2"><div class="field"><label>Durum</label><select id="noteStatus"><option value="called">Görüşüldü</option><option value="noanswer">Cevap yok</option><option value="later">Tekrar aranacak</option><option value="wrong">Hatalı numara</option></select></div><div class="field"><label>Arayan</label><input id="agent" placeholder="Adın" value="${esc(state.user.name)}"></div></div><div class="field"><label>Not</label><textarea id="note" placeholder="Görüşme notu"></textarea></div><div class="actions"><button>Log Kaydet</button><button type="button" class="secondary" id="copyBtn">Telefonu Kopyala</button></div></form>`:''}${memberEditForm(m)}`;
       if(m.phone){$('noteStatus').value=st==='new'?'called':st; $('noteForm').onsubmit=e=>{e.preventDefault(); addLog($('noteStatus').value,$('note').value,$('agent').value);}; document.querySelectorAll('[data-quick]').forEach(b=>b.onclick=()=>addLog(b.dataset.quick,'',$('agent')?$('agent').value:'')); $('copyBtn').onclick=()=>navigator.clipboard.writeText(m.phone).then(()=>toast('Telefon kopyalandı.'));}
+    }
+
+    // ------------------------------------------------------------------ otomatik arama
+    function initials(n){return String(n||'').split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toLocaleUpperCase('tr-TR');}
+    function waLink(phone){const d=cleanPhone(phone).replace(/^0/,''); return d?`https://wa.me/90${d}`:'';}
+    function todayStats(){const me=state.user.username; const day=new Date().toDateString(); const mine=state.logs.filter(l=>l.username===me&&new Date(l.time).toDateString()===day); const c=k=>mine.filter(l=>l.status===k).length; return {total:mine.length,called:c('called'),noanswer:c('noanswer'),later:c('later'),wrong:c('wrong')};}
+    function renderAuto(list){
+      const m=selectedMember(); const scope=state.autoScope||'new';
+      const counts=Object.fromEntries(AUTO_SCOPES.map(([k])=>[k,autoList(k).length]));
+      const chips=`<div class="scope-chips">${AUTO_SCOPES.map(([k,v])=>`<button type="button" class="scope-chip ${scope===k?'active':''}" data-auto-scope="${k}">${v}<span>${counts[k].toLocaleString('tr-TR')}</span></button>`).join('')}</div>`;
+      const t=todayStats();
+      const head=`<div class="auto-head"><div><h2>Otomatik Arama</h2><div class="small">${esc(state.neighborhood==='all'?'Tüm mahalleler':state.neighborhood)} • sıradaki kişiler: ${list.length.toLocaleString('tr-TR')}</div></div><div class="auto-today"><span title="Bugün aradıklarınız"><b>${t.total}</b> bugün</span><span class="ok"><b>${t.called}</b> görüşüldü</span><span class="na"><b>${t.noanswer}</b> cevap yok</span><span class="lt"><b>${t.later}</b> tekrar</span></div></div>`;
+      if(!m){$('detail').innerHTML=`<div class="auto2">${head}${chips}<div class="auto-done"><div class="auto-done-ic">✓</div><h3>Bu listede aranacak kimse kalmadı</h3><p class="small">Üstten başka bir liste seçebilir ya da mahalle filtresini değiştirebilirsiniz.</p></div></div>`; return;}
+      const idx=Math.max(0,list.findIndex(x=>x.id===m.id)); const pct=list.length?Math.round(idx/list.length*100):0;
+      const st=statusFor(m.id); const hist=logsFor(m.id).slice(0,3);
+      const next=list.slice(idx+1,idx+7);
+      const waiting=sessionStorage.getItem('pending-auto-call')===m.id;
+      $('detail').innerHTML=`<div class="auto2">${head}${chips}
+        <div class="auto-progress"><span style="width:${pct}%"></span></div>
+        <div class="auto-grid">
+          <article class="ap-card">
+            <div class="ap-head"><div class="ap-avatar">${esc(initials(m.name))}</div><div class="ap-who"><h2>${esc(m.name)}</h2><div class="small">${esc(m.neighborhood)} • ${esc(doorText(m))}</div></div><span class="badge ${st}">${statusLabels[st]}</span></div>
+            <div class="ap-call"><a class="ap-phone" href="tel:${esc(m.phone)}" data-auto-call="${esc(m.id)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg><span>Ara</span><strong>${esc(m.phone)}</strong></a>${waLink(m.phone)?`<a class="ap-wa" href="${esc(waLink(m.phone))}" target="_blank" rel="noopener">WhatsApp</a>`:''}</div>
+            <div class="auto-prompt ${waiting?'show':''}" id="autoPrompt">Arama nasıl geçti? Aşağıdan sonucu seçin.</div>
+            <div class="ap-results">
+              <button type="button" class="r-ok" data-auto-status="called"><b>Görüşüldü</b><kbd>1</kbd></button>
+              <button type="button" class="r-na" data-auto-status="noanswer"><b>Cevap yok</b><kbd>2</kbd></button>
+              <button type="button" class="r-lt" data-auto-status="later"><b>Tekrar ara</b><kbd>3</kbd></button>
+              <button type="button" class="r-wr" data-auto-status="wrong"><b>Hatalı numara</b><kbd>4</kbd></button>
+            </div>
+            <textarea id="autoNote" placeholder="Görüşme notu (isteğe bağlı) — sonuçla birlikte kaydedilir"></textarea>
+            <div class="ap-nav"><button type="button" class="secondary" id="autoPrev" ${idx===0?'disabled':''}>← Önceki</button><span class="small">${(idx+1).toLocaleString('tr-TR')} / ${list.length.toLocaleString('tr-TR')}</span><button type="button" class="secondary" id="skipBtn">Atla →</button></div>
+            <div class="facts"><div class="fact"><div>Adres</div><div>${esc(m.address||'-')}</div></div><div class="fact"><div>Referans</div><div>${esc((m.refs||[]).join(', ')||'-')}</div></div><div class="fact"><div>Üyelik</div><div>${esc(fmtDay(m.joined))}</div></div></div>
+            ${hist.length?`<div class="ap-hist"><div class="small"><b>Önceki aramalar</b></div>${hist.map(l=>`<div class="ap-hist-row"><span class="badge ${esc(l.status)}">${esc(statusLabels[l.status]||l.status)}</span><span class="small">${esc(fmtDate(l.time))} • ${esc(l.agent||l.username||'')}</span>${l.note?`<div>${esc(l.note)}</div>`:''}</div>`).join('')}</div>`:''}
+          </article>
+          <aside class="ap-next"><h3>Sıradakiler</h3>${next.map((x,k)=>`<button type="button" class="ap-next-row" data-auto-jump="${esc(x.id)}"><span class="ap-num">${idx+k+2}</span><span><strong>${esc(x.name)}</strong><span class="small">${esc(x.neighborhood)}</span></span></button>`).join('')||'<div class="small">Listenin sonu.</div>'}<p class="small kbd-hint">Klavye: 1–4 sonuç, → atla, ← önceki</p></aside>
+        </div></div>`;
+      document.querySelectorAll('[data-auto-status]').forEach(b=>b.onclick=()=>autoResult(b.dataset.autoStatus));
+      $('skipBtn').onclick=()=>autoMove(1); $('autoPrev').onclick=()=>autoMove(-1);
+    }
+    function autoMove(step){const list=currentList(); if(!list.length)return; const i=list.findIndex(x=>x.id===state.selected); const n=Math.min(Math.max(0,(i<0?0:i)+step),list.length-1); state.selected=list[n].id; sessionStorage.removeItem('pending-auto-call'); save(); render();}
+    async function autoResult(status){
+      const before=currentList(); const i=Math.max(0,before.findIndex(x=>x.id===state.selected));
+      sessionStorage.removeItem('pending-auto-call');
+      await addLog(status,($('autoNote')||{}).value||'','',false,true);
+      const after=currentList(); // sonuçlanan kişi listeden çıktıysa aynı sıradaki kişi, çıkmadıysa bir sonraki
+      const stillThere=after.findIndex(x=>x.id===state.selected);
+      const nextIdx=stillThere>=0?stillThere+1:i;
+      state.selected=after.length?after[Math.min(nextIdx,after.length-1)].id:null; save(); render();
     }
 
     // ------------------------------------------------------------------ Kepez analiz (değişmedi)
@@ -682,7 +776,7 @@
     function queuedLogs(){try{return JSON.parse(localStorage.getItem('pending-call-logs')||'[]');}catch(e){return [];}}
     function setQueuedLogs(items){localStorage.setItem('pending-call-logs',JSON.stringify(items.slice(0,200)));}
     async function flushQueuedLogs(){const queue=queuedLogs(); if(!queue.length)return; const remaining=[]; for(const item of queue){if(/^\d{11}$/.test(String(item.memberId)))continue; try{await api('/logs',{method:'POST',json:item});}catch(e){remaining.push(item);}} setQueuedLogs(remaining);}
-    async function addLog(status,note,agent,advance=false){if(!state.selected)return; const m=selectedMember()||{}; const item={id:crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random(),memberId:state.selected,memberName:m.name||'',memberPhone:m.phone||'',neighborhood:m.neighborhood||'',status,note:(note||'').trim(),agent:(agent||state.user?.name||'').trim(),username:state.user?state.user.username:'',time:new Date().toISOString()}; state.logs=state.logs.filter(l=>l.id!==item.id); state.logs.unshift(item); indexLogs(); save(); let saved=false; try{await api('/logs',{method:'POST',json:item}); saved=true;}catch(e){} if(!saved){const queue=queuedLogs().filter(l=>l.id!==item.id); queue.unshift(item); setQueuedLogs(queue); toast('Log cihazda kaydedildi, internet gelince tekrar gönderilecek.');} else toast('Log kaydedildi.'); if(advance){selectNext(); return;} render();}
+    async function addLog(status,note,agent,advance=false,quiet=false){if(!state.selected)return; const m=selectedMember()||{}; const item={id:crypto.randomUUID?crypto.randomUUID():String(Date.now())+Math.random(),memberId:state.selected,memberName:m.name||'',memberPhone:m.phone||'',neighborhood:m.neighborhood||'',status,note:(note||'').trim(),agent:(agent||state.user?.name||'').trim(),username:state.user?state.user.username:'',time:new Date().toISOString()}; state.logs=state.logs.filter(l=>l.id!==item.id); state.logs.unshift(item); indexLogs(); save(); let saved=false; try{await api('/logs',{method:'POST',json:item}); saved=true;}catch(e){} if(!saved){const queue=queuedLogs().filter(l=>l.id!==item.id); queue.unshift(item); setQueuedLogs(queue); toast('Log cihazda kaydedildi, internet gelince tekrar gönderilecek.');} else toast('Log kaydedildi.'); if(quiet)return; if(advance){selectNext(); return;} render();}
 
     // ------------------------------------------------------------------ talep ve öneriler
     function requestCard(r,adminView){const reply=r.reply?`<div class="reply"><strong>Yanıt:</strong> ${esc(r.reply)}</div>`:''; if(!adminView)return `<article class="log"><div class="log-top"><strong>${esc(r.category||'Talep')}</strong><span class="badge ${r.status==='done'?'called':r.status==='reviewed'?'later':'new'}">${esc(requestStatusLabels[r.status]||r.status)}</span></div><span class="small">${esc(fmtDate(r.time))}</span><p>${esc(r.text)}</p>${reply}</article>`; return `<article class="log ${r.status==='new'?'unread-request':''}"><div class="log-top"><div><strong>${esc(r.name||r.username)}</strong><div class="small">${esc(r.category||'Talep')} • ${esc(r.neighborhood||(r.role==='management'?'Yönetim':''))} • ${esc(fmtDate(r.time))}</div></div><select data-request-status="${esc(r.id)}">${Object.entries(requestStatusLabels).map(([k,v])=>`<option value="${k}" ${r.status===k?'selected':''}>${v}</option>`).join('')}</select></div><p>${esc(r.text)}</p><form class="reply-form" data-request-reply="${esc(r.id)}"><input name="reply" value="${esc(r.reply||'')}" placeholder="Yanıt yazın (talep sahibi görür)"><button>Yanıtla</button><button type="button" class="danger" data-request-delete="${esc(r.id)}">Sil</button></form></article>`;}
@@ -888,12 +982,15 @@
       const tu=t.closest('[data-toggle-user]'); if(tu){saveUserRow(tu.closest('[data-user]'),true); return;}
       const dl=t.closest('[data-leader-delete]'); if(dl){deleteLeader(dl.dataset.leaderDelete); return;}
       const dr=t.closest('[data-request-delete]'); if(dr){deleteRequest(dr.dataset.requestDelete); return;}
-      const call=t.closest('[data-auto-call]'); if(call){sessionStorage.setItem('pending-auto-call',call.dataset.autoCall); return;}
+      const call=t.closest('[data-auto-call]'); if(call){sessionStorage.setItem('pending-auto-call',call.dataset.autoCall); setTimeout(()=>{const p=$('autoPrompt'); if(p)p.classList.add('show');},800); return;}
+      const sc=t.closest('[data-auto-scope]'); if(sc){state.autoScope=sc.dataset.autoScope; state.selected=null; save(); render(); return;}
+      const jm=t.closest('[data-auto-jump]'); if(jm){state.selected=jm.dataset.autoJump; sessionStorage.removeItem('pending-auto-call'); save(); render(); return;}
       const ah=t.closest('[data-analysis-hood]'); if(ah){state.selectedAnalysisNeighborhood=ah.dataset.analysisHood; state.selectedStreet=null; state.analysisQuery=''; save(); renderAnalysis(); return;}
       if(t.closest('[data-back-hood]')){state.selectedAnalysisNeighborhood=null; state.selectedStreet=null; state.analysisQuery=''; save(); renderAnalysis(); return;}
       const sr=t.closest('[data-street]'); if(sr){state.selectedStreet=sr.dataset.street; save(); renderAnalysis(); if(window.matchMedia('(max-width:1050px)').matches)setTimeout(()=>{const m=$('kepezMap'); if(m)m.scrollIntoView({behavior:'smooth',block:'start'});},120); return;}
     });
-    document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible'||state.mode!=='auto')return; const pending=sessionStorage.getItem('pending-auto-call'); if(!pending||pending!==state.selected)return; sessionStorage.removeItem('pending-auto-call'); setTimeout(()=>addLog('called','Arama başlatıldı.','',true),350);});
+    document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible'||state.mode!=='auto')return; const pending=sessionStorage.getItem('pending-auto-call'); if(!pending||pending!==state.selected)return; const p=$('autoPrompt'); if(p){p.classList.add('show'); p.scrollIntoView({block:'center',behavior:'smooth'});}});
+    document.addEventListener('keydown',e=>{if(state.mode!=='auto'||document.body.classList.contains('locked')||e.ctrlKey||e.metaKey||e.altKey)return; if(['TEXTAREA','INPUT','SELECT'].includes(document.activeElement&&document.activeElement.tagName))return; const map={'1':'called','2':'noanswer','3':'later','4':'wrong'}; if(map[e.key]){e.preventDefault(); autoResult(map[e.key]);} else if(e.key==='ArrowRight'){e.preventDefault(); autoMove(1);} else if(e.key==='ArrowLeft'){e.preventDefault(); autoMove(-1);}});
     $('memberList').onclick=e=>{const tab=e.target.closest('[data-list-tab]'); if(tab){const t=tab.dataset.listTab; setMode(t==='members'?'list':t); state.limit=180; return;} const hood=e.target.closest('[data-leader-hood]'); if(hood){state.selectedLeaderNeighborhood=hood.dataset.leaderHood; state.selectedLeader=null; save(); render(); return;} if(e.target.closest('[data-leader-back]')){state.selectedLeaderNeighborhood=null; state.selectedLeader=null; save(); render(); return;} const leader=e.target.closest('[data-leader-id]'); if(leader){state.selectedLeader=leader.dataset.leaderId; render(); scrollDetailIntoView(); return;} const board=e.target.closest('[data-board-id]'); if(board){state.selectedLeader=board.dataset.boardId; render(); scrollDetailIntoView(); return;} const b=e.target.closest('.member[data-id]'); if(!b)return; state.selected=b.dataset.id; save(); render(); scrollDetailIntoView();};
     $('neighborhoodSelect').onchange=e=>{state.neighborhood=e.target.value; state.limit=180; state.selected=null; save(); render();};
     $('searchInput').oninput=e=>{state.query=e.target.value; state.limit=180; render();};
