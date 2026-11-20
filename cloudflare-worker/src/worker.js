@@ -511,11 +511,13 @@ async function pushToTarget(env, target) {
 function clean(v, max = 500) {
   return String(v == null ? '' : v).trim().slice(0, max);
 }
+// Her biçimi (0532…, 532…, +90 532…, 0090…) 0 ile başlayan 11 haneye çevirir
 function cleanPhone(v) {
   let d = String(v || '').replace(/\D/g, '');
-  if (d.length === 10 && d[0] === '5') d = '0' + d;
-  if (d.length === 12 && d.startsWith('90')) d = '0' + d.slice(2);
-  return d.slice(0, 15);
+  if (d.startsWith('00')) d = d.slice(2);
+  if (d.length >= 12 && d.startsWith('90')) d = d.slice(2);
+  const n = d.replace(/^0+/, '');
+  return n.length === 10 ? '0' + n : d.slice(0, 15);
 }
 
 
