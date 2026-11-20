@@ -503,6 +503,53 @@
       .usage-actions a { flex:1; text-align:center; }
       .ubadge { font-size:.7rem; }
     }
+    /* ---- Otomatik arama: kurumsal görünüm ---- */
+    .auto2 { gap:12px; }
+    .auto-head h2 { font-size:1.3rem; }
+    .auto-today { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:0; background:#fff; border:1px solid var(--line); border-radius:14px; overflow:hidden; }
+    .auto-today > div, .auto-today .ok, .auto-today .na, .auto-today .lt { background:#fff!important; }
+    .auto-today span { background:transparent!important; padding:0!important; border-radius:0!important; }
+    .auto-today > div { display:grid; justify-items:center; padding:8px 4px; border-right:1px solid var(--line); background:#fff; border-radius:0; }
+    .auto-today > div:last-child { border-right:0; }
+    .auto-today b { font-size:1.15rem; color:#0f172a; } .auto-today span { font-size:.72rem; color:var(--muted); font-weight:600; }
+    .auto-today .ok b { color:#15803d; } .auto-today .na b { color:#475569; } .auto-today .lt b { color:#b45309; }
+    .auto-progress-wrap { display:grid; grid-template-columns:1fr auto; gap:10px; align-items:center; }
+    .auto-progress { height:6px; }
+    .ap-card { padding:16px; gap:14px; }
+    .ap-avatar { width:46px; height:46px; font-size:1rem; }
+    .ap-who h2 { font-size:1.2rem; line-height:1.2; }
+    .ap-who .small { font-size:.85rem; }
+    .ap-call { grid-template-columns:1fr auto; }
+    .ap-phone { min-height:56px; font-size:1.05rem; gap:8px; padding:0 14px; }
+    .ap-phone strong { font-variant-numeric:tabular-nums; letter-spacing:.3px; white-space:nowrap; }
+    .ap-wa { gap:6px; padding:0 14px; border-radius:12px; }
+    .ap-wa svg { width:22px; height:22px; }
+    .ap-results { gap:8px; }
+    .ap-results button { min-height:52px; flex-direction:row; gap:8px; border-radius:12px; font-size:.95rem; border:1px solid; box-shadow:none; }
+    .ap-results button svg { width:20px; height:20px; flex:0 0 auto; }
+    .ap-results button b { font-weight:700; }
+    .ap-results kbd { margin-left:auto; background:rgba(15,23,42,.06); border-radius:6px; padding:1px 6px; font-size:.7rem; opacity:1; }
+    .ap-results .r-ok { background:#f0fdf4; color:#15803d; border-color:#bbf7d0; } .ap-results .r-ok:hover { background:#dcfce7; }
+    .ap-results .r-na { background:#f8fafc; color:#475569; border-color:#e2e8f0; } .ap-results .r-na:hover { background:#f1f5f9; }
+    .ap-results .r-lt { background:#fffbeb; color:#b45309; border-color:#fde68a; } .ap-results .r-lt:hover { background:#fef3c7; }
+    .ap-results .r-wr { background:#fef2f2; color:#b91c1c; border-color:#fecaca; } .ap-results .r-wr:hover { background:#fee2e2; }
+    #autoNote { min-height:64px; }
+    .ap-nav button { min-height:40px; border-radius:999px; padding:0 16px; font-size:.9rem; }
+    .ap-next summary { list-style:none; cursor:pointer; } .ap-next summary::-webkit-details-marker { display:none; }
+    .ap-next summary h3 { display:flex; justify-content:space-between; }
+    @media (max-width:700px) {
+      .ap-card { padding:14px; }
+      .ap-call { grid-template-columns:1fr 56px; }
+      .ap-wa span { display:none; }
+      .ap-wa { padding:0; }
+      .ap-phone { font-size:1rem; }
+      .ap-phone > span { display:none; }
+      .ap-results kbd { display:none; }
+      .ap-results button { justify-content:flex-start; padding:0 12px; font-size:.9rem; }
+      .auto2 .facts .fact { grid-template-columns:1fr; }
+      .auto2 .facts .fact div:first-child { padding-bottom:2px; }
+      .ap-next:not([open]) { padding:10px 12px; }
+    }
   </style>
 </head>
 <body class="locked">
@@ -824,33 +871,34 @@
       const counts=Object.fromEntries(AUTO_SCOPES.map(([k])=>[k,autoList(k).length]));
       const chips=`<div class="scope-chips">${AUTO_SCOPES.map(([k,v])=>`<button type="button" class="scope-chip ${scope===k?'active':''}" data-auto-scope="${k}">${v}<span>${counts[k].toLocaleString('tr-TR')}</span></button>`).join('')}</div>`;
       const t=todayStats();
-      const head=`<div class="auto-head"><div><h2>Otomatik Arama</h2><div class="small">${esc(state.neighborhood==='all'?'Tüm mahalleler':state.neighborhood)} • sıradaki kişiler: ${list.length.toLocaleString('tr-TR')}</div></div><div class="auto-today"><span title="Bugün aradıklarınız"><b>${t.total}</b> bugün</span><span class="ok"><b>${t.called}</b> görüşüldü</span><span class="na"><b>${t.noanswer}</b> cevap yok</span><span class="lt"><b>${t.later}</b> tekrar</span></div></div>`;
+      const head=`<div class="auto-head"><div><h2>Otomatik Arama</h2><div class="small">${esc(state.neighborhood==='all'?'Tüm mahalleler':state.neighborhood)} • ${list.length.toLocaleString('tr-TR')} kişi sırada</div></div></div>`+`<div class="auto-today"><div><b>${t.total}</b><span>Bugün</span></div><div class="ok"><b>${t.called}</b><span>Görüşüldü</span></div><div class="na"><b>${t.noanswer}</b><span>Cevap yok</span></div><div class="lt"><b>${t.later}</b><span>Tekrar</span></div></div>`;
       if(!m){$('detail').innerHTML=`<div class="auto2">${head}${chips}<div class="auto-done"><div class="auto-done-ic">✓</div><h3>Bu listede aranacak kimse kalmadı</h3><p class="small">Üstten başka bir liste seçebilir ya da mahalle filtresini değiştirebilirsiniz.</p></div></div>`; return;}
       const idx=Math.max(0,list.findIndex(x=>x.id===m.id)); const pct=list.length?Math.round(idx/list.length*100):0;
       const st=statusFor(m.id); const hist=logsFor(m.id).slice(0,3);
       const next=list.slice(idx+1,idx+7);
       const waiting=sessionStorage.getItem('pending-auto-call')===m.id;
       $('detail').innerHTML=`<div class="auto2">${head}${chips}
-        <div class="auto-progress"><span style="width:${pct}%"></span></div>
+        <div class="auto-progress-wrap"><div class="auto-progress"><span style="width:${Math.max(pct,1)}%"></span></div><span class="small">${(idx+1).toLocaleString('tr-TR')} / ${list.length.toLocaleString('tr-TR')}</span></div>
         <div class="auto-grid">
           <article class="ap-card">
             <div class="ap-head"><div class="ap-avatar">${esc(initials(m.name))}</div><div class="ap-who"><h2>${esc(m.name)}</h2><div class="small">${esc(m.neighborhood)} • ${esc(doorText(m))}</div></div><span class="badge ${st}">${statusLabels[st]}</span></div>
-            <div class="ap-call"><a class="ap-phone" href="${esc(telHref(m.phone))}" data-auto-call="${esc(m.id)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg><span>Ara</span><strong>${esc(fmtPhone(m.phone))}</strong></a>${waLink(m.phone)?`<a class="ap-wa" href="${esc(waLink(m.phone))}" target="_blank" rel="noopener">WhatsApp</a>`:''}</div>
+            <div class="ap-call"><a class="ap-phone" href="${esc(telHref(m.phone))}" data-auto-call="${esc(m.id)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg><span>Ara</span><strong>${esc(fmtPhone(m.phone))}</strong></a>${waLink(m.phone)?`<a class="ap-wa" href="${esc(waLink(m.phone))}" target="_blank" rel="noopener" aria-label="WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4 5.2 5.2 0 0 0 3.2.7 2.7 2.7 0 0 0 1.8-1.3 2.2 2.2 0 0 0 .2-1.3c-.1-.1-.2-.2-.5-.3z"/></svg><span>WhatsApp</span></a>`:''}</div>
             <div class="auto-prompt ${waiting?'show':''}" id="autoPrompt">Arama nasıl geçti? Aşağıdan sonucu seçin.</div>
             <div class="ap-results">
-              <button type="button" class="r-ok" data-auto-status="called"><b>Görüşüldü</b><kbd>1</kbd></button>
-              <button type="button" class="r-na" data-auto-status="noanswer"><b>Cevap yok</b><kbd>2</kbd></button>
-              <button type="button" class="r-lt" data-auto-status="later"><b>Tekrar ara</b><kbd>3</kbd></button>
-              <button type="button" class="r-wr" data-auto-status="wrong"><b>Hatalı numara</b><kbd>4</kbd></button>
+              <button type="button" class="r-ok" data-auto-status="called"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg><b>Görüşüldü</b><kbd>1</kbd></button>
+              <button type="button" class="r-na" data-auto-status="noanswer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8"/><path d="m16 2 6 6M22 2l-6 6"/></svg><b>Cevap yok</b><kbd>2</kbd></button>
+              <button type="button" class="r-lt" data-auto-status="later"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><b>Tekrar ara</b><kbd>3</kbd></button>
+              <button type="button" class="r-wr" data-auto-status="wrong"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="m15 9-6 6M9 9l6 6"/></svg><b>Hatalı numara</b><kbd>4</kbd></button>
             </div>
             <textarea id="autoNote" placeholder="Görüşme notu (isteğe bağlı) — sonuçla birlikte kaydedilir"></textarea>
-            <div class="ap-nav"><button type="button" class="secondary" id="autoPrev" ${idx===0?'disabled':''}>← Önceki</button><span class="small">${(idx+1).toLocaleString('tr-TR')} / ${list.length.toLocaleString('tr-TR')}</span><button type="button" class="secondary" id="skipBtn">Atla →</button></div>
+            <div class="ap-nav"><button type="button" class="secondary" id="autoPrev" ${idx===0?'disabled':''}>← Önceki</button><button type="button" class="secondary" id="skipBtn">Atla →</button></div>
             <div class="facts"><div class="fact"><div>Adres</div><div>${esc(m.address||'-')}</div></div><div class="fact"><div>Referans</div><div>${esc((m.refs||[]).join(', ')||'-')}</div></div><div class="fact"><div>Üyelik</div><div>${esc(fmtDay(m.joined))}</div></div></div>
             ${hist.length?`<div class="ap-hist"><div class="small"><b>Önceki aramalar</b></div>${hist.map(l=>`<div class="ap-hist-row"><span class="badge ${esc(l.status)}">${esc(statusLabels[l.status]||l.status)}</span><span class="small">${esc(fmtDate(l.time))} • ${esc(l.agent||l.username||'')}</span>${l.note?`<div>${esc(l.note)}</div>`:''}</div>`).join('')}</div>`:''}
           </article>
-          <aside class="ap-next"><h3>Sıradakiler</h3>${next.map((x,k)=>`<button type="button" class="ap-next-row" data-auto-jump="${esc(x.id)}"><span class="ap-num">${idx+k+2}</span><span><strong>${esc(x.name)}</strong><span class="small">${esc(x.neighborhood)}</span></span></button>`).join('')||'<div class="small">Listenin sonu.</div>'}<p class="small kbd-hint">Klavye: 1–4 sonuç, → atla, ← önceki</p></aside>
+          <details class="ap-next" open><summary><h3>Sıradakiler</h3></summary>${next.map((x,k)=>`<button type="button" class="ap-next-row" data-auto-jump="${esc(x.id)}"><span class="ap-num">${idx+k+2}</span><span><strong>${esc(x.name)}</strong><span class="small">${esc(x.neighborhood)}</span></span></button>`).join('')||'<div class="small">Listenin sonu.</div>'}<p class="small kbd-hint">Klavye: 1–4 sonuç, → atla, ← önceki</p></details>
         </div></div>`;
       document.querySelectorAll('[data-auto-status]').forEach(b=>b.onclick=()=>autoResult(b.dataset.autoStatus));
+      const nx=document.querySelector('.ap-next'); if(nx&&window.matchMedia('(max-width:700px)').matches)nx.open=false;
       $('skipBtn').onclick=()=>autoMove(1); $('autoPrev').onclick=()=>autoMove(-1);
     }
     function autoMove(step){const list=currentList(); if(!list.length)return; const i=list.findIndex(x=>x.id===state.selected); const n=Math.min(Math.max(0,(i<0?0:i)+step),list.length-1); state.selected=list[n].id; sessionStorage.removeItem('pending-auto-call'); save(); render();}
