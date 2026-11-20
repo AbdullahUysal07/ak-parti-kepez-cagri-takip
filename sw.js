@@ -15,6 +15,23 @@ self.addEventListener('fetch', event => {
     { headers: { 'Content-Type': 'text/html; charset=utf-8' } })));
 });
 
+// Uygulama simgesindeki sayı (rozet): okunmamış bildirim sayısı cihazda saklanır
+const BADGE_CACHE = 'kepez-rozet';
+async function readBadge() {
+  try { const r = await (await caches.open(BADGE_CACHE)).match('/rozet'); return r ? Number(await r.text()) || 0 : 0; } catch (e) { return 0; }
+}
+async function writeBadge(n) {
+  n = Math.max(0, Number(n) || 0);
+  try { await (await caches.open(BADGE_CACHE)).put('/rozet', new Response(String(n))); } catch (e) {}
+  try {
+    if (n > 0 && self.navigator.setAppBadge) await self.navigator.setAppBadge(n);
+    else if (self.navigator.clearAppBadge) await self.navigator.clearAppBadge();
+  } catch (e) {}
+}
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'badge') event.waitUntil(writeBadge(event.data.count));
+});
+
 self.addEventListener('push', event => {
   event.waitUntil((async () => {
     let data = {};
@@ -42,6 +59,9 @@ self.addEventListener('push', event => {
       requireInteraction: true
     };
     await self.registration.showNotification(title, options);
+    await writeBadge((await readBadge()) + 1);
+    // Uygulama açıksa duyuruları hemen yenilesin
+    try { (await self.clients.matchAll({ type: 'window' })).forEach(c => c.postMessage({ type: 'new-notification' })); } catch (e) {}
   })());
 });
 
