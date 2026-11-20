@@ -170,8 +170,56 @@
      @media (max-width:1050px) { .app { display:block; } .wrap,body.home-mode .wrap,body.auto-mode .wrap,body.admin-mode .wrap,body.analysis-mode .wrap { grid-template-columns:1fr; } .panel { min-height:340px; margin-bottom:10px; } .list,.detail,.logs { max-height:62vh; } .panel-list .list { max-height:none; overflow:visible; } .admin-grid { grid-template-columns:1fr; } .user-row { grid-template-columns:1fr; } .analysis-shell { grid-template-columns:1fr; } .analysis-map-card { min-height:0; } #kepezMap { min-height:360px; } }
     @media (max-width:680px) { header { align-items:center; flex-wrap:wrap; padding:10px; } #exportBtn { width:auto; min-height:36px; padding:0 10px; font-size:.88rem; margin-left:58px; } .brand-lockup { align-items:center; flex:1 1 100%; } .logo { width:50px; height:50px; } .toolbar { grid-template-columns:1fr; } .wrap { padding:8px; gap:8px; } .notice,.notice.show { display:none!important; } body.home-mode { background:#fff; } body.home-mode .wrap { padding:0; gap:0; background:#fff; } body.home-mode .wrap>.panel { border:0; border-radius:0; box-shadow:none; min-height:0; margin-bottom:0; background:#fff; } body.home-mode .detail { max-height:none; overflow:visible; padding:10px; background:#fff; } body.home-mode .home { gap:10px; } body.analysis-mode { background:#fff; } body.analysis-mode .wrap { padding:8px; background:#fff; } body.analysis-mode .wrap>.panel { min-height:0; margin-bottom:0; } body.analysis-mode .detail { max-height:none; overflow:visible; padding:0; background:#fff; } body.analysis-mode .analysis-shell { display:block; min-height:0; } body.analysis-mode .analysis-sidebar { min-height:0; max-height:none; border-radius:10px; margin-bottom:10px; } body.analysis-mode .analysis-summary { gap:8px; } body.analysis-mode .street-list { display:none; } body.analysis-mode .street-row { padding:14px 16px; } body.analysis-mode .analysis-map-card { display:block; min-height:0; border-radius:10px; overflow:hidden; } body.analysis-mode #kepezMap { min-height:0; height:340px; width:100%; } body.analysis-mode .street-members { max-height:none; overflow:visible; } body.auto-mode .panel-logs,body.home-mode .panel-logs,body:not(.admin-mode) .panel-logs { display:none; } body.admin-mode .panel-logs { display:block; } .grid2,.quick,.auto-actions { grid-template-columns:1fr; } .fact { grid-template-columns:1fr; } .fact div:first-child { padding-bottom:0; } .phone { position:sticky; top:0; z-index:2; } .member { gap:8px; padding:14px 12px; } .member strong { font-size:1.08rem; white-space:normal; } .list-phone { width:100%; min-height:44px; font-size:1.08rem; } .meta { font-size:.96rem; } .auto-phone { min-height:72px; font-size:1.45rem; } .welcome { grid-template-columns:1fr; } .chairman { width:72px; height:72px; } }
     .app { grid-template-columns:minmax(0,1fr); }
-    .notice.show { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; }
+    .notice.show { display:flex; align-items:center; gap:10px; cursor:pointer; }
+    .notice-text { flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .notice-close { flex:0 0 auto; min-height:28px; width:28px; padding:0; background:transparent; color:#7c3f00; border:1px solid #f5c27a; border-radius:6px; }
     .announcement-body,.log p { overflow-wrap:anywhere; }
+    body.resuming .login-card > *:not(.login-logo):not(h2):not(#loginError) { display:none; }
+    /* Kepez Analiz: sade ve kullanışlı yerleşim */
+    body.analysis-mode .analysis-shell { display:grid; grid-template-columns:minmax(280px,340px) minmax(0,1fr); gap:12px; min-height:0; }
+    body.analysis-mode .analysis-sidebar { display:flex; flex-direction:column; min-height:0; max-height:calc(100vh - 230px); margin:0; }
+    .analysis-title { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .analysis-title h2 { margin:0; font-size:1.15rem; }
+    .small-btn { width:auto; min-height:32px; padding:0 10px; font-size:.85rem; }
+    .analysis-stats { display:flex; gap:8px; }
+    .analysis-stats > div { flex:1; background:#fff; border:1px solid var(--line); border-radius:8px; padding:6px 8px; display:grid; }
+    .analysis-stats strong { color:var(--brand2); font-size:1.05rem; } .analysis-stats span { font-size:.75rem; color:var(--muted); }
+    body.analysis-mode .analysis-controls { display:grid; gap:8px; padding:10px; align-content:start; }
+    body.analysis-mode .analysis-controls select,body.analysis-mode .analysis-controls input { min-height:40px; height:40px; }
+    body.analysis-mode .street-list { display:block; flex:1; overflow:auto; max-height:none; min-height:0; }
+    body.analysis-mode .street-row { display:grid; grid-template-columns:1fr auto; align-items:center; gap:2px 8px; padding:9px 12px; }
+    body.analysis-mode .street-row .street-meta { grid-column:1/-1; font-size:.75rem; }
+    .street-count { background:#eef4ff; color:var(--brand2); border-radius:999px; padding:1px 9px; font-weight:800; font-size:.8rem; }
+    .street-row.active .street-count { background:#f28c00; color:#fff; }
+    .street-row:hover { background:#f8fbff; }
+    body.analysis-mode .analysis-map-card { display:flex; flex-direction:column; min-height:0; max-height:calc(100vh - 230px); }
+    body.analysis-mode #kepezMap { flex:0 0 auto; height:46vh; min-height:300px; }
+    body.analysis-mode .street-members { flex:1; max-height:none; overflow:auto; padding:10px; display:block; }
+    .street-members-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
+    .street-member-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:8px; }
+    .street-member { padding:8px 10px; gap:4px; }
+    .street-member-top { display:flex; justify-content:space-between; gap:6px; align-items:center; }
+    .street-member-top strong { font-size:.92rem; }
+    .street-member { grid-template-columns:minmax(0,1fr) auto; align-items:center; }
+    .street-member > .small { grid-column:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .street-member-top { grid-column:1; }
+    .street-member-actions { grid-column:2; grid-row:1 / span 2; flex-wrap:nowrap; gap:6px; }
+    .street-member-actions { align-items:center; }
+    .street-member-actions a { margin:0!important; height:34px; min-height:0!important; padding:0 12px!important; font-size:.85rem; display:inline-flex; align-items:center; justify-content:center; width:auto!important; }
+    body.no-logs .panel-logs { display:none; }
+    @media (min-width:1051px) {
+      body.no-logs:not(.home-mode):not(.admin-mode):not(.auto-mode):not(.analysis-mode) .wrap,body.board-mode .wrap { grid-template-columns:minmax(320px,420px) minmax(0,1fr); }
+      body.no-logs.admin-mode .wrap,body.no-logs.auto-mode .wrap { grid-template-columns:1fr; }
+    }
+    .analysis-hint { color:var(--muted); text-align:center; padding:18px 10px; }
+    @media (max-width:1050px) {
+      body.analysis-mode .analysis-shell { grid-template-columns:1fr; }
+      body.analysis-mode .analysis-sidebar,body.analysis-mode .analysis-map-card { max-height:none; }
+      body.analysis-mode .street-list { max-height:240px; }
+      body.analysis-mode #kepezMap { height:42vh; min-height:260px; }
+      body.analysis-mode .street-members { overflow:visible; }
+      .street-member-grid { grid-template-columns:1fr; }
+    }
     .nav-request { border-top:1px solid var(--line); }
     .admin-tabs { display:flex; gap:6px; flex-wrap:wrap; }
     .admin-tab { min-height:36px; background:#fff; color:var(--brand2); border:1px solid var(--line); padding:0 12px; }
@@ -324,16 +372,31 @@
     function statusFor(id){return (logsFor(id)[0]||{status:'new'}).status;}
 
     // ------------------------------------------------------------------ veri yükleme
-    async function loadMembers(){
-      const data=await api('/members');
-      state.memberIndex=data.version?{version:data.version,updatedAt:data.updatedAt}:null;
-      state.memberEdits=data.edits||{};
+    // Üye listesi cihazda (IndexedDB) saklanır; sayfa yenilenince yeniden indirilmez,
+    // sadece sunucudaki liste değiştiyse indirilir. Çıkış yapınca silinir.
+    function cacheDb(){return new Promise((resolve,reject)=>{const r=indexedDB.open('kepez-cache',1); r.onupgradeneeded=()=>r.result.createObjectStore('kv'); r.onsuccess=()=>resolve(r.result); r.onerror=()=>reject(r.error);});}
+    async function cacheGet(k){try{const db=await cacheDb(); return await new Promise(res=>{const q=db.transaction('kv').objectStore('kv').get(k); q.onsuccess=()=>res(q.result||null); q.onerror=()=>res(null);});}catch(e){return null;}}
+    async function cacheSet(k,v){try{const db=await cacheDb(); await new Promise(res=>{const t=db.transaction('kv','readwrite'); t.objectStore('kv').put(v,k); t.oncomplete=res; t.onerror=res;});}catch(e){}}
+    async function cacheClear(){try{const db=await cacheDb(); await new Promise(res=>{const t=db.transaction('kv','readwrite'); t.objectStore('kv').clear(); t.oncomplete=res; t.onerror=res;});}catch(e){}}
+    function applyMembers(dataObj,version,updatedAt,hoods,edits){
+      state.rawMembers=dataObj||{};
+      state.memberIndex=version?{version,updatedAt}:null;
+      state.memberEdits=edits||{};
       const list=[];
-      Object.entries(data.data||{}).forEach(([hood,rows])=>rows.forEach(r=>list.push({id:r[0],name:r[1],phone:r[2],address:r[3],joined:r[4],refs:r[5]||[],neighborhood:hood})));
+      Object.entries(dataObj||{}).forEach(([hood,rows])=>rows.forEach(r=>list.push({id:r[0],name:r[1],phone:r[2],address:r[3],joined:r[4],refs:r[5]||[],neighborhood:hood})));
       list.forEach(m=>{const e=state.memberEdits[m.id]; if(e)Object.assign(m,e);});
       state.members=list.filter(m=>!m.deleted);
       state.memberById=new Map(state.members.map(m=>[m.id,m]));
-      state.memberHoods=(data.hoods||[]).map(h=>h.name);
+      state.memberHoods=(hoods||[]).map(h=>h.name);
+    }
+    async function loadMembers(){
+      const cacheKey='members:'+state.user.username;
+      const cached=state.members.length?null:await cacheGet(cacheKey);
+      if(cached&&cached.version&&!state.members.length){applyMembers(cached.data,cached.version,cached.updatedAt,cached.hoods,cached.edits); indexLogs(); fillNeighborhoods(); render();}
+      const have=(state.memberIndex&&state.memberIndex.version)||'';
+      const data=await api('/members'+(have?'?have='+encodeURIComponent(have):''));
+      if(data.unchanged){applyMembers(state.rawMembers,data.version,data.updatedAt,data.hoods,data.edits); if(cached)cacheSet(cacheKey,{...cached,edits:data.edits,hoods:data.hoods});}
+      else {applyMembers(data.data,data.version,data.updatedAt,data.hoods,data.edits); cacheSet(cacheKey,{version:data.version,updatedAt:data.updatedAt,hoods:data.hoods,edits:data.edits,data:data.data});}
     }
     async function loadMine(force=false){if(state.mineLoaded&&!force)return; try{const data=await api('/members/mine'); state.mine=data.members||[]; state.mineLoaded=true;}catch(e){if(e.message!=='unauthorized')toast('Üyeleriniz alınamadı.');}}
     async function loadLeaders(){try{const data=await api('/leaders'); state.leaders=data.leaders||[];}catch(e){}}
@@ -399,7 +462,8 @@
       setBodyMode(state.mode==='auto'?'auto-mode':'');
       renderList(list); renderDetail(list); if(isAdmin())renderLogs(); else clearLogsPanel();
     }
-    function renderNotice(){const n=$('notice'); const latest=state.announcements[0]; if(latest&&state.mode!=='home'){n.textContent='Yeni duyuru: '+latest.body; n.classList.add('show');} else {n.textContent=''; n.classList.remove('show');}}
+    function renderNotice(){const n=$('notice'); const latest=state.announcements[0]; if(latest&&state.mode!=='home'&&latest.id!==state.lastSeenAnnouncement){n.innerHTML=`<span class="notice-text">Yeni duyuru: ${esc(String(latest.body).replace(/\s+/g,' '))}</span><button type="button" class="notice-close" aria-label="Kapat">✕</button>`; n.classList.add('show');} else {n.innerHTML=''; n.classList.remove('show');}}
+    function dismissNotice(){const latest=state.announcements[0]; if(!latest)return; state.lastSeenAnnouncement=latest.id; save(); renderNotice(); api('/announcements/read',{method:'POST',json:{announcementId:latest.id}}).catch(()=>{});}
     function listTabs(){if(state.mode!=='list')return ''; const t=state.memberTab; return `<div class="list-tabs"><button type="button" class="list-tab ${t==='members'?'active':''}" data-list-tab="members">Üyeler</button><button type="button" class="list-tab ${t==='mine'?'active':''}" data-list-tab="mine">Üyelerim</button><button type="button" class="list-tab ${t==='leaders'?'active':''}" data-list-tab="leaders">Mahalle Başkanları</button></div>`;}
     function renderList(list){
       const mine=state.memberTab==='mine';
@@ -445,8 +509,40 @@
     function streetGroups(){const groups=new Map(); analysisList().forEach(m=>{const street=streetName(m.address); const key=(m.neighborhood||'Mahalle Yok')+'|'+street; if(!groups.has(key))groups.set(key,{key,neighborhood:m.neighborhood||'Mahalle Yok',street,members:[]}); groups.get(key).members.push(m);}); return Array.from(groups.values()).sort((a,b)=>b.members.length-a.members.length||a.street.localeCompare(b.street,'tr'));}
     function neighborhoodGroups(groups){const map=new Map(); groups.forEach(g=>{if(!map.has(g.neighborhood))map.set(g.neighborhood,{name:g.neighborhood,members:0,streets:0}); const h=map.get(g.neighborhood); h.members+=g.members.length; h.streets+=1;}); return Array.from(map.values()).sort((a,b)=>a.name.localeCompare(b.name,'tr'));}
     function startLocationPolling(){if(state.locationTimer||!canSeeLiveLocations())return; state.locationTimer=setInterval(async()=>{if(state.mode!=='analysis')return; await loadLocations(); const groups=streetGroups(); const selected=groups.find(g=>g.key===state.selectedStreet); drawMap(selected);},120000);}
-    function renderAnalysis(){$('countText').textContent='Kepez Analiz'; $('memberList').innerHTML=''; startLocationPolling(); if(state.map){state.map.remove(); state.map=null; state.mapLayers=null;} const allAnalysis=analysisList(); const groups=streetGroups(); const hoods=neighborhoodGroups(groups); if(state.selectedAnalysisNeighborhood&&!hoods.some(h=>h.name===state.selectedAnalysisNeighborhood))state.selectedAnalysisNeighborhood=null; if(!state.selectedAnalysisNeighborhood)state.selectedStreet=null; const visibleGroups=state.selectedAnalysisNeighborhood?groups.filter(g=>g.neighborhood===state.selectedAnalysisNeighborhood):[]; const q=norm(state.analysisQuery||''); const filteredGroups=visibleGroups.filter(g=>!q||norm(`${g.neighborhood} ${g.street}`).includes(q)); if(state.selectedStreet&&!filteredGroups.some(g=>g.key===state.selectedStreet))state.selectedStreet=null; const selected=filteredGroups.find(g=>g.key===state.selectedStreet)||null; const active=canSeeLiveLocations()?state.locations.filter(l=>Date.now()-new Date(l.time).getTime()<1000*60*15):[]; const liveText=canSeeLiveLocations()?` • ${active.length} aktif konum`:''; const hoodOpts=`<option value="">Mahalle seçin</option>${hoods.map(h=>`<option value="${esc(h.name)}" ${state.selectedAnalysisNeighborhood===h.name?'selected':''}>${esc(h.name)} - ${h.members} üye</option>`).join('')}`; const streetOptions=state.selectedAnalysisNeighborhood?`<option value="">Sokak/cadde seçin</option>${filteredGroups.map(g=>`<option value="${esc(g.key)}" ${state.selectedStreet===g.key?'selected':''}>${esc(g.street)} - ${g.members.length} üye</option>`).join('')}`:'<option value="">Önce mahalle seçin</option>'; const selectionText=state.selectedAnalysisNeighborhood?`${filteredGroups.length} sokak/cadde bulundu.`:'Mahalle seçince sokak/cadde listesi açılır.'; $('detail').innerHTML=`<div class="analysis-shell"><aside class="analysis-sidebar"><div class="analysis-summary"><h2>Kepez Analiz</h2><div class="small">${hoods.length} mahalle • ${groups.length} sokak/adres kümesi • ${allAnalysis.length} üye${liveText}</div><button type="button" class="secondary" id="refreshMapBtn">Haritayı Yenile</button></div><div class="analysis-controls"><select id="analysisHoodSelect">${hoodOpts}</select><input id="analysisSearchInput" type="search" placeholder="Mahalle, sokak no veya cadde ara" value="${esc(state.analysisQuery||'')}" autocomplete="off"><select id="analysisStreetSelect" ${state.selectedAnalysisNeighborhood?'':'disabled'}>${streetOptions}</select><div class="analysis-choice"><strong>${selected?esc(selected.street):(state.selectedAnalysisNeighborhood?esc(state.selectedAnalysisNeighborhood):'Seçim yapılmadı')}</strong><span class="street-meta">${selected?`${esc(selected.neighborhood)} • ${selected.members.length} üye`:selectionText}</span></div></div><div class="street-list"><div class="analysis-empty-note">${selectionText}</div></div></aside><section class="analysis-map-card"><div id="kepezMap"></div><div id="streetMembers" class="street-members">${selected?streetMembersHtml(selected):'<div class="empty">Mahalle ve sokak/cadde seçin.</div>'}</div></section></div>`; $('analysisHoodSelect').onchange=e=>{state.selectedAnalysisNeighborhood=e.target.value||null; state.selectedStreet=null; state.analysisQuery=''; save(); renderAnalysis();}; $('analysisSearchInput').oninput=e=>{state.analysisQuery=e.target.value; clearTimeout(analysisSearchTimer); analysisSearchTimer=setTimeout(()=>{state.selectedStreet=null; save(); renderAnalysis();},260);}; $('analysisStreetSelect').onchange=e=>{state.selectedStreet=e.target.value||null; save(); renderAnalysis();}; $('refreshMapBtn').onclick=async()=>{await loadLocations(); drawMap(selected); toast('Harita yenilendi.');}; setTimeout(()=>drawMap(selected),80);}
-    function streetMembersHtml(group){const members=group.members.slice(0,120); return `<div><strong>${esc(group.street)}</strong><div class="small">${esc(group.neighborhood)} • ${group.members.length} üye</div></div>`+members.map(m=>`<article class="street-member"><strong>${esc(m.name)}</strong><span class="small">${esc(m.address||'-')}</span><div class="street-member-actions"><a class="phone" href="tel:${esc(m.phone)}">Ara</a><a class="map-link" href="${esc(mapUrlFor(m))}" target="_blank" rel="noopener">Konum Aç</a></div></article>`).join('')+(group.members.length>members.length?`<div class="small">${group.members.length-members.length} üye daha var. Arama filtresiyle daraltın.</div>`:'');}
+    function renderAnalysis(){
+      $('countText').textContent='Kepez Analiz'; $('memberList').innerHTML=''; startLocationPolling();
+      if(state.map){state.map.remove(); state.map=null; state.mapLayers=null;}
+      const allAnalysis=analysisList(); const groups=streetGroups(); const hoods=neighborhoodGroups(groups);
+      if(state.selectedAnalysisNeighborhood&&!hoods.some(h=>h.name===state.selectedAnalysisNeighborhood))state.selectedAnalysisNeighborhood=null;
+      if(!state.selectedAnalysisNeighborhood)state.selectedStreet=null;
+      const q=norm(state.analysisQuery||'');
+      const hood=state.selectedAnalysisNeighborhood;
+      const visibleGroups=hood?groups.filter(g=>g.neighborhood===hood):[];
+      const filteredGroups=visibleGroups.filter(g=>!q||norm(g.street).includes(q)).sort((a,b)=>b.members.length-a.members.length||a.street.localeCompare(b.street,'tr'));
+      const filteredHoods=hoods.filter(h=>!q||norm(h.name).includes(q));
+      if(state.selectedStreet&&!visibleGroups.some(g=>g.key===state.selectedStreet))state.selectedStreet=null;
+      const selected=visibleGroups.find(g=>g.key===state.selectedStreet)||null;
+      const active=canSeeLiveLocations()?state.locations.filter(l=>Date.now()-new Date(l.time).getTime()<1000*60*15):[];
+      const hoodOpts=`<option value="">Tüm mahalleler (${hoods.length})</option>${hoods.map(h=>`<option value="${esc(h.name)}" ${hood===h.name?'selected':''}>${esc(h.name)} • ${h.members} üye</option>`).join('')}`;
+      const listHtml=hood
+        ? `<button type="button" class="analysis-back" data-back-hood>← Tüm mahalleler</button>`+(filteredGroups.map(g=>`<button type="button" class="street-row ${g.key===state.selectedStreet?'active':''}" data-street="${esc(g.key)}"><strong>${esc(g.street)}</strong><span class="street-count">${g.members.length}</span></button>`).join('')||'<div class="analysis-empty-note">Aramaya uyan sokak/cadde yok.</div>')
+        : (filteredHoods.map(h=>`<button type="button" class="street-row" data-analysis-hood="${esc(h.name)}"><strong>${esc(h.name)}</strong><span class="street-count">${h.members}</span><span class="street-meta">${h.streets} sokak/cadde</span></button>`).join('')||'<div class="analysis-empty-note">Aramaya uyan mahalle yok.</div>');
+      const stats=`<div class="analysis-stats"><div><strong>${hood?visibleGroups.reduce((a,g)=>a+g.members.length,0).toLocaleString('tr-TR'):allAnalysis.length.toLocaleString('tr-TR')}</strong><span>üye</span></div><div><strong>${hood?visibleGroups.length:hoods.length}</strong><span>${hood?'sokak/cadde':'mahalle'}</span></div>${canSeeLiveLocations()?`<div><strong>${active.length}</strong><span>aktif konum</span></div>`:''}</div>`;
+      $('detail').innerHTML=`<div class="analysis-shell">
+        <aside class="analysis-sidebar">
+          <div class="analysis-summary"><div class="analysis-title"><h2>Kepez Analiz</h2><button type="button" class="secondary small-btn" id="refreshMapBtn" title="Haritayı yenile">↻ Yenile</button></div>${stats}</div>
+          <div class="analysis-controls"><select id="analysisHoodSelect">${hoodOpts}</select><input id="analysisSearchInput" type="search" placeholder="${hood?'Sokak / cadde ara (örn. 2627)':'Mahalle ara'}" value="${esc(state.analysisQuery||'')}" autocomplete="off"></div>
+          <div class="street-list">${listHtml}</div>
+        </aside>
+        <section class="analysis-map-card"><div id="kepezMap"></div><div id="streetMembers" class="street-members">${selected?streetMembersHtml(selected):`<div class="analysis-hint">${hood?'Soldaki listeden bir sokak/cadde seçin; üyeler haritada ve burada görünür.':'Bir mahalle seçerek başlayın.'}</div>`}</div></section>
+      </div>`;
+      $('analysisHoodSelect').onchange=e=>{state.selectedAnalysisNeighborhood=e.target.value||null; state.selectedStreet=null; state.analysisQuery=''; save(); renderAnalysis();};
+      $('analysisSearchInput').oninput=e=>{state.analysisQuery=e.target.value; clearTimeout(analysisSearchTimer); analysisSearchTimer=setTimeout(()=>{save(); renderAnalysis(); const i=$('analysisSearchInput'); i.focus(); i.setSelectionRange(i.value.length,i.value.length);},260);};
+      $('refreshMapBtn').onclick=async()=>{await loadLocations(); drawMap(selected); toast('Harita yenilendi.');};
+      const act=document.querySelector('.street-row.active'); if(act)act.scrollIntoView({block:'nearest'});
+      setTimeout(()=>drawMap(selected),80);
+    }
+    function streetMembersHtml(group){const members=group.members.slice(0,200); return `<div class="street-members-head"><div><strong>${esc(group.street)}</strong><div class="small">${esc(group.neighborhood)} • ${group.members.length} üye</div></div></div><div class="street-member-grid">`+members.map(m=>{const st=statusFor(m.id); return `<article class="street-member"><div class="street-member-top"><strong>${esc(m.name)}</strong>${st!=='new'?`<span class="badge ${st}">${statusLabels[st]}</span>`:''}</div><span class="small">${esc(String(m.address||'-').replace(/^ANTALYA KEPEZ\s+/,''))}</span><div class="street-member-actions"><a class="phone" href="tel:${esc(m.phone)}">Ara</a><a class="map-link" href="${esc(mapUrlFor(m))}" target="_blank" rel="noopener">Konum</a></div></article>`;}).join('')+`</div>`+(group.members.length>members.length?`<div class="small">${group.members.length-members.length} üye daha var.</div>`:'');}
     async function geocodeGroup(group){if(!group)return null; const cacheKey='geo:'+group.key; try{const cached=JSON.parse(localStorage.getItem(cacheKey)||'null'); if(cached&&cached.lat&&cached.lng)return cached;}catch(e){} const query=[group.street,group.neighborhood,'Kepez Antalya Türkiye'].filter(Boolean).join(' '); try{const url='https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?f=json&maxLocations=1&SingleLine='+encodeURIComponent(query); const res=await fetch(url); const data=await res.json(); const c=data.candidates&&data.candidates[0]; if(c&&c.location){const point={lat:c.location.y,lng:c.location.x,label:c.address||query}; localStorage.setItem(cacheKey,JSON.stringify(point)); return point;}}catch(e){} return null;}
     async function geocodeMember(m, fallback, index){const cacheKey='geo-member:'+m.id; try{const cached=JSON.parse(localStorage.getItem(cacheKey)||'null'); if(cached&&cached.lat&&cached.lng)return cached;}catch(e){} const query=[m.address,m.neighborhood,'Kepez Antalya Türkiye'].filter(Boolean).join(' '); try{const url='https://geocode.arcgis.com/arcgis/rest/services/World/GeocodeServer/findAddressCandidates?f=json&maxLocations=1&SingleLine='+encodeURIComponent(query); const res=await fetch(url); const data=await res.json(); const c=data.candidates&&data.candidates[0]; if(c&&c.location){const point={lat:c.location.y,lng:c.location.x}; localStorage.setItem(cacheKey,JSON.stringify(point)); return point;}}catch(e){} if(!fallback)return null; const angle=index*.9; const radius=.00018+(index%8)*.000035; return {lat:fallback.lat+Math.sin(angle)*radius,lng:fallback.lng+Math.cos(angle)*radius};}
     async function drawMap(group){const el=$('kepezMap'); if(!el||!window.L)return; if(!state.map){state.map=L.map(el).setView([37.0219,30.7141],12); L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'&copy; OpenStreetMap'}).addTo(state.map); state.mapLayers=L.layerGroup().addTo(state.map);} else {state.map.invalidateSize(); state.mapLayers.clearLayers();} if(canSeeLiveLocations())state.locations.forEach(l=>{const age=Math.round((Date.now()-new Date(l.time).getTime())/60000); const marker=L.circleMarker([l.lat,l.lng],{radius:8,color:'#123c7c',fillColor:'#f28c00',fillOpacity:.9,className:'location-dot'}).addTo(state.mapLayers); marker.bindPopup(`<strong>${esc(l.name)}</strong><br>${esc(l.neighborhood||l.role||'')}<br>${age} dk önce`);}); const point=await geocodeGroup(group); if(group&&point){state.map.setView([point.lat,point.lng],17); const members=group.members.slice(0,80); const points=await Promise.all(members.map((m,i)=>geocodeMember(m,point,i))); points.forEach((p,i)=>{if(!p)return; const m=members[i]; const marker=L.circleMarker([p.lat,p.lng],{radius:7,color:'#fff',weight:2,fillColor:'#f28c00',fillOpacity:.95,className:'member-dot'}).addTo(state.mapLayers); marker.bindPopup(`<strong>${esc(m.name)}</strong><br>${esc(m.phone||'')}<br><span>${esc(m.address||'')}</span><br><a href="tel:${esc(m.phone)}">Ara</a> · <a href="${esc(mapUrlFor(m))}" target="_blank" rel="noopener">Konum Aç</a>`);}); if(group.members.length>80)toast('Haritada ilk 80 üye gösterildi. Liste altta devam ediyor.');} else {state.map.setView([37.0219,30.7141],12);}}
@@ -583,21 +679,22 @@
     function showLoginMessage(text){$('loginError').textContent=text||'';}
     async function startSession(token,user,remember){
       storeToken(token,remember); state.user=user; load();
-      showLoginMessage('Üye listesi yükleniyor…');
-      try{await loadMembers();}catch(e){if(e.message==='unauthorized')return; showLoginMessage('Üye listesi alınamadı. İnterneti kontrol edip tekrar deneyin.'); state.user=null; return;}
       indexLogs();
       document.body.classList.remove('locked'); showLoginMessage('');
-      $('adminNavBtn').hidden=!isAdmin(); $('analysisNavBtn').hidden=!canUseAnalysis(); $('exportBtn').hidden=!isAdmin();
+      $('memberList').innerHTML='<div class="empty">Üye listesi yükleniyor…</div>';
+      loadMembers().then(()=>{indexLogs(); fillNeighborhoods(); render();}).catch(e=>{if(e.message!=='unauthorized'&&!state.members.length)toast('Üye listesi alınamadı. Sayfayı aşağı çekerek yenileyin.');});
+      document.body.classList.toggle('no-logs',!isAdmin()); $('adminNavBtn').hidden=!isAdmin(); $('analysisNavBtn').hidden=!canUseAnalysis(); $('exportBtn').hidden=!isAdmin();
       fillNeighborhoods(); setMode(state.mode||'home');
       if(user.mustChangePassword)openPasswordModal(true);
       void Promise.allSettled([loadLeaders(),flushQueuedLogs(),loadAnnouncements(),loadLogs(),loadLocations(),loadRequests(),loadUsers()]).then(()=>{if(state.user){renderNotice(); render();}});
     }
     async function login(username,password,remember){const data=await api('/auth/login',{method:'POST',json:{username,password}}); localStorage.removeItem(legacyLoginKey); await startSession(data.token,data.user,remember);}
-    function logout(){localStorage.removeItem(tokenKey); sessionStorage.removeItem(tokenKey); localStorage.removeItem(legacyLoginKey); if(state.locationWatch!==null&&navigator.geolocation)navigator.geolocation.clearWatch(state.locationWatch); state.locationWatch=null; Object.assign(state,{members:[],memberById:new Map(),mine:[],mineLoaded:false,leaders:[],users:[],logs:[],requests:[],user:null,token:'',selected:null}); memberLogs.clear(); document.body.classList.add('locked'); closeDrawer(); $('usernameInput').value=''; $('passwordInput').value=''; showLoginMessage(''); $('adminNavBtn').hidden=true; $('analysisNavBtn').hidden=true; $('exportBtn').hidden=true; $('detail').innerHTML='<div class="empty">Giriş yapınca üyeler açılacak.</div>'; $('memberList').innerHTML='<div class="empty">Üye listesi giriş sonrası yüklenir.</div>'; $('logs').innerHTML='<div class="empty">Loglar girişten sonra görünür.</div>';}
-    async function tryAutoLogin(){
+    function logout(){cacheClear(); localStorage.removeItem(tokenKey); sessionStorage.removeItem(tokenKey); localStorage.removeItem(legacyLoginKey); if(state.locationWatch!==null&&navigator.geolocation)navigator.geolocation.clearWatch(state.locationWatch); state.locationWatch=null; Object.assign(state,{members:[],memberById:new Map(),mine:[],mineLoaded:false,leaders:[],users:[],logs:[],requests:[],user:null,token:'',selected:null}); memberLogs.clear(); document.body.classList.add('locked'); closeDrawer(); $('usernameInput').value=''; $('passwordInput').value=''; showLoginMessage(''); $('adminNavBtn').hidden=true; $('analysisNavBtn').hidden=true; $('exportBtn').hidden=true; $('detail').innerHTML='<div class="empty">Giriş yapınca üyeler açılacak.</div>'; $('memberList').innerHTML='<div class="empty">Üye listesi giriş sonrası yüklenir.</div>'; $('logs').innerHTML='<div class="empty">Loglar girişten sonra görünür.</div>';}
+    async function tryAutoLogin(){try{await tryAutoLoginInner();}finally{document.body.classList.remove('resuming');}}
+    async function tryAutoLoginInner(){
       const token=savedToken();
       try{
-        if(token){state.token=token; showLoginMessage('Oturum açılıyor…'); const data=await api('/auth/me'); await startSession(token,data.user,!!localStorage.getItem(tokenKey)); return;}
+        if(token){state.token=token; document.body.classList.add('resuming'); showLoginMessage('Oturum açılıyor…'); const data=await api('/auth/me'); await startSession(token,data.user,!!localStorage.getItem(tokenKey)); return;}
         const legacy=JSON.parse(localStorage.getItem(legacyLoginKey)||'null');
         if(legacy&&legacy.username&&legacy.password){showLoginMessage('Oturum açılıyor…'); await login(legacy.username,legacy.password,true);}
       }catch(e){
@@ -637,6 +734,9 @@
       const dl=t.closest('[data-leader-delete]'); if(dl){deleteLeader(dl.dataset.leaderDelete); return;}
       const dr=t.closest('[data-request-delete]'); if(dr){deleteRequest(dr.dataset.requestDelete); return;}
       const call=t.closest('[data-auto-call]'); if(call){sessionStorage.setItem('pending-auto-call',call.dataset.autoCall); return;}
+      const ah=t.closest('[data-analysis-hood]'); if(ah){state.selectedAnalysisNeighborhood=ah.dataset.analysisHood; state.selectedStreet=null; state.analysisQuery=''; save(); renderAnalysis(); return;}
+      if(t.closest('[data-back-hood]')){state.selectedAnalysisNeighborhood=null; state.selectedStreet=null; state.analysisQuery=''; save(); renderAnalysis(); return;}
+      const sr=t.closest('[data-street]'); if(sr){state.selectedStreet=sr.dataset.street; save(); renderAnalysis(); if(window.matchMedia('(max-width:1050px)').matches)setTimeout(()=>{const m=$('kepezMap'); if(m)m.scrollIntoView({behavior:'smooth',block:'start'});},120); return;}
     });
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible'||state.mode!=='auto')return; const pending=sessionStorage.getItem('pending-auto-call'); if(!pending||pending!==state.selected)return; sessionStorage.removeItem('pending-auto-call'); setTimeout(()=>addLog('called','Arama başlatıldı.','',true),350);});
     $('memberList').onclick=e=>{const tab=e.target.closest('[data-list-tab]'); if(tab){const t=tab.dataset.listTab; setMode(t==='members'?'list':t); state.limit=180; return;} const hood=e.target.closest('[data-leader-hood]'); if(hood){state.selectedLeaderNeighborhood=hood.dataset.leaderHood; state.selectedLeader=null; save(); render(); return;} if(e.target.closest('[data-leader-back]')){state.selectedLeaderNeighborhood=null; state.selectedLeader=null; save(); render(); return;} const leader=e.target.closest('[data-leader-id]'); if(leader){state.selectedLeader=leader.dataset.leaderId; render(); scrollDetailIntoView(); return;} const board=e.target.closest('[data-board-id]'); if(board){state.selectedLeader=board.dataset.boardId; render(); scrollDetailIntoView(); return;} const b=e.target.closest('.member[data-id]'); if(!b)return; state.selected=b.dataset.id; save(); render(); scrollDetailIntoView();};
@@ -644,7 +744,7 @@
     $('searchInput').oninput=e=>{state.query=e.target.value; state.limit=180; render();};
     $('statusFilter').onchange=e=>{state.status=e.target.value; state.limit=180; render();};
     $('nextBtn').onclick=()=>selectNext();
-    $('notice').onclick=()=>setMode('home');
+    $('notice').onclick=e=>{if(e.target.closest('.notice-close')){dismissNotice(); return;} setMode('home');};
     $('exportBtn').onclick=async()=>{if(!isAdmin())return; await loadLogs(); exportLogs(state.logs);};
     $('loginForm').onsubmit=async e=>{e.preventDefault(); const u=$('usernameInput').value, p=$('passwordInput').value; if(!u||!p){showLoginMessage('Kullanıcı adı ve şifre gerekli.'); return;} showLoginMessage('Kontrol ediliyor…'); try{await login(u,p,$('rememberInput').checked); $('passwordInput').value='';}catch(err){showLoginMessage(err.status===401?'Kullanıcı adı veya şifre hatalı ya da kullanıcı pasif.':'Sunucuya bağlanılamadı. İnternet bağlantınızı kontrol edin.');}};
     $('detail').innerHTML='<div class="empty">Giriş yapınca üyeler açılacak.</div>';

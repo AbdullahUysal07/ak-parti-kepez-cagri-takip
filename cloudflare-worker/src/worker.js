@@ -303,12 +303,14 @@ function rowToMember(row, hood) {
   return { id: row[0], name: row[1], phone: row[2], address: row[3], joined: row[4], refs: row[5] || [], neighborhood: hood };
 }
 
-async function membersResponse(env, user) {
+async function membersResponse(env, user, have) {
   const index = await getJson(env, K.memberIndex, null);
   const edits = await env.SUBSCRIPTIONS.get(K.memberEdits) || '{}';
   if (!index) return textResponse(`{"ok":true,"version":null,"hoods":[],"data":{},"edits":${edits}}`);
   const allowed = user.role === 'management' ? index.hoods.map(h => h.name) : index.hoods.map(h => h.name).filter(h => user.neighborhoods.includes(h));
   const hoods = index.hoods.filter(h => allowed.includes(h.name));
+  // Cihazda aynı sürüm varsa listeyi tekrar gönderme; sadece düzenlemeleri gönder.
+  if (have && have === index.version) return textResponse(`{"ok":true,"unchanged":true,"version":${JSON.stringify(index.version)},"updatedAt":${JSON.stringify(index.updatedAt || '')},"hoods":${JSON.stringify(hoods)},"edits":${edits}}`);
   // Mahalle verileri KV'den bayt akışı olarak doğrudan yanıta aktarılır; büyük listeyi
   // sunucuda çözüp yeniden üretmeye gerek kalmaz (işlemci süresi düşük kalır).
   const { readable, writable } = new TransformStream();
@@ -317,8 +319,11 @@ async function membersResponse(env, user) {
     try {
       await writer.write(encoder.encode(`{"ok":true,"version":${JSON.stringify(index.version)},"updatedAt":${JSON.stringify(index.updatedAt || '')},"hoods":${JSON.stringify(hoods)},"edits":${edits},"data":{`));
       let first = true;
-      for (const hood of allowed) {
-        const stream = await env.SUBSCRIPTIONS.get(memberHoodKey(index.version, hood), 'stream');
+      // Tüm mahalleleri aynı anda iste, sırayla yanıta yaz
+      const streams = allowed.map(hood => env.SUBSCRIPTIONS.get(memberHoodKey(index.version, hood), 'stream'));
+      for (let i = 0; i < allowed.length; i++) {
+        const hood = allowed[i];
+        const stream = await streams[i];
         if (!stream) continue;
         await writer.write(encoder.encode((first ? '' : ',') + JSON.stringify(hood) + ':'));
         first = false;
@@ -493,7 +498,7 @@ async function handle(request, env) {
   }
 
   // ---- Üyeler ----
-  if (path === '/members' && method === 'GET') return membersResponse(env, user);
+  if (path === '/members' && method === 'GET') return membersResponse(env, user, url.searchParams.get('have') || '');
   if (path === '/members/mine' && method === 'GET') return json({ ok: true, members: await myMembers(env, user) });
   if (path.startsWith('/members/') && method === 'PUT') {
     const denied = requireAdmin(); if (denied) return denied;
