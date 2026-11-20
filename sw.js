@@ -6,6 +6,15 @@ self.addEventListener('activate', event => {
   event.waitUntil(self.clients.claim());
 });
 
+// Uygulama olarak kurulabilmek için gereken basit ağ katmanı: sayfalar her zaman
+// internetten alınır (eski sürüm takılı kalmaz); bağlantı yoksa kısa bir uyarı gösterilir.
+self.addEventListener('fetch', event => {
+  if (event.request.mode !== 'navigate') return;
+  event.respondWith(fetch(event.request).catch(() => new Response(
+    '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Bağlantı yok</title><body style="font-family:-apple-system,Segoe UI,Arial;display:grid;place-items:center;min-height:100vh;margin:0;background:#123c7c;color:#fff;text-align:center;padding:20px"><div><h2>İnternet bağlantısı yok</h2><p>Bağlantı gelince sayfayı yenileyin.</p><button onclick="location.reload()" style="font:inherit;padding:12px 20px;border:0;border-radius:10px;background:#f28c00;color:#fff;font-weight:700">Yeniden dene</button></div>',
+    { headers: { 'Content-Type': 'text/html; charset=utf-8' } })));
+});
+
 self.addEventListener('push', event => {
   event.waitUntil((async () => {
     let data = {};
