@@ -227,6 +227,17 @@
     .bmarker.approx { background:#94a3b8; }
     .pop-list { max-height:180px; overflow:auto; margin:6px 0; display:grid; gap:4px; }
     .pop-row span { color:#64748b; font-size:.8rem; }
+    .check-shell { max-width:760px; }
+    .check-warning { border:1px solid #f5c27a; background:#fff4df; color:#7c3f00; border-radius:10px; padding:10px 12px; }
+    .check-form { border-top:0; padding-top:0; }
+    .check-result { border-radius:12px; padding:14px; display:grid; gap:8px; border:2px solid; }
+    .check-result p { margin:0; }
+    .check-result.ok { border-color:#16a34a; background:#f0fdf4; }
+    .check-result.no { border-color:#2563eb; background:#eff6ff; }
+    .check-result.warn { border-color:#dc2626; background:#fef2f2; }
+    .check-badge { font-size:1.35rem; font-weight:900; letter-spacing:.3px; }
+    .check-result.ok .check-badge { color:#15803d; } .check-result.no .check-badge { color:#1d4ed8; } .check-result.warn .check-badge { color:#b91c1c; }
+    body.hide-toolbar .toolbar { display:none!important; }
     .nav-request { border-top:1px solid var(--line); }
     .admin-tabs { display:flex; gap:6px; flex-wrap:wrap; }
     .admin-tab { min-height:36px; background:#fff; color:var(--brand2); border:1px solid var(--line); padding:0 12px; }
@@ -279,6 +290,7 @@
           <button class="nav-item" data-mode="leaders" type="button">Mahalle Başkanları</button>
           <button class="nav-item" data-mode="list" type="button">Üye Listeleri</button>
           <button class="nav-item" data-mode="mine" type="button">Üyelerim</button>
+          <button class="nav-item" data-mode="check" type="button">Üye Sorgula</button>
           <button class="nav-item" data-mode="auto" type="button">Otomatik Arama</button>
           <button class="nav-item" id="analysisNavBtn" data-mode="analysis" type="button" hidden>Kepez Analiz</button>
           <button class="nav-item" id="adminNavBtn" data-mode="admin" type="button" hidden>Hasan Demir Paneli</button>
@@ -402,8 +414,11 @@
       if(cached&&cached.version&&!state.members.length){applyMembers(cached.data,cached.version,cached.updatedAt,cached.hoods,cached.edits); indexLogs(); fillNeighborhoods(); render();}
       const have=(state.memberIndex&&state.memberIndex.version)||'';
       const data=await api('/members'+(have?'?have='+encodeURIComponent(have):''));
+      const nameIndex=!!data.nameIndex;
       if(data.unchanged){applyMembers(state.rawMembers,data.version,data.updatedAt,data.hoods,data.edits); if(cached)cacheSet(cacheKey,{...cached,edits:data.edits,hoods:data.hoods});}
       else {applyMembers(data.data,data.version,data.updatedAt,data.hoods,data.edits); cacheSet(cacheKey,{version:data.version,updatedAt:data.updatedAt,hoods:data.hoods,edits:data.edits,data:data.data});}
+      if(state.memberIndex)state.memberIndex.nameIndex=nameIndex;
+      if(isAdmin()&&state.memberIndex&&!nameIndex&&isManagement())buildNameIndex();
     }
     async function loadMine(force=false){if(state.mineLoaded&&!force)return; try{const data=await api('/members/mine'); state.mine=data.members||[]; state.mineLoaded=true;}catch(e){if(e.message!=='unauthorized')toast('Üyeleriniz alınamadı.');}}
     async function loadLeaders(){try{const data=await api('/leaders'); state.leaders=data.leaders||[];}catch(e){}}
@@ -443,6 +458,7 @@
       else if(mode==='list'){state.mode='list'; state.memberTab='members';}
       else if(mode==='mine'){state.mode='list'; state.memberTab='mine'; state.selected=null; loadMine().then(render);}
       else if(mode==='requests'){state.mode='requests'; loadRequests().then(render);}
+      else if(mode==='check'){state.mode='check';}
       else state.mode=mode;
       const active=state.mode==='list'?({board:'board',leaders:'leaders',mine:'mine'}[state.memberTab]||'list'):state.mode;
       document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===active));
@@ -450,11 +466,13 @@
     }
     function render(){
       if(!state.user)return;
+      document.body.classList.toggle('hide-toolbar',!(state.mode==='auto'||(state.mode==='list'&&(state.memberTab==='members'||state.memberTab==='mine'))));
       // Excel yükleme ekranındayken arka plan yenilemeleri seçilen dosyayı/ilerlemeyi silmesin
       if(state.mode==='admin'&&state.adminTab==='yukle'&&$('importFile'))return;
       renderNotice();
       if(state.mode==='analysis'&&canUseAnalysis()){setBodyMode('analysis-mode'); renderAnalysis(); clearLogsPanel(); return;}
       if(state.mode==='admin'&&isAdmin()){setBodyMode('admin-mode'); renderAdmin(); renderLogs(); return;}
+      if(state.mode==='check'){setBodyMode('admin-mode'); if(!$('checkForm'))renderCheck(); clearLogsPanel(); return;}
       if(state.mode==='requests'){setBodyMode('admin-mode'); if($('requestForm'))renderMyRequests(); else renderRequests(); clearLogsPanel(); return;}
       if(state.mode==='home'){setBodyMode('home-mode'); renderHome(); if(isAdmin())renderLogs(); else clearLogsPanel(); return;}
       if(state.mode==='list'&&(state.memberTab==='leaders'||state.memberTab==='board')){
@@ -718,24 +736,57 @@
           prog.textContent=`Hazırlanıyor… ${Math.min(i+500,rows.length).toLocaleString('tr-TR')} / ${rows.length.toLocaleString('tr-TR')}`;
         }
         const oldIds=new Set(state.members.map(m=>m.id)); const added=[...ids].filter(id=>!oldIds.has(id)).length; const removed=[...oldIds].filter(id=>!ids.has(id)).length;
-        pendingImport={byHood,shards,ids,total:ids.size};
+        pendingImport={byHood,shards,nameShards:nameShardsFrom(byHood),ids,total:ids.size};
         prog.textContent='';
         out.innerHTML=`<div class="admin-grid four"><div class="admin-card"><strong>Dosyadaki üye</strong><h2>${ids.size.toLocaleString('tr-TR')}</h2><span class="small">${withPhone.toLocaleString('tr-TR')} telefonlu</span></div><div class="admin-card"><strong>Yeni eklenecek</strong><h2>${added.toLocaleString('tr-TR')}</h2></div><div class="admin-card"><strong>Kaldırılacak</strong><h2>${removed.toLocaleString('tr-TR')}</h2><span class="small">listede olmayanlar</span></div><div class="admin-card"><strong>Mahalle</strong><h2>${Object.keys(byHood).length}</h2>${skipped?`<span class="small">${skipped} satır TC hatalı, atlandı</span>`:''}</div></div><button type="button" id="importConfirm">Listeyi Yükle ve Güncelle</button>`;
         $('importConfirm').onclick=runImport;
       }catch(e){prog.textContent=''; out.innerHTML=`<div class="login-error">Dosya okunamadı: ${esc(e.message||e)}</div>`;}
     }
     async function runImport(){
-      if(!pendingImport)return; const {byHood,shards,ids,total}=pendingImport; const btn=$('importConfirm'); btn.disabled=true; const prog=$('importProgress');
+      if(!pendingImport)return; const {byHood,shards,nameShards,ids,total}=pendingImport; const btn=$('importConfirm'); btn.disabled=true; const prog=$('importProgress');
       try{
         const {version}=await api('/admin/import/start',{method:'POST',json:{}});
-        const hoodNames=Object.keys(byHood).sort((a,b)=>a.localeCompare(b,'tr')); const steps=hoodNames.length+REF_SHARDS; let done=0;
+        const hoodNames=Object.keys(byHood).sort((a,b)=>a.localeCompare(b,'tr')); const steps=hoodNames.length+REF_SHARDS*2; let done=0;
         const send=async(kind,key,payload)=>{for(let attempt=0;attempt<3;attempt++){try{await api(`/admin/import/part?version=${encodeURIComponent(version)}&kind=${kind}&key=${encodeURIComponent(key)}`,{method:'POST',body:payload,headers:{'Content-Type':'text/plain;charset=utf-8'}}); done++; prog.textContent=`Yükleniyor… %${Math.round(done/steps*100)}`; return;}catch(e){if(attempt===2)throw e; await new Promise(r=>setTimeout(r,1500));}}};
         for(const h of hoodNames)await send('hood',h,JSON.stringify(byHood[h]));
         for(let i=0;i<REF_SHARDS;i++)await send('ref',String(i),JSON.stringify(shards[i]));
-        await api('/admin/import/finish',{method:'POST',json:{version,total,hoods:hoodNames.map(h=>({name:h,count:byHood[h].length})),ids:Object.keys(state.memberEdits).filter(id=>ids.has(id))}});
+        for(let i=0;i<REF_SHARDS;i++)await send('name',String(i),JSON.stringify(nameShards[i]));
+        await api('/admin/import/finish',{method:'POST',json:{version,nameIndex:true,total,hoods:hoodNames.map(h=>({name:h,count:byHood[h].length})),ids:Object.keys(state.memberEdits).filter(id=>ids.has(id))}});
         prog.textContent='Liste güncellendi, yeniden yükleniyor…'; pendingImport=null;
         await loadMembers(); state.mineLoaded=false; fillNeighborhoods(); renderAdmin(); toast(`Üye listesi güncellendi: ${total.toLocaleString('tr-TR')} üye.`);
       }catch(e){btn.disabled=false; prog.textContent='Yükleme tamamlanamadı: '+(e.message||e)+'. Mevcut liste değişmedi; tekrar deneyebilirsiniz.';}
+    }
+
+    // ------------------------------------------------------------------ üye sorgulama
+    function surnameKey(name){const t=refKey(name).split(' ').filter(Boolean); return t[t.length-1]||'';}
+    function nameShardsFrom(byHood){const shards=Array.from({length:REF_SHARDS},()=>({})); Object.entries(byHood).forEach(([hood,rows])=>rows.forEach(row=>{const k=surnameKey(row[1]); if(!k)return; const sh=shards[refShard(k)]; (sh[k]=sh[k]||[]).push([hood,row]);})); return shards;}
+    let nameIndexBuilding=false;
+    // Eski yüklemelerde sorgu dizini yoksa admin tarayıcısı bir kez oluşturur (arka planda)
+    async function buildNameIndex(){if(nameIndexBuilding||!state.memberIndex)return; nameIndexBuilding=true; const version=state.memberIndex.version; try{const shards=nameShardsFrom(state.rawMembers||{}); for(let i=0;i<REF_SHARDS;i++)await api(`/admin/import/part?version=${encodeURIComponent(version)}&kind=name&key=${i}`,{method:'POST',body:JSON.stringify(shards[i]),headers:{'Content-Type':'text/plain;charset=utf-8'}}); await api('/admin/import/name-done',{method:'POST',json:{version}}); state.memberIndex.nameIndex=true;}catch(e){}finally{nameIndexBuilding=false;}}
+    const CHECK_TEXT={
+      active:['ok','AKTİF ÜYE','Bu kişi Kepez\'de kayıtlı aktif üyedir.'],
+      not_member:['no','ÜYE DEĞİL','Kepez\'de bu ad soyadla kayıtlı üye yok. İkametgâhı Kepez\'de ise üye yapılabilir.'],
+      need_phone:['warn','AYNI İSİMDE BİRDEN FAZLA KİŞİ VAR','Kesin sonuç için telefon numarasını da yazıp tekrar sorgulayın.'],
+      uncertain:['warn','KESİNLİK YOK','Aynı isimde birden fazla kayıt var ve telefon numarasıyla netleşmedi. Lütfen Bilgi İşlem\'e ulaşın.']
+    };
+    function checkResultHtml(r){
+      if(!r)return '';
+      if(r.error)return `<div class="check-result warn"><strong>Sorgu yapılamadı</strong><p>${esc(r.error)}</p></div>`;
+      const [cls,title,text]=CHECK_TEXT[r.result]||['warn','KESİNLİK YOK','Lütfen Bilgi İşlem\'e ulaşın.'];
+      const m=r.member;
+      const facts=m?`<div class="facts"><div class="fact"><div>Ad Soyad</div><div>${esc(m.name)}</div></div><div class="fact"><div>Mahalle</div><div>${esc(m.neighborhood||'-')}</div></div><div class="fact"><div>Üyelik Tarihi</div><div>${esc(fmtDay(m.joined))}</div></div><div class="fact"><div>Kayıtlı Telefon</div><div>${esc(m.phone||'Yok')}</div></div></div>`:'';
+      const extra=[r.nameMatches>1?`Bu isimde Kepez'de ${r.nameMatches} kayıt bulundu${r.byPhone?', telefon numarasıyla eşleşti':''}.`:'', r.phoneMismatch?'Not: Girilen telefon, kayıtlı telefonla eşleşmiyor. Kişinin aynı olduğundan emin olun.':''].filter(Boolean).map(x=>`<p class="small">${esc(x)}</p>`).join('');
+      return `<div class="check-result ${cls}"><div class="check-badge">${esc(title)}</div><p>${esc(text)}</p>${extra}${facts}</div>`;
+    }
+    function renderCheck(){
+      $('countText').textContent='Üye Sorgula'; $('memberList').innerHTML='';
+      const c=state.check||{name:'',phone:'',result:null};
+      $('detail').innerHTML=`<div class="admin-shell check-shell"><div class="admin-section-head"><h2>Üye Sorgula</h2></div>
+        <div class="check-warning"><strong>Dikkat:</strong> Bu sorgu yalnızca <strong>Kepez ilçesi</strong> üyeliklerini gösterir. Kişinin ikametgâhının Kepez'de olduğundan emin olun; başka ilçelerdeki üyelikler burada görünmez.</div>
+        <form id="checkForm" class="form check-form"><div class="field"><label>Ad Soyad</label><input id="checkName" value="${esc(c.name)}" placeholder="Örn. Mehmet Yılmaz" autocomplete="off" required></div><div class="field"><label>Telefon</label><input id="checkPhone" value="${esc(c.phone)}" placeholder="05xx xxx xx xx" inputmode="tel" autocomplete="off"></div><div class="actions"><button>Sorgula</button><button type="button" class="secondary" id="checkClear">Temizle</button></div></form>
+        <div id="checkResult">${checkResultHtml(c.result)}</div></div>`;
+      $('checkForm').onsubmit=async e=>{e.preventDefault(); const name=$('checkName').value.trim(), phone=$('checkPhone').value.trim(); if(name.split(/\s+/).filter(Boolean).length<2){toast('Lütfen ad ve soyadı birlikte yazın.'); return;} const btn=e.target.querySelector('button'); btn.disabled=true; $('checkResult').innerHTML='<div class="small">Sorgulanıyor…</div>'; let result; try{result=await api('/members/check',{method:'POST',json:{name,phone}});}catch(err){result={error:err.message==='no_member_list'?'Üye listesi henüz yüklenmemiş.':'Sunucuya ulaşılamadı, tekrar deneyin.'};} btn.disabled=false; state.check={name,phone,result}; $('checkResult').innerHTML=checkResultHtml(result);};
+      $('checkClear').onclick=()=>{state.check=null; renderCheck(); $('checkName').focus();};
     }
 
     // ------------------------------------------------------------------ duyurular
