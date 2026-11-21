@@ -166,6 +166,7 @@ const ADMIN_USERNAMES = ['hasan_demir', 'ilkaygunesss'];
 const USER_TITLES = { hasan_demir: 'İlçe Başkanı', ilkaygunesss: 'İlçe Teşkilat Başkanı' };
 const ANALYSIS_USERS = ['ilkaygunesss', 'huseyin_ilkay_gunes'];
 const REF_SHARDS = 64;
+const MAX_VISIT_IMAGES = 5;
 const TOKEN_DAYS = 120;
 const K = {
   secret: '__server_secret__',
@@ -408,7 +409,7 @@ async function migrateLogs(env, logs) {
   for (const l of logs) {
     if (/^\d{11}$/.test(String(l.memberId || ''))) l.memberId = await memberIdFromTc(secret, l.memberId);
   }
-  await putJson(env, K.logs, logs.slice(0, 5000));
+  await putJson(env, K.logs, logs.slice(0, 10000));
   return logs;
 }
 
@@ -856,11 +857,44 @@ async function handle(request, env) {
     const b = await body();
     const text = clean(b.text, 3000);
     if (!text) return json({ error: 'text_required' }, 400);
-    const requests = await getJson(env, K.requests, []);
     const item = { id: crypto.randomUUID(), text, category: clean(b.category, 40) || 'Talep', username: user.username, name: user.name, role: user.role, neighborhood: user.neighborhoods[0] || '', status: 'new', time: new Date().toISOString() };
+    if (b.visit && typeof b.visit === 'object') {
+      item.visit = { neighborhood: clean(b.visit.neighborhood, 80), date: /^\d{4}-\d{2}-\d{2}$/.test(String(b.visit.date || '')) ? b.visit.date : '' };
+      if (item.visit.neighborhood) item.neighborhood = item.visit.neighborhood;
+    }
+    // Ziyaret fotoğrafları: ana veriden ve GitHub deposundan ayrı, kendi KV deposunda (VISIT_IMAGES) tutulur
+    if (Array.isArray(b.images) && b.images.length > MAX_VISIT_IMAGES) return json({ error: 'too_many_images' }, 400);
+    const images = Array.isArray(b.images) ? b.images : [];
+    if (images.length) {
+      if (!env.VISIT_IMAGES) return json({ error: 'image_storage_missing' }, 503);
+      const decoded = [];
+      for (const d of images) {
+        const m = /^data:image\/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$/.exec(String(d || ''));
+        if (!m) return json({ error: 'bad_image' }, 400);
+        const bytes = base64UrlToBytes(m[2].replace(/=+$/, ''));
+        if (bytes.length > 2.5 * 1024 * 1024) return json({ error: 'image_too_large' }, 413);
+        decoded.push({ type: 'image/' + m[1], bytes });
+      }
+      item.images = [];
+      for (let n = 0; n < decoded.length; n++) {
+        await env.VISIT_IMAGES.put(`img:${item.id}:${n}`, decoded[n].bytes, { metadata: { type: decoded[n].type, username: user.username } });
+        item.images.push({ n, size: decoded[n].bytes.length });
+      }
+    }
+    const requests = await getJson(env, K.requests, []);
     requests.unshift(item);
     await putJson(env, K.requests, requests.slice(0, 2000));
     return json({ ok: true, request: item });
+  }
+  if (path.startsWith('/requests/img/') && method === 'GET') {
+    const [rid, nStr] = decodeURIComponent(path.slice('/requests/img/'.length)).split('/');
+    const requests = await getJson(env, K.requests, []);
+    const r = requests.find(x => x.id === rid);
+    if (!r || !(admin || r.username === user.username)) return json({ error: 'not_found' }, 404);
+    if (!env.VISIT_IMAGES) return json({ error: 'image_storage_missing' }, 503);
+    const got = await env.VISIT_IMAGES.getWithMetadata(`img:${rid}:${Number(nStr) || 0}`, 'arrayBuffer');
+    if (!got || !got.value) return json({ error: 'not_found' }, 404);
+    return new Response(got.value, { headers: { 'Content-Type': (got.metadata && got.metadata.type) || 'image/jpeg', 'Cache-Control': 'private, max-age=86400', ...corsHeaders() } });
   }
   if (path.startsWith('/requests/') && (method === 'PUT' || method === 'DELETE')) {
     const denied = requireAdmin(); if (denied) return denied;
@@ -868,8 +902,10 @@ async function handle(request, env) {
     const requests = await getJson(env, K.requests, []);
     const i = requests.findIndex(r => r.id === id);
     if (i === -1) return json({ error: 'not_found' }, 404);
-    if (method === 'DELETE') requests.splice(i, 1);
-    else {
+    if (method === 'DELETE') {
+      const [removed] = requests.splice(i, 1);
+      if (env.VISIT_IMAGES && removed.images) await Promise.all(removed.images.map(im => env.VISIT_IMAGES.delete(`img:${removed.id}:${im.n}`)));
+    } else {
       const b = await body();
       if (['new', 'reviewed', 'done'].includes(b.status)) requests[i].status = b.status;
       if ('reply' in b) requests[i].reply = clean(b.reply, 2000);
@@ -925,6 +961,16 @@ async function handle(request, env) {
   }
 
   // ---- Arama logları ----
+  if (path === '/logs/delete' && method === 'POST') {
+    const denied = requireAdmin(); if (denied) return denied;
+    const b = await body();
+    const ids = new Set((Array.isArray(b.ids) ? b.ids : []).map(x => String(x)));
+    if (!ids.size) return json({ error: 'ids_required' }, 400);
+    const logs = await getJson(env, K.logs, []);
+    const kept = logs.filter(l => !ids.has(String(l.id)));
+    await putJson(env, K.logs, kept);
+    return json({ ok: true, deleted: logs.length - kept.length });
+  }
   if (path === '/logs' && method === 'GET') {
     const denied = requireAdmin(); if (denied) return denied;
     return json({ ok: true, logs: await migrateLogs(env, await getJson(env, K.logs, [])) });
@@ -954,7 +1000,7 @@ async function handle(request, env) {
     const existing = logs.findIndex(l => l.id === item.id);
     if (existing !== -1) logs.splice(existing, 1);
     logs.unshift(item);
-    await putJson(env, K.logs, logs.slice(0, 5000));
+    await putJson(env, K.logs, logs.slice(0, 10000));
     return json({ ok: true, log: item });
   }
 
