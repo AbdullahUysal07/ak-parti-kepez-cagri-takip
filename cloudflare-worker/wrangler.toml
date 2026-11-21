@@ -9,3 +9,8 @@ id = "4cf6453d99ad41ba9f0ef0b794a26eec"
 [vars]
 VAPID_PUBLIC_KEY = "BDF-DNF3ase4Th9_1FYDC3hlLrM_POPq-HwBV6NL7rt-3PvtYodySS22FP57vVD1rBvlmKVRRQbfIaI3XxQEBLU"
 VAPID_SUBJECT = "mailto:abdullahuysal01@gmail.com"
+
+# Mahalle ziyareti fotoğrafları (ana veriden ayrı depo)
+[[kv_namespaces]]
+binding = "VISIT_IMAGES"
+id = "98e0789e8aa04be9b174c8535e7a70af"
