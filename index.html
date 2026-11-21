@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="app-version" content="2026.11.21-3">
   <meta name="apple-mobile-web-app-title" content="Kepez Çağrı">
   <meta name="application-name" content="Kepez Çağrı">
   <meta name="theme-color" content="#123c7c">
@@ -588,6 +589,15 @@
     .img-viewer button{position:absolute;min-height:0;background:rgba(255,255,255,.14)!important;color:#fff!important;border-radius:50%;width:44px;height:44px;padding:0;font-size:28px;line-height:1;box-shadow:none!important}
     .iv-close{top:14px;right:14px}.iv-prev{left:12px;top:50%}.iv-next{right:12px;top:50%}
     .iv-count{position:absolute;bottom:16px;color:#fff;font-size:.9rem}
+    html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+    .admin-section>#requestForm{border-top:0;margin-top:0;padding-top:0}
+    .visit-fields .grid2>*,.visit-fields .field{min-width:0}
+    input[type=date]{display:block;width:100%;max-width:100%;min-width:0;box-sizing:border-box;-webkit-appearance:none;appearance:none;text-align:left;min-height:44px;background:#fff}
+    input[type=date]::-webkit-date-and-time-value{text-align:left}
+    .visit-fields{overflow:hidden}
+    @media (max-width:700px){.visit-fields{padding:10px}.visit-fields .grid2{grid-template-columns:1fr}.vp{width:calc((100% - 16px)/3);height:auto;aspect-ratio:1}.photo-add{width:100%;justify-content:center;box-sizing:border-box}.req-photos{grid-template-columns:repeat(3,1fr)}}
+    .update-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));z-index:9998;display:flex;align-items:center;gap:12px;background:#0f172a;color:#fff;padding:10px 10px 10px 16px;border-radius:14px;box-shadow:0 10px 30px rgba(2,6,23,.35);font-size:.92rem;max-width:calc(100vw - 24px);white-space:nowrap}
+    .update-bar button{min-height:36px;padding:0 14px;border-radius:10px;background:#f59e0b!important;color:#111!important;font-weight:800;box-shadow:none!important}
   </style>
 </head>
 <body class="locked">
@@ -702,6 +712,11 @@
     function fmtDate(v){if(!v)return '-'; const d=new Date(v); return isNaN(d)?String(v):d.toLocaleString('tr-TR');}
     function fmtDay(v){if(!v)return '-'; const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})/); return m?`${m[3]}.${m[2]}.${m[1]}`:String(v);}
     function mapUrlFor(x){const q=[x.address,x.neighborhood,'Kepez Antalya'].filter(Boolean).join(' '); return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(q);}
+    // Yeni sürüm kontrolü: sayfa açıkken site güncellenirse kullanıcıya "Güncelle" çubuğu gösterilir
+    const APP_VERSION=(document.querySelector('meta[name="app-version"]')||{}).content||'';
+    async function checkAppUpdate(){if(!APP_VERSION||!navigator.onLine)return; try{const r=await fetch(location.pathname+'?_v='+Date.now(),{cache:'no-store'}); if(!r.ok)return; const m=(await r.text()).match(/name="app-version" content="([^"]+)"/); if(m&&m[1]!==APP_VERSION)showUpdateBar(m[1]);}catch(e){}}
+    function showUpdateBar(ver){if(document.getElementById('updateBar'))return; const b=document.createElement('div'); b.id='updateBar'; b.className='update-bar'; b.innerHTML='<span>Uygulamanın yeni sürümü hazır.</span><button type="button">Güncelle</button>'; b.querySelector('button').onclick=()=>{location.replace(location.pathname+'?v='+encodeURIComponent(ver)+location.hash);}; document.body.appendChild(b);}
+    setTimeout(checkAppUpdate,8000); setInterval(checkAppUpdate,10*60000); document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkAppUpdate();});
     function toast(msg){const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toast.timer); toast.timer=setTimeout(()=>t.classList.remove('show'),2600);}
     function updateDrawer(){if(!state.user)return; const n=state.user.name||''; $('drawerName').textContent=n; $('drawerAvatar').textContent=n.split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toLocaleUpperCase('tr-TR')||'AK'; const nh=(state.user.neighborhoods||[]).length; $('drawerRole').textContent=[state.user.allHoods?'':nh>1?`${nh} mahalle`:firstHood(),titleForUser()].filter(Boolean).join(' • '); $('navSectionMgmt').hidden=!(isAdmin()||canUseAnalysis()); const pl=$('adminNavBtn').querySelector('.nav-label'); if(pl)pl.textContent=panelName(); $('navSectionMgmt').textContent=isAdmin()?'Yönetim':'Analiz'; const al=$('analysisNavBtn').querySelector('.nav-label'); if(al)al.textContent=isManagement()?'Kepez Analiz':'Mahalle Analizi'; updateNavBadges();}
     function isUnread(a){if(!a)return false; if(state.lastSeenAt)return new Date(a.createdAt)>new Date(state.lastSeenAt); return a.id!==state.lastSeenAnnouncement&&!state.lastSeenAnnouncement;}
