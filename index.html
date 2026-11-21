@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="2026.11.21-3">
+  <meta name="app-version" content="2026.11.21-4">
   <meta name="apple-mobile-web-app-title" content="Kepez Çağrı">
   <meta name="application-name" content="Kepez Çağrı">
   <meta name="theme-color" content="#123c7c">
@@ -1324,7 +1324,9 @@
 
     const IS_STANDALONE=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
     if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
-    if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(e.data&&e.data.type==='new-notification'&&state.user)loadAnnouncements();});
+    // Bildirimden gelen yönlendirme (?ac=talepler)
+    function openFromLink(href){let ac=''; try{ac=new URL(href||location.href,location.href).searchParams.get('ac')||'';}catch(e){} if(ac!=='talepler'||!state.user)return false; if(isAdmin()){state.adminTab='talepler'; setMode('admin');} else setMode('requests'); loadRequests().then(()=>{if(state.mode==='admin')renderAdmin(); else if(state.mode==='requests')renderMyRequests();}); try{const u=new URL(location.href); if(u.searchParams.has('ac')){u.searchParams.delete('ac'); history.replaceState(null,'',u.pathname+u.search+u.hash);}}catch(e){} return true;}
+    if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(!e.data||!state.user)return; if(e.data.type==='new-notification'){loadAnnouncements(); loadRequests().then(()=>{if(state.mode==='admin'&&state.adminTab==='talepler'&&!document.activeElement.closest('.reply-form'))renderAdmin(); else if(state.mode==='requests')renderMyRequests(); else if(state.mode==='admin')updateDrawer();});} if(e.data.type==='open-url')openFromLink(e.data.url);});
     if(IS_STANDALONE){const n=document.getElementById('installNav'); if(n)n.hidden=true;}
     function notifyCard(){if(!('Notification' in window)||!('serviceWorker' in navigator))return ''; if(Notification.permission==='granted')return ''; if(Notification.permission==='denied')return `<section class="notify-card warn"><strong>Bildirimler kapalı</strong><span>Duyurulardan haberdar olmak için telefon ayarlarından bu uygulamanın bildirimlerine izin verin.</span></section>`; return `<section class="notify-card"><div><strong>Bildirimleri açın</strong><span>Duyuru ve ziyaret programları anında telefonunuza gelsin.</span></div><button type="button" id="notifyCardBtn">Bildirimleri Aç</button></section>`;}
 
@@ -1350,7 +1352,7 @@
       $('memberList').innerHTML='<div class="empty">Üye listesi yükleniyor…</div>';
       loadMembers().then(()=>{indexLogs(); fillNeighborhoods(); render();}).catch(e=>{if(e.message!=='unauthorized'&&!state.members.length)toast('Üye listesi alınamadı. Sayfayı aşağı çekerek yenileyin.');});
       document.body.classList.toggle('no-logs',!isAdmin()); updateDrawer(); $('adminNavBtn').hidden=!isAdmin(); $('analysisNavBtn').hidden=!canUseAnalysis(); $('exportBtn').hidden=!isAdmin();
-      fillNeighborhoods(); setMode(state.mode||'home');
+      fillNeighborhoods(); setMode(state.mode||'home'); openFromLink();
       if(user.mustChangePassword)openPasswordModal(true);
       pingActivity(true); void Promise.allSettled([loadOrg(),loadLeaders(),flushQueuedLogs(),loadAnnouncements(),loadLogs(),loadLocations(),loadRequests(),loadUsers()]).then(()=>{if(state.user){renderNotice(); render();}});
     }

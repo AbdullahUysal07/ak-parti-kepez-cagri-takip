@@ -43,7 +43,10 @@ self.addEventListener('push', event => {
 
     if (!data.body) {
       try {
-        const response = await fetch('https://ak-parti-kepez-push.aytride.workers.dev/latest?t=' + Date.now(), { cache: 'no-store' });
+        // Kişiye özel bildirim (talep/yanıt) varsa onu, yoksa genel duyuruyu al
+        let ep = '';
+        try { const sub = await self.registration.pushManager.getSubscription(); ep = sub ? sub.endpoint : ''; } catch (e) {}
+        const response = await fetch('https://ak-parti-kepez-push.aytride.workers.dev/latest?t=' + Date.now() + (ep ? '&ep=' + encodeURIComponent(ep) : ''), { cache: 'no-store' });
         if (response.ok) data = await response.json();
       } catch (error) {
         data = {};
@@ -70,7 +73,7 @@ self.addEventListener('notificationclick', event => {
   const url = event.notification.data && event.notification.data.url ? event.notification.data.url : './';
   event.waitUntil(clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
     for (const client of list) {
-      if ('focus' in client) return client.focus();
+      if ('focus' in client) { try { client.postMessage({ type: 'open-url', url }); } catch (e) {} return client.focus(); }
     }
     return clients.openWindow(url);
   }));
