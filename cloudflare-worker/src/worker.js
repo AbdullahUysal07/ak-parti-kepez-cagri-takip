@@ -514,10 +514,11 @@ async function pushToTarget(env, target) {
 const inboxKey = id => `__inbox__:${id}`;
 async function pushToUsers(env, usernames, payload) {
   const want = new Set(usernames);
-  let sent = 0;
+  let sent = 0, devices = 0;
   const item = { title: clean(payload.title, 120), body: clean(payload.body, 400), url: payload.url || './', sentAt: new Date().toISOString() };
   await forEachSubscription(env, async (name, saved) => {
     if (!want.has(saved.username)) return;
+    devices += 1;
     const box = (await getJson(env, inboxKey(name), [])).filter(x => Date.now() - Date.parse(x.sentAt) < 864e5);
     box.push(item);
     await env.SUBSCRIPTIONS.put(inboxKey(name), JSON.stringify(box.slice(-10)), { expirationTtl: 86400 * 2 });
@@ -526,7 +527,7 @@ async function pushToUsers(env, usernames, payload) {
     if (res.ok) sent += 1;
     else if (res.status === 404 || res.status === 410) { await env.SUBSCRIPTIONS.delete(name); await env.SUBSCRIPTIONS.delete(inboxKey(name)); }
   });
-  return sent;
+  return { sent, devices };
 }
 const shortText = (t, n = 140) => { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : t; };
 
@@ -953,13 +954,13 @@ async function handle(request, env) {
       const r = requests[i];
       const prevStatus = r.status, prevReply = r.reply || '';
       if (['new', 'reviewed', 'done'].includes(b.status)) r.status = b.status;
-      if ('reply' in b) r.reply = clean(b.reply, 2000);
+      if ('reply' in b) { r.reply = clean(b.reply, 2000); if (r.reply !== prevReply) { r.repliedAt = new Date().toISOString(); r.repliedBy = user.name; } }
       r.updatedAt = new Date().toISOString();
       await putJson(env, K.requests, requests);
       // Talep sahibine bildirim: yanıt yazıldığında veya durum değiştiğinde
       const replied = r.reply && r.reply !== prevReply;
       const statusChanged = r.status !== prevStatus && r.status !== 'new';
-      let notified = 0;
+      let notified = null;
       if ((replied || statusChanged) && r.username && r.username !== user.username) {
         const label = { reviewed: 'İnceleniyor', done: 'Tamamlandı' }[r.status] || '';
         try {
