@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="2026.11.21-5">
+  <meta name="app-version" content="2026.11.21-6">
   <meta name="apple-mobile-web-app-title" content="Kepez Çağrı">
   <meta name="application-name" content="Kepez Çağrı">
   <meta name="theme-color" content="#123c7c">
@@ -1355,7 +1355,7 @@
       document.body.classList.toggle('no-logs',!isAdmin()); updateDrawer(); $('adminNavBtn').hidden=!isAdmin(); $('analysisNavBtn').hidden=!canUseAnalysis(); $('exportBtn').hidden=!isAdmin();
       fillNeighborhoods(); setMode(state.mode||'home'); openFromLink();
       if(user.mustChangePassword)openPasswordModal(true);
-      pingActivity(true); void Promise.allSettled([loadOrg(),loadLeaders(),flushQueuedLogs(),loadAnnouncements(),loadLogs(),loadLocations(),loadRequests(),loadUsers()]).then(()=>{if(state.user){renderNotice(); render();}});
+      syncPushSubscription(); pingActivity(true); void Promise.allSettled([loadOrg(),loadLeaders(),flushQueuedLogs(),loadAnnouncements(),loadLogs(),loadLocations(),loadRequests(),loadUsers()]).then(()=>{if(state.user){renderNotice(); render();}});
     }
     async function login(username,password,remember){const data=await api('/auth/login',{method:'POST',json:{username,password}}); localStorage.removeItem(legacyLoginKey); await startSession(data.token,data.user,remember);}
     function logout(){cacheClear(); syncAppBadge(0); localStorage.removeItem(tokenKey); sessionStorage.removeItem(tokenKey); localStorage.removeItem(legacyLoginKey); if(state.locationWatch!==null&&navigator.geolocation)navigator.geolocation.clearWatch(state.locationWatch); state.locationWatch=null; Object.assign(state,{members:[],memberById:new Map(),mine:[],mineLoaded:false,leaders:[],users:[],logs:[],requests:[],user:null,token:'',selected:null}); memberLogs.clear(); document.body.classList.add('locked'); closeDrawer(); $('usernameInput').value=''; $('passwordInput').value=''; showLoginMessage(''); $('adminNavBtn').hidden=true; $('analysisNavBtn').hidden=true; $('exportBtn').hidden=true; $('detail').innerHTML='<div class="empty">Giriş yapınca üyeler açılacak.</div>'; $('memberList').innerHTML='<div class="empty">Üye listesi giriş sonrası yüklenir.</div>'; $('logs').innerHTML='<div class="empty">Loglar girişten sonra görünür.</div>';}
@@ -1376,6 +1376,8 @@
 
     // ------------------------------------------------------------------ bildirimler
     function urlBase64ToUint8Array(value){const padded=value+'='.repeat((4-value.length%4)%4); const raw=atob(padded.replace(/-/g,'+').replace(/_/g,'/')); return Uint8Array.from(raw,c=>c.charCodeAt(0));}
+    // İzin daha önce verilmişse aboneliği sessizce giriş yapan kişiye bağlar (aynı telefonda hesap değişince de doğru kişiye gitsin)
+    async function syncPushSubscription(){try{if(!state.user||!('serviceWorker' in navigator)||!('PushManager' in window)||typeof Notification==='undefined'||Notification.permission!=='granted')return; const reg=await navigator.serviceWorker.getRegistration('./')||await navigator.serviceWorker.register('./sw.js'); let sub=await reg.pushManager.getSubscription(); if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(PUSH_PUBLIC_KEY)}); const key=state.user.username+'|'+sub.endpoint; if(sessionStorage.getItem('push-bound')===key)return; await api('/subscribe',{method:'POST',json:{subscription:sub.toJSON?sub.toJSON():sub}}); sessionStorage.setItem('push-bound',key);}catch(e){}}
     async function enablePush(){if(!('serviceWorker' in navigator)||!('PushManager' in window)){toast('Bu cihaz bildirim desteklemiyor.'); return;} const permission=await Notification.requestPermission(); if(permission!=='granted'){toast('Bildirim izni verilmedi.'); return;} const registration=await navigator.serviceWorker.register('./sw.js'); const existing=await registration.pushManager.getSubscription(); const subscription=existing||await registration.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(PUSH_PUBLIC_KEY)}); try{await api('/subscribe',{method:'POST',json:{subscription}}); toast('Bildirimler açıldı.'); pingActivity(true);}catch(e){toast('Bildirim kaydı yapılamadı.');}}
     async function sendAdminPush(e){e.preventDefault(); const body=$('pushBody').value.trim(); if(!body){toast('Mesaj gerekli.'); return;} try{const data=await api('/send',{method:'POST',json:{title:$('pushTitle').value.trim()||'AK Parti Kepez',body,target:$('pushTarget').value,url:location.href}}); toast(`Bildirim gönderildi: ${data.sent||0} cihaz`);}catch(err){toast('Bildirim gönderilemedi.');}}
     async function refreshApp(){if(!state.user)return; await flushQueuedLogs(); await Promise.allSettled([loadAnnouncements(),loadLogs(),loadLocations(),loadRequests(),loadLeaders()]); if(state.memberTab==='mine')await loadMine(true); render(); toast('Sayfa yenilendi.');}
