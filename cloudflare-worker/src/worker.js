@@ -509,6 +509,27 @@ async function pushToTarget(env, target) {
   return { sent, failed, failures: failures.slice(0, 5) };
 }
 
+// Belirli kişilere bildirim: her cihazın kendi gelen kutusuna (__inbox__:<abonelik>) yazılır,
+// servis çalışanı /latest?ep=... ile kendi bildirimini alır (genel duyuruları etkilemez).
+const inboxKey = id => `__inbox__:${id}`;
+async function pushToUsers(env, usernames, payload) {
+  const want = new Set(usernames);
+  let sent = 0;
+  const item = { title: clean(payload.title, 120), body: clean(payload.body, 400), url: payload.url || './', sentAt: new Date().toISOString() };
+  await forEachSubscription(env, async (name, saved) => {
+    if (!want.has(saved.username)) return;
+    const box = (await getJson(env, inboxKey(name), [])).filter(x => Date.now() - Date.parse(x.sentAt) < 864e5);
+    box.push(item);
+    await env.SUBSCRIPTIONS.put(inboxKey(name), JSON.stringify(box.slice(-10)), { expirationTtl: 86400 * 2 });
+    let res;
+    try { res = await sendPush(env, saved.subscription); } catch (e) { return; }
+    if (res.ok) sent += 1;
+    else if (res.status === 404 || res.status === 410) { await env.SUBSCRIPTIONS.delete(name); await env.SUBSCRIPTIONS.delete(inboxKey(name)); }
+  });
+  return sent;
+}
+const shortText = (t, n = 140) => { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : t; };
+
 function clean(v, max = 500) {
   return String(v == null ? '' : v).trim().slice(0, max);
 }
@@ -697,6 +718,16 @@ async function handle(request, env) {
   // Kısa kurulum bağlantısı: WhatsApp mesajlarında uzun site adresi yerine kullanılır
   if (path === '/kur' || path === '/k') return Response.redirect('https://abdullahuysal07.github.io/ak-parti-kepez-cagri-takip/kurulum.html', 302);
   if (path === '/latest') {
+    const ep = url.searchParams.get('ep');
+    if (ep) {
+      const key = inboxKey(await sha256Hex(ep));
+      const box = await getJson(env, key, []);
+      if (box.length) {
+        const next = box.shift();
+        if (box.length) await env.SUBSCRIPTIONS.put(key, JSON.stringify(box), { expirationTtl: 86400 * 2 }); else await env.SUBSCRIPTIONS.delete(key);
+        return json(next);
+      }
+    }
     const latest = await env.SUBSCRIPTIONS.get(K.latest, 'json');
     return json(latest || { title: 'AK Parti Kepez', body: 'Yeni bildirim var.', url: './' });
   }
@@ -884,7 +915,19 @@ async function handle(request, env) {
     const requests = await getJson(env, K.requests, []);
     requests.unshift(item);
     await putJson(env, K.requests, requests.slice(0, 2000));
-    return json({ ok: true, request: item });
+    const isVisit = item.category === 'Mahalle Ziyareti';
+    const notifyAdmins = ADMIN_USERNAMES.filter(u => u !== user.username);
+    let notified = 0;
+    if (notifyAdmins.length) {
+      try {
+        notified = await pushToUsers(env, notifyAdmins, {
+          title: isVisit ? `Yeni ziyaret raporu: ${user.name}` : `Yeni ${item.category.toLocaleLowerCase('tr-TR')}: ${user.name}`,
+          body: (isVisit && item.visit && item.visit.neighborhood ? item.visit.neighborhood + ' • ' : '') + shortText(text) + (item.images && item.images.length ? ` (📷 ${item.images.length} fotoğraf)` : ''),
+          url: './?ac=talepler'
+        });
+      } catch (e) {}
+    }
+    return json({ ok: true, request: item, notified });
   }
   if (path.startsWith('/requests/img/') && method === 'GET') {
     const [rid, nStr] = decodeURIComponent(path.slice('/requests/img/'.length)).split('/');
@@ -907,9 +950,27 @@ async function handle(request, env) {
       if (env.VISIT_IMAGES && removed.images) await Promise.all(removed.images.map(im => env.VISIT_IMAGES.delete(`img:${removed.id}:${im.n}`)));
     } else {
       const b = await body();
-      if (['new', 'reviewed', 'done'].includes(b.status)) requests[i].status = b.status;
-      if ('reply' in b) requests[i].reply = clean(b.reply, 2000);
-      requests[i].updatedAt = new Date().toISOString();
+      const r = requests[i];
+      const prevStatus = r.status, prevReply = r.reply || '';
+      if (['new', 'reviewed', 'done'].includes(b.status)) r.status = b.status;
+      if ('reply' in b) r.reply = clean(b.reply, 2000);
+      r.updatedAt = new Date().toISOString();
+      await putJson(env, K.requests, requests);
+      // Talep sahibine bildirim: yanıt yazıldığında veya durum değiştiğinde
+      const replied = r.reply && r.reply !== prevReply;
+      const statusChanged = r.status !== prevStatus && r.status !== 'new';
+      let notified = 0;
+      if ((replied || statusChanged) && r.username && r.username !== user.username) {
+        const label = { reviewed: 'İnceleniyor', done: 'Tamamlandı' }[r.status] || '';
+        try {
+          notified = await pushToUsers(env, [r.username], {
+            title: replied ? `${r.category || 'Talep'} yanıtlandı` : `${r.category || 'Talep'} durumu: ${label}`,
+            body: replied ? `${user.name}: ${shortText(r.reply)}` : shortText(r.text, 120),
+            url: './?ac=talepler'
+          });
+        } catch (e) {}
+      }
+      return json({ ok: true, notified });
     }
     await putJson(env, K.requests, requests);
     return json({ ok: true });
