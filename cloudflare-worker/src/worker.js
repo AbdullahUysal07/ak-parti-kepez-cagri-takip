@@ -887,9 +887,25 @@ async function handle(request, env) {
   if (path === '/access' && method === 'POST') {
     const denied = requireAdmin(); if (denied) return denied;
     const b = await body();
-    const username = clean(b.username, 80);
+    let username = clean(b.username, 80);
     const base = await getJson(env, K.users, []);
-    if (!base.some(u => u.username === username)) return json({ error: 'user_not_found' }, 404);
+    if (b.create) {
+      // Yeni kullanıcı: kullanıcı adı benzersiz olmalı (hem kayıtlı ad hem giriş adı)
+      username = normalizeUser(b.loginUsername || b.username);
+      const name = clean(b.name, 120);
+      if (!username || username.length < 3) return json({ error: 'username_required' }, 400);
+      if (!name) return json({ error: 'name_required' }, 400);
+      const current = await loadUsers(env);
+      if (base.some(u => u.username === username) || current.some(u => u.loginUsername === username)) return json({ error: 'username_taken' }, 409);
+      base.push({ username, name, role: b.group === 'mahalle' ? 'neighborhood' : 'management', neighborhoods: [], createdAt: new Date().toISOString(), createdBy: user.username });
+      await putJson(env, K.users, base);
+    } else if (!base.some(u => u.username === username)) return json({ error: 'user_not_found' }, 404);
+    else {
+      // Giriş adı başka bir kullanıcıyla çakışmasın
+      const wantedLogin = normalizeUser(b.loginUsername || username);
+      const current = await loadUsers(env);
+      if (current.some(u => u.username !== username && (u.loginUsername === wantedLogin || u.username === wantedLogin))) return json({ error: 'username_taken' }, 409);
+    }
     const group = GROUP_LABELS[b.group] ? b.group : (b.role === 'neighborhood' ? 'mahalle' : 'yonetim');
     const role = group === 'mahalle' ? 'neighborhood' : 'management';
     const hoodsIn = Array.isArray(b.neighborhoods) ? b.neighborhoods : [b.neighborhood];
