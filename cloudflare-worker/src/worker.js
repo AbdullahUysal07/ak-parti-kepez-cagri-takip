@@ -185,6 +185,13 @@ const K = {
 const memberHoodKey = (version, hood) => `__members__:${version}:${hood}`;
 const memberRefKey = (version, shard) => `__members_ref__:${version}:${shard}`;
 const memberNameKey = (version, shard) => `__members_name__:${version}:${shard}`;
+// Doğum günü dizini: yılın haftasına göre 53 parça; içinde { "MM-GG": [[mahalle, id, ad, telefon, [referans anahtarları]]] }
+const memberBdKey = (version, week) => `__members_bd__:${version}:${week}`;
+function bdWeek(mmdd) {
+  const [m, d] = String(mmdd).split('-').map(Number);
+  const doy = Math.floor((Date.UTC(2001, (m || 1) - 1, Math.min(d || 1, m === 2 ? 28 : 31)) - Date.UTC(2001, 0, 1)) / 864e5);
+  return Math.min(52, Math.floor(doy / 7));
+}
 
 function bytesToHex(bytes) {
   return [...new Uint8Array(bytes)].map(b => b.toString(16).padStart(2, '0')).join('');
@@ -326,7 +333,7 @@ const isAdminUser = u => !!u && ADMIN_USERNAMES.includes(u.username);
 // --------------------------- Üyeler ---------------------------------------
 // Üye satırı biçimi (yer tasarrufu için dizi): [id, ad soyad, telefon, adres, üyelik tarihi, referanslar(dizi)]
 function rowToMember(row, hood) {
-  return { id: row[0], name: row[1], phone: row[2], address: row[3], joined: row[4], refs: row[5] || [], neighborhood: hood };
+  return { id: row[0], name: row[1], phone: row[2], address: row[3], joined: row[4], refs: row[5] || [], bd: row[6] || '', neighborhood: hood };
 }
 
 async function membersResponse(env, user, have) {
@@ -531,6 +538,64 @@ async function pushToUsers(env, usernames, payload) {
 }
 const shortText = (t, n = 140) => { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : t; };
 
+// Türkiye saatine göre bugünün "AA-GG" değeri
+function trToday() {
+  const d = new Date(Date.now() + 3 * 3600e3);
+  const y = d.getUTCFullYear(), mm = String(d.getUTCMonth() + 1).padStart(2, '0'), dd = String(d.getUTCDate()).padStart(2, '0');
+  return { y, mmdd: `${mm}-${dd}`, date: `${y}-${mm}-${dd}` };
+}
+function bdDaysFor(t) {
+  const leap = (t.y % 4 === 0 && t.y % 100 !== 0) || t.y % 400 === 0;
+  return t.mmdd === '02-28' && !leap ? ['02-28', '02-29'] : [t.mmdd];
+}
+// Her sabah 10.00: kişinin sorumlu olduğu mahallelerde veya referansıyla yapılan üyelerde doğum günü varsa bildirim
+async function birthdayPush(env, opts = {}) {
+  const t = trToday();
+  const sentKey = `__bd_sent__:${t.date}`;
+  if (!opts.force && await env.SUBSCRIPTIONS.get(sentKey)) return { skipped: 'already_sent' };
+  const index = await getJson(env, K.memberIndex, null);
+  if (!index || !index.bdIndex) return { skipped: 'no_birthday_data' };
+  const days = bdDaysFor(t);
+  const week = await getJson(env, memberBdKey(index.version, bdWeek(days[0])), {});
+  const rows = days.flatMap(d => week[d] || []);
+  if (!opts.force) await env.SUBSCRIPTIONS.put(sentKey, '1', { expirationTtl: 86400 * 3 });
+  if (!rows.length) return { birthdays: 0, sent: 0 };
+  const users = new Map((await loadUsers(env)).map(u => [u.username, u]));
+  const counts = new Map();
+  const countFor = u => {
+    if (counts.has(u.username)) return counts.get(u.username);
+    const keys = [u.name, u.refName].map(refKey).filter(Boolean);
+    let hood = 0, mine = 0;
+    for (const r of rows) {
+      if (userCanSeeHood(u, r[0])) hood++;
+      if (keys.some(k => (r[4] || []).includes(k))) mine++;
+    }
+    const c = { hood, mine };
+    counts.set(u.username, c);
+    return c;
+  };
+  let sent = 0, devices = 0;
+  await forEachSubscription(env, async (name, saved) => {
+    const u = users.get(saved.username);
+    if (!u || u.disabled || (opts.onlyUser && u.username !== opts.onlyUser)) return;
+    const c = countFor(u);
+    if (!c.hood && !c.mine) return;
+    const parts = [];
+    if (c.hood) parts.push(u.allHoods ? `Kepez'de ${c.hood} üyemizin` : `mahallenizde ${c.hood} üyemizin`);
+    if (c.mine) parts.push(`üyelerinizden ${c.mine} kişinin`);
+    const item = { title: '🎂 Bugün doğum günü olanlar var', body: `Bugün ${parts.join(', ')} doğum günü. Kutlama mesajı göndermek için dokunun.`, url: './?ac=dogum', sentAt: new Date().toISOString() };
+    devices++;
+    const box = (await getJson(env, inboxKey(name), [])).filter(x => Date.now() - Date.parse(x.sentAt) < 864e5);
+    box.push(item);
+    await env.SUBSCRIPTIONS.put(inboxKey(name), JSON.stringify(box.slice(-10)), { expirationTtl: 86400 * 2 });
+    let res;
+    try { res = await sendPush(env, saved.subscription); } catch (e) { return; }
+    if (res.ok) sent++;
+    else if (res.status === 404 || res.status === 410) { await env.SUBSCRIPTIONS.delete(name); await env.SUBSCRIPTIONS.delete(inboxKey(name)); }
+  });
+  return { birthdays: rows.length, devices, sent };
+}
+
 function clean(v, max = 500) {
   return String(v == null ? '' : v).trim().slice(0, max);
 }
@@ -699,6 +764,9 @@ async function usageReport(env) {
 
 // --------------------------- İstek yönlendirme ----------------------------
 export default {
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(birthdayPush(env).catch(() => {}));
+  },
   async fetch(request, env) {
     if (request.method === 'OPTIONS') return new Response(null, { headers: corsHeaders() });
     try {
@@ -805,6 +873,7 @@ async function handle(request, env) {
     if (kind === 'hood') await env.SUBSCRIPTIONS.put(memberHoodKey(version, key), text);
     else if (kind === 'ref') await env.SUBSCRIPTIONS.put(memberRefKey(version, Number(key) % REF_SHARDS), text);
     else if (kind === 'name') await env.SUBSCRIPTIONS.put(memberNameKey(version, Number(key) % REF_SHARDS), text);
+    else if (kind === 'bd') await env.SUBSCRIPTIONS.put(memberBdKey(version, Math.min(52, Math.max(0, Number(key) || 0))), text);
     else return json({ error: 'bad_kind' }, 400);
     return json({ ok: true });
   }
@@ -813,13 +882,14 @@ async function handle(request, env) {
     const b = await body();
     if (!/^v[a-z0-9]+$/.test(b.version || '') || !Array.isArray(b.hoods)) return json({ error: 'bad_request' }, 400);
     const previous = await getJson(env, K.memberIndex, null);
-    const index = { version: b.version, nameIndex: !!b.nameIndex, updatedAt: new Date().toISOString(), updatedBy: user.name, total: Number(b.total) || 0, hoods: b.hoods.map(h => ({ name: clean(h.name, 80), count: Number(h.count) || 0 })) };
+    const index = { version: b.version, nameIndex: !!b.nameIndex, bdIndex: !!b.bdIndex, updatedAt: new Date().toISOString(), updatedBy: user.name, total: Number(b.total) || 0, hoods: b.hoods.map(h => ({ name: clean(h.name, 80), count: Number(h.count) || 0 })) };
     await putJson(env, K.memberIndex, index);
     let removed = 0;
     if (previous && previous.version && previous.version !== b.version) {
       removed += await deleteByPrefix(env, `__members__:${previous.version}:`);
       removed += await deleteByPrefix(env, `__members_ref__:${previous.version}:`);
       removed += await deleteByPrefix(env, `__members_name__:${previous.version}:`);
+      if (previous.bdIndex) removed += await deleteByPrefix(env, `__members_bd__:${previous.version}:`);
     }
     // Listeden çıkarılan üyelerin düzenleme kayıtlarını temizle
     if (Array.isArray(b.ids)) {
@@ -830,6 +900,12 @@ async function handle(request, env) {
       if (changed) await putJson(env, K.memberEdits, edits);
     }
     return json({ ok: true, index, removedKeys: removed });
+  }
+
+  // Doğum günü bildirimini elle tetikleme (deneme için, yalnızca admin)
+  if (path === '/admin/birthday-push' && method === 'POST') {
+    const denied = requireAdmin(); if (denied) return denied;
+    return json({ ok: true, ...(await birthdayPush(env, { force: true, onlyUser: url.searchParams.get('me') ? user.username : '' })) });
   }
 
   // ---- Harita ----

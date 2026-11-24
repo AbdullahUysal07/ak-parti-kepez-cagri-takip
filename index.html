@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="2026.11.24-2">
+  <meta name="app-version" content="2026.11.24-3">
   <meta name="apple-mobile-web-app-title" content="Kepez Çağrı">
   <meta name="application-name" content="Kepez Çağrı">
   <meta name="theme-color" content="#123c7c">
@@ -614,6 +614,26 @@
     .muted{color:#94a3b8}
     .link-btn{background:none!important;border:0;padding:0;min-height:0;color:#0b4ea2!important;font-weight:700;box-shadow:none!important;cursor:pointer;text-align:left;font:inherit;font-weight:700}
     @media (max-width:700px){.bolge-table thead{display:none}.bolge-table tr{display:block;border-bottom:1px solid #e5e7eb;padding:6px 0}.bolge-table td{display:block;border:0;padding:3px 4px}.bolge-table td:nth-child(2)::before{content:'Koordinatör: ';color:#64748b}.bolge-table td:nth-child(3)::before{content:'Başkan: ';color:#64748b}}
+    .bd-shell .seg{display:inline-flex;background:#f1f5f9;border-radius:12px;padding:3px;gap:3px}
+    .bd-shell .seg button{min-height:34px;padding:0 14px;border-radius:9px;background:transparent!important;color:#334155!important;box-shadow:none!important;font-weight:700}
+    .bd-shell .seg button.active{background:#fff!important;color:#0b4ea2!important;box-shadow:0 1px 3px rgba(15,23,42,.12)!important}
+    .bd-section{margin-top:16px;border:1px solid #e5e7eb;border-radius:14px;padding:12px;background:#fff}
+    .bd-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+    .bd-head h3{margin:0;font-size:1.02rem;display:flex;align-items:center;gap:8px}
+    .bd-count{background:#fef3c7;color:#92400e;border-radius:999px;padding:2px 9px;font-size:.8rem}
+    .bd-tools{display:flex;gap:8px;flex-wrap:wrap}
+    .bd-tools select{min-height:38px;max-width:220px}
+    .bd-share{min-height:38px;padding:0 12px;font-size:.88rem}
+    .bd-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 4px;border-top:1px solid #f1f5f9}
+    .bd-row:first-child{border-top:0}
+    .bd-main{display:flex;flex-direction:column;min-width:0}
+    .bd-main .meta{font-size:.84rem;color:#64748b}
+    .bd-act{display:flex;gap:6px;flex-shrink:0}
+    .bd-wa,.bd-tel{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border-radius:10px;font-weight:700;text-decoration:none;font-size:.88rem}
+    .bd-wa{background:#dcfce7;color:#15803d}
+    .bd-wa svg{width:18px;height:18px}
+    .bd-tel{background:#eff6ff;color:#0b4ea2}
+    @media (max-width:700px){.bd-wa span{display:none}.bd-head .bd-share{width:100%}.bd-tools{width:100%}.bd-tools select{max-width:none;flex:1}}
   </style>
 </head>
 <body class="locked">
@@ -641,6 +661,7 @@
           <button class="nav-item " data-mode="list" type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><span class="nav-label">Üye Listeleri</span></button>
           <button class="nav-item " data-mode="mine" type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01z"/></svg><span class="nav-label">Üyelerim</span></button>
           <button class="nav-item " data-mode="check" type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/><path d="M8 11h6"/><path d="M11 8v6"/></svg><span class="nav-label">Üye Sorgula</span></button>
+          <button class="nav-item " data-mode="birthdays" type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/><path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/><path d="M2 21h20"/><path d="M7 8v3M12 8v3M17 8v3"/><path d="M7 4h.01M12 4h.01M17 4h.01"/></svg><span class="nav-label">Doğum Günleri</span><span class="nav-badge" id="navBadgeBd" hidden></span></button>
           <button class="nav-item " data-mode="auto" type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/></svg><span class="nav-label">Otomatik Arama</span></button>
           <div class="nav-section">Teşkilat</div>
           <button class="nav-item " data-mode="yurutme" type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/><path d="M19 3l1.5 1.5L23 2"/></svg><span class="nav-label">Yürütme Kurulu</span></button>
@@ -741,7 +762,7 @@
     // Ana ekrandaki uygulama simgesinde okunmamış duyuru sayısı (iPhone, bilgisayar)
     let lastAppBadge=-1;
     function syncAppBadge(n){if(n===lastAppBadge)return; lastAppBadge=n; try{if(n>0&&navigator.setAppBadge)navigator.setAppBadge(n).catch(()=>{}); else if(navigator.clearAppBadge)navigator.clearAppBadge().catch(()=>{});}catch(e){} try{const c=navigator.serviceWorker&&navigator.serviceWorker.controller; if(c)c.postMessage({type:'badge',count:n});}catch(e){}}
-    function updateNavBadges(){if(!state.user)return; const unread=state.announcements.filter(a=>isUnread(a)).length; syncAppBadge(state.announcementsLoaded?unread:Math.max(lastAppBadge,0)); const h=$('navBadgeHome'); h.textContent=unread; h.hidden=!unread; const req=isAdmin()?state.requests.filter(r=>r.status==='new').length:0; const ad=$('navBadgeAdmin'); ad.textContent=req; ad.hidden=!req;}
+    function updateNavBadges(){if(!state.user)return; const bdb=$('navBadgeBd'); if(bdb){const n=todayBirthdayCount(); bdb.textContent=n>99?'99+':n; bdb.hidden=!n;} const unread=state.announcements.filter(a=>isUnread(a)).length; syncAppBadge(state.announcementsLoaded?unread:Math.max(lastAppBadge,0)); const h=$('navBadgeHome'); h.textContent=unread; h.hidden=!unread; const req=isAdmin()?state.requests.filter(r=>r.status==='new').length:0; const ad=$('navBadgeAdmin'); ad.textContent=req; ad.hidden=!req;}
     function closeDrawer(){$('drawer').classList.remove('open'); $('drawer').setAttribute('aria-hidden','true');}
 
     // ------------------------------------------------------------------ sunucu bağlantısı
@@ -784,7 +805,7 @@
       state.memberIndex=version?{version,updatedAt}:null;
       state.memberEdits=edits||{};
       const list=[];
-      Object.entries(dataObj||{}).forEach(([hood,rows])=>rows.forEach(r=>list.push({id:r[0],name:r[1],phone:r[2],address:r[3],joined:r[4],refs:r[5]||[],neighborhood:hood})));
+      Object.entries(dataObj||{}).forEach(([hood,rows])=>rows.forEach(r=>list.push({id:r[0],name:r[1],phone:r[2],address:r[3],joined:r[4],refs:r[5]||[],bd:r[6]||'',neighborhood:hood})));
       list.forEach(m=>{const e=state.memberEdits[m.id]; if(e)Object.assign(m,e); if(m.phone)m.phone=cleanPhone(m.phone);});
       state.members=list.filter(m=>!m.deleted);
       state.memberById=new Map(state.members.map(m=>[m.id,m]));
@@ -854,6 +875,7 @@
       else if(mode==='mine'){state.mode='list'; state.memberTab='mine'; state.selected=null; loadMine().then(render);}
       else if(mode==='requests'){state.mode='requests'; loadRequests().then(render);}
       else if(mode==='check'){state.mode='check';}
+      else if(mode==='birthdays'){state.mode='birthdays'; if(!state.mineLoaded)loadMine().then(()=>{if(state.mode==='birthdays')renderBirthdays();});}
       else state.mode=mode;
       const active=state.mode==='list'?({board:'board',yurutme:'yurutme',ilkoord:'ilkoord',bolgekoord:'bolgekoord',leaders:'leaders',mine:'mine'}[state.memberTab]||'list'):state.mode;
       document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===active));
@@ -867,6 +889,7 @@
       renderNotice();
       if(state.mode==='analysis'&&canUseAnalysis()){setBodyMode('analysis-mode'); renderAnalysis(); clearLogsPanel(); return;}
       if(state.mode==='admin'&&isAdmin()){setBodyMode('admin-mode'); renderAdmin(); renderLogs(); return;}
+      if(state.mode==='birthdays'){setBodyMode('admin-mode'); renderBirthdays(); clearLogsPanel(); return;}
       if(state.mode==='check'){setBodyMode('admin-mode'); if(!$('checkForm'))renderCheck(); if(isAdmin())renderLogs(); else clearLogsPanel(); return;}
       if(state.mode==='requests'){setBodyMode('admin-mode'); if($('requestForm'))renderMyRequests(); else renderRequests(); clearLogsPanel(); return;}
       if(state.mode==='home'){setBodyMode('home-mode'); renderHome(); if(isAdmin())renderLogs(); else clearLogsPanel(); return;}
@@ -1274,15 +1297,16 @@
         const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:'',raw:true});
         if(!rows.length)throw new Error('Dosyada satır bulunamadı.');
         const headers=Object.keys(rows[0]);
-        const col={tc:pickColumn(headers,[h=>h.includes('tc')||h.includes('kimlik')]),first:pickColumn(headers,[h=>h==='adi'||h==='ad'||h==='isim']),last:pickColumn(headers,[h=>h.startsWith('soyad')]),phone:pickColumn(headers,[h=>h.includes('cep')||h.includes('telefon')]),refs:pickColumn(headers,[h=>h.startsWith('referans')]),joined:pickColumn(headers,[h=>h.includes('uyelik')||h.includes('tarih')]),address:pickColumn(headers,[h=>h.includes('adres')])};
+        const col={tc:pickColumn(headers,[h=>h.includes('tc')||h.includes('kimlik')]),first:pickColumn(headers,[h=>h==='adi'||h==='ad'||h==='isim']),last:pickColumn(headers,[h=>h.startsWith('soyad')]),phone:pickColumn(headers,[h=>h.includes('cep')])||pickColumn(headers,[h=>h.includes('telefon')]),refs:pickColumn(headers,[h=>h.startsWith('referans')]),joined:pickColumn(headers,[h=>h.includes('uyelik')])||pickColumn(headers,[h=>h.includes('tarih')&&!h.includes('dogum')&&!h.includes('guncelleme')]),address:pickColumn(headers,[h=>h.includes('secmen')&&h.includes('adres')])||pickColumn(headers,[h=>h.includes('adres')&&!h.startsWith('ev')&&!h.startsWith('is')])||pickColumn(headers,[h=>h.includes('adres')]),hoodCol:pickColumn(headers,[h=>h.includes('uye_mahalle')||h==='mahalle']),birth:pickColumn(headers,[h=>h.includes('dogum_tarih')])};
         const missing=Object.entries(col).filter(([k,v])=>!v&&['tc','first','last','address'].includes(k)).map(([k])=>k);
+        const dateParts=v=>{if(typeof v==='number'&&v>1000&&v<100000){const dc=XLSX.SSF.parse_date_code(v); return [dc.y,dc.m,dc.d];} const t=String(v||'').trim(); let m=t.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})/); if(m)return [+m[3],+m[2],+m[1]]; m=t.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m)return [+m[1],+m[2],+m[3]]; return null;};
         if(missing.length)throw new Error('Gerekli sütun bulunamadı: '+missing.join(', '));
         prog.textContent='Sunucudan anahtar alınıyor…';
         const {secret}=await api('/admin/id-secret');
         const keyBytes=new Uint8Array(secret.match(/../g).map(h=>parseInt(h,16)));
         const hmacKey=await crypto.subtle.importKey('raw',keyBytes,{name:'HMAC',hash:'SHA-256'},false,['sign']);
         const enc=new TextEncoder();
-        const byHood={}; const shards=Array.from({length:REF_SHARDS},()=>({})); const ids=new Set(); let skipped=0, withPhone=0;
+        const byHood={}; const shards=Array.from({length:REF_SHARDS},()=>({})); const bdShards=Array.from({length:53},()=>({})); const ids=new Set(); let skipped=0, withPhone=0, withBd=0;
         for(let i=0;i<rows.length;i+=500){
           const batch=rows.slice(i,i+500);
           const sigs=await Promise.all(batch.map(r=>{const tc=String(r[col.tc]||'').replace(/\D/g,''); return tc.length===11?crypto.subtle.sign('HMAC',hmacKey,enc.encode('member:'+tc)):null;}));
@@ -1291,34 +1315,38 @@
             const id=Array.from(new Uint8Array(sigs[j])).map(b=>b.toString(16).padStart(2,'0')).join('').slice(0,20);
             if(ids.has(id))return; ids.add(id);
             const address=String(r[col.address]||'').replace(/\s+/g,' ').trim();
-            const hm=address.match(/KEPEZ\s+(.+?MAH\.)/i); const hood=hm?hm[1].trim().toLocaleUpperCase('tr-TR'):'Mahalle Yok';
+            const hm=address.match(/KEPEZ\s+(.+?MAH\.)/i); const hc=col.hoodCol?String(r[col.hoodCol]||'').replace(/\s+/g,' ').trim().toLocaleUpperCase('tr-TR'):''; const hood=hm?hm[1].trim().toLocaleUpperCase('tr-TR'):(hc?(/MAH\.?$/.test(hc)?hc.replace(/MAH$/,'MAH.'):hc+' MAH.'):'Mahalle Yok');
             const name=[r[col.first],r[col.last]].map(x=>String(x||'').trim()).filter(Boolean).join(' ').toLocaleUpperCase('tr-TR');
             const phone=col.phone?cleanPhone(r[col.phone]):''; if(phone)withPhone++;
             const refs=col.refs?String(r[col.refs]||'').split(',').map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean):[];
             const jv=col.joined?r[col.joined]:''; let joined=''; if(typeof jv==='number'&&jv>1000&&jv<100000){const dc=XLSX.SSF.parse_date_code(jv); joined=`${dc.y}-${String(dc.m).padStart(2,'0')}-${String(dc.d).padStart(2,'0')}`;} else {joined=String(jv||'').trim(); const dm=joined.match(/^(\d{1,2})[./](\d{1,2})[./](\d{4})/); if(dm)joined=`${dm[3]}-${dm[2].padStart(2,'0')}-${dm[1].padStart(2,'0')}`; else if(!/^\d{4}-\d{2}-\d{2}/.test(joined)){const d=new Date(joined); joined=isNaN(d)?'':`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}} joined=joined.slice(0,10);
-            const row=[id,name,phone,address,joined,refs];
+            // Doğum günü: yalnızca gün ve ay saklanır (yıl/yaş tutulmaz)
+            let bd=''; const bp=col.birth?dateParts(r[col.birth]):null; if(bp&&bp[1]>=1&&bp[1]<=12&&bp[2]>=1&&bp[2]<=31){bd=`${String(bp[1]).padStart(2,'0')}-${String(bp[2]).padStart(2,'0')}`; withBd++;}
+            const row=bd?[id,name,phone,address,joined,refs,bd]:[id,name,phone,address,joined,refs];
             (byHood[hood]=byHood[hood]||[]).push(row);
+            if(bd){const w=bdShards[bdWeekOf(bd)]; (w[bd]=w[bd]||[]).push([hood,id,name,phone,[...new Set(refs.map(refKey).filter(Boolean))]]);}
             new Set(refs.map(refKey).filter(Boolean)).forEach(k=>{const s=shards[refShard(k)]; (s[k]=s[k]||[]).push([hood,row]);});
           });
           prog.textContent=`Hazırlanıyor… ${Math.min(i+500,rows.length).toLocaleString('tr-TR')} / ${rows.length.toLocaleString('tr-TR')}`;
         }
         const oldIds=new Set(state.members.map(m=>m.id)); const added=[...ids].filter(id=>!oldIds.has(id)).length; const removed=[...oldIds].filter(id=>!ids.has(id)).length;
-        pendingImport={byHood,shards,nameShards:nameShardsFrom(byHood),ids,total:ids.size};
+        pendingImport={byHood,shards,bdShards:withBd?bdShards:null,nameShards:nameShardsFrom(byHood),ids,total:ids.size};
         prog.textContent='';
-        out.innerHTML=`<div class="admin-grid four"><div class="admin-card"><strong>Dosyadaki üye</strong><h2>${ids.size.toLocaleString('tr-TR')}</h2><span class="small">${withPhone.toLocaleString('tr-TR')} telefonlu</span></div><div class="admin-card"><strong>Yeni eklenecek</strong><h2>${added.toLocaleString('tr-TR')}</h2></div><div class="admin-card"><strong>Kaldırılacak</strong><h2>${removed.toLocaleString('tr-TR')}</h2><span class="small">listede olmayanlar</span></div><div class="admin-card"><strong>Mahalle</strong><h2>${Object.keys(byHood).length}</h2>${skipped?`<span class="small">${skipped} satır TC hatalı, atlandı</span>`:''}</div></div><button type="button" id="importConfirm">Listeyi Yükle ve Güncelle</button>`;
+        out.innerHTML=`<div class="admin-grid four"><div class="admin-card"><strong>Dosyadaki üye</strong><h2>${ids.size.toLocaleString('tr-TR')}</h2><span class="small">${withPhone.toLocaleString('tr-TR')} telefonlu${withBd?` • ${withBd.toLocaleString('tr-TR')} doğum günü`:''}</span></div><div class="admin-card"><strong>Yeni eklenecek</strong><h2>${added.toLocaleString('tr-TR')}</h2></div><div class="admin-card"><strong>Kaldırılacak</strong><h2>${removed.toLocaleString('tr-TR')}</h2><span class="small">listede olmayanlar</span></div><div class="admin-card"><strong>Mahalle</strong><h2>${Object.keys(byHood).length}</h2>${skipped?`<span class="small">${skipped} satır TC hatalı, atlandı</span>`:''}</div></div><button type="button" id="importConfirm">Listeyi Yükle ve Güncelle</button>`;
         $('importConfirm').onclick=runImport;
       }catch(e){prog.textContent=''; out.innerHTML=`<div class="login-error">Dosya okunamadı: ${esc(e.message||e)}</div>`;}
     }
     async function runImport(){
-      if(!pendingImport)return; const {byHood,shards,nameShards,ids,total}=pendingImport; const btn=$('importConfirm'); btn.disabled=true; const prog=$('importProgress');
+      if(!pendingImport)return; const {byHood,shards,bdShards,nameShards,ids,total}=pendingImport; const btn=$('importConfirm'); btn.disabled=true; const prog=$('importProgress');
       try{
         const {version}=await api('/admin/import/start',{method:'POST',json:{}});
-        const hoodNames=Object.keys(byHood).sort((a,b)=>a.localeCompare(b,'tr')); const steps=hoodNames.length+REF_SHARDS*2; let done=0;
+        const hoodNames=Object.keys(byHood).sort((a,b)=>a.localeCompare(b,'tr')); const steps=hoodNames.length+REF_SHARDS*2+(bdShards?53:0); let done=0;
         const send=async(kind,key,payload)=>{for(let attempt=0;attempt<3;attempt++){try{await api(`/admin/import/part?version=${encodeURIComponent(version)}&kind=${kind}&key=${encodeURIComponent(key)}`,{method:'POST',body:payload,headers:{'Content-Type':'text/plain;charset=utf-8'}}); done++; prog.textContent=`Yükleniyor… %${Math.round(done/steps*100)}`; return;}catch(e){if(attempt===2)throw e; await new Promise(r=>setTimeout(r,1500));}}};
         for(const h of hoodNames)await send('hood',h,JSON.stringify(byHood[h]));
         for(let i=0;i<REF_SHARDS;i++)await send('ref',String(i),JSON.stringify(shards[i]));
         for(let i=0;i<REF_SHARDS;i++)await send('name',String(i),JSON.stringify(nameShards[i]));
-        await api('/admin/import/finish',{method:'POST',json:{version,nameIndex:true,total,hoods:hoodNames.map(h=>({name:h,count:byHood[h].length})),ids:Object.keys(state.memberEdits).filter(id=>ids.has(id))}});
+        if(bdShards)for(let i=0;i<53;i++)await send('bd',String(i),JSON.stringify(bdShards[i]));
+        await api('/admin/import/finish',{method:'POST',json:{version,nameIndex:true,bdIndex:!!bdShards,total,hoods:hoodNames.map(h=>({name:h,count:byHood[h].length})),ids:Object.keys(state.memberEdits).filter(id=>ids.has(id))}});
         prog.textContent='Liste güncellendi, yeniden yükleniyor…'; pendingImport=null;
         await loadMembers(); state.mineLoaded=false; fillNeighborhoods(); renderAdmin(); toast(`Üye listesi güncellendi: ${total.toLocaleString('tr-TR')} üye.`);
       }catch(e){btn.disabled=false; prog.textContent='Yükleme tamamlanamadı: '+(e.message||e)+'. Mevcut liste değişmedi; tekrar deneyebilirsiniz.';}
@@ -1345,6 +1373,37 @@
       const extra=[r.nameMatches>1?`Bu isimde Kepez'de ${r.nameMatches} kayıt bulundu${r.byPhone?', telefon numarasıyla eşleşti':''}.`:'', r.phoneMismatch?'Not: Girilen telefon, kayıtlı telefonla eşleşmiyor. Kişinin aynı olduğundan emin olun.':''].filter(Boolean).map(x=>`<p class="small">${esc(x)}</p>`).join('');
       return `<div class="check-result ${cls}"><div class="check-badge">${esc(title)}</div><p>${esc(text)}</p>${extra}${facts}</div>`;
     }
+    // ------------------------------------------------------------------ doğum günleri
+    function bdWeekOf(mmdd){const [m,d]=mmdd.split('-').map(Number); const doy=Math.floor((Date.UTC(2001,m-1,Math.min(d,m===2?28:31))-Date.UTC(2001,0,1))/864e5); return Math.min(52,Math.floor(doy/7));}
+    function mmddOf(date){return `${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;}
+    function bdDaysAhead(n){const out=[]; const d=new Date(); for(let i=0;i<n;i++){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate()+i); const y=x.getFullYear(); const k=mmddOf(x); const leap=(y%4===0&&y%100!==0)||y%400===0; out.push({date:x,keys:k==='02-28'&&!leap?['02-28','02-29']:[k],offset:i});} return out;}
+    function firstName(n){const t=String(n||'').trim().split(/\s+/); const f=t.length>2?t.slice(0,-1).join(' '):t[0]||''; return f.toLocaleLowerCase('tr-TR').replace(/(^|\s)\S/g,c=>c.toLocaleUpperCase('tr-TR'));}
+    function bdMessage(m){return `Sayın ${firstName(m.name)}, doğum gününüzü en içten dileklerimle kutlar; sağlık, huzur ve mutluluk dolu nice yıllar dilerim. 🎂\n\n${state.user.name}\nAK Parti Kepez İlçe Başkanlığı`;}
+    function bdWaLink(m){const base=waLink(m.phone); return base?`${base}?text=${encodeURIComponent(bdMessage(m))}`:'';}
+    function bdCollect(){const range=state.bdRange||'today'; const days=bdDaysAhead(range==='today'?1:7); const keyDay=new Map(); days.forEach(d=>d.keys.forEach(k=>keyDay.set(k,d)));
+      const mineIds=new Set(state.mine.map(m=>m.id)); const pick=list=>list.filter(m=>m.bd&&keyDay.has(m.bd)).map(m=>({...m,day:keyDay.get(m.bd)})).sort((a,b)=>a.day.offset-b.day.offset||a.name.localeCompare(b.name,'tr'));
+      const mine=pick(state.mine); const hood=pick(state.members.filter(m=>!mineIds.has(m.id)&&isKepezNeighborhood(m.neighborhood)&&(state.bdHood==='all'||!state.bdHood||m.neighborhood===state.bdHood)));
+      return {mine,hood,days};}
+    function bdDayLabel(d){return d.offset===0?'Bugün':d.offset===1?'Yarın':d.date.toLocaleDateString('tr-TR',{day:'numeric',month:'long',weekday:'long'});}
+    function bdRow(m){const wa=bdWaLink(m); return `<div class="bd-row"><div class="bd-main"><strong>${esc(m.name)}</strong><span class="meta">${esc(hoodShort(m.neighborhood))}${m.phone?' • '+esc(fmtPhone(m.phone)):' • Telefon yok'}${state.bdRange==='week'?` • <b>${esc(bdDayLabel(m.day))}</b>`:''}</span></div><div class="bd-act">${wa?`<a class="bd-wa" href="${esc(wa)}" target="_blank" rel="noopener" title="WhatsApp ile kutla"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.5-.6-2.7-1.2-4.4-3.9-4.6-4.1-.1-.2-1.1-1.4-1.1-2.7s.7-1.9.9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 2c.1.1.1.3 0 .5l-.3.5-.4.4c-.1.1-.3.3-.1.6.2.3.7 1.2 1.6 1.9 1.1 1 2 1.3 2.3 1.4.3.1.5.1.6-.1l.9-1c.2-.3.4-.2.6-.1l1.9.9c.3.1.5.2.5.3.1.2.1.7-.1 1.3z"/></svg><span>Kutla</span></a>`:''}${m.phone?`<a class="bd-tel" href="${esc(telHref(m.phone))}" data-dial="${esc(m.id)}" title="Ara">Ara</a>`:''}</div></div>`;}
+    function bdListText(list,title){return `${title}\n\n${list.map(m=>`• ${m.name} – ${hoodShort(m.neighborhood)}${m.phone?' – '+fmtPhone(m.phone):''}`).join('\n')}`;}
+    function renderBirthdays(){
+      $('countText').textContent='Doğum Günleri'; $('memberList').innerHTML='';
+      const hasData=state.members.some(m=>m.bd)||state.mine.some(m=>m.bd);
+      const range=state.bdRange||'today'; const {mine,hood}=bdCollect();
+      const hoods=Array.from(new Set(state.members.map(m=>m.neighborhood).filter(isKepezNeighborhood))).sort((a,b)=>a.localeCompare(b,'tr'));
+      const scopeLabel=state.user.allHoods||isAdmin()?'Tüm mahalleler':'Sorumlu olduğunuz mahalleler';
+      const section=(id,title,list,empty)=>`<section class="bd-section"><div class="bd-head"><h3>${title} <span class="bd-count">${list.length}</span></h3>${list.length?`<button type="button" class="secondary bd-share" data-bd-share="${id}">Listeyi WhatsApp'ta paylaş</button>`:''}</div>${list.length?`<div class="bd-list">${list.slice(0,300).map(bdRow).join('')}${list.length>300?`<p class="small">İlk 300 kişi gösteriliyor; mahalle seçerek daraltın.</p>`:''}</div>`:`<div class="empty small-empty">${empty}</div>`}</section>`;
+      $('detail').innerHTML=`<div class="admin-shell bd-shell"><div class="admin-section-head"><h2>Doğum Günleri</h2><div class="seg"><button type="button" class="${range==='today'?'active':''}" data-bd-range="today">Bugün</button><button type="button" class="${range==='week'?'active':''}" data-bd-range="week">7 gün</button></div></div>
+        ${hasData?'':`<div class="check-warning">Doğum tarihi bilgisi henüz yüklenmedi.${isAdmin()?' Doğum Tarihi sütunu olan AKBİS listesini Hasan Demir Paneli → Üye Listesi Yükle bölümünden yükleyin.':''}</div>`}
+        <p class="small">Her sabah 10.00'da, bugün doğum günü olan üyeleriniz veya mahallenizdekiler varsa bildirim gelir. "Kutla" düğmesi kişinin WhatsApp'ını hazır mesajla açar.</p>
+        ${section('mine','Üyelerim',mine,range==='today'?'Bugün referansınızla yapılan üyelerden doğum günü olan yok.':'Önümüzdeki 7 günde üyelerinizden doğum günü olan yok.')}
+        <section class="bd-section"><div class="bd-head"><h3>${esc(scopeLabel)} <span class="bd-count">${hood.length}</span></h3><div class="bd-tools">${hoods.length>1?`<select id="bdHood"><option value="all">Tüm mahalleler</option>${hoods.map(h=>`<option value="${esc(h)}" ${state.bdHood===h?'selected':''}>${esc(h)}</option>`).join('')}</select>`:''}${hood.length?`<button type="button" class="secondary bd-share" data-bd-share="hood">Listeyi WhatsApp'ta paylaş</button>`:''}</div></div>${hood.length?`<div class="bd-list">${hood.slice(0,300).map(bdRow).join('')}${hood.length>300?`<p class="small">İlk 300 kişi gösteriliyor; mahalle seçerek daraltın.</p>`:''}</div>`:`<div class="empty small-empty">${range==='today'?'Bugün doğum günü olan yok.':'Önümüzdeki 7 günde doğum günü olan yok.'}</div>`}</section></div>`;
+      document.querySelectorAll('[data-bd-range]').forEach(b=>b.onclick=()=>{state.bdRange=b.dataset.bdRange; renderBirthdays();});
+      const hs=$('bdHood'); if(hs)hs.onchange=()=>{state.bdHood=hs.value; renderBirthdays();};
+      document.querySelectorAll('[data-bd-share]').forEach(b=>b.onclick=()=>{const {mine,hood}=bdCollect(); const list=b.dataset.bdShare==='mine'?mine:hood; const when=range==='today'?'Bugün':'Önümüzdeki 7 gün'; const t=bdListText(list,`🎂 ${when} doğum günü olan ${b.dataset.bdShare==='mine'?'üyelerimiz':'mahalle üyelerimiz'}:`); window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank','noopener');});
+    }
+    function todayBirthdayCount(){const k=new Set(bdDaysAhead(1)[0].keys); const ids=new Set(); state.mine.forEach(m=>{if(k.has(m.bd))ids.add(m.id);}); state.members.forEach(m=>{if(k.has(m.bd)&&isKepezNeighborhood(m.neighborhood)&&!(state.user.allHoods||isAdmin()))ids.add(m.id);}); return ids.size;}
     function renderCheck(){
       $('countText').textContent='Üye Sorgula'; $('memberList').innerHTML='';
       const c=state.check||{name:'',phone:'',result:null};
@@ -1359,7 +1418,7 @@
     const IS_STANDALONE=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone===true;
     if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});
     // Bildirimden gelen yönlendirme (?ac=talepler)
-    function openFromLink(href){let ac=''; try{ac=new URL(href||location.href,location.href).searchParams.get('ac')||'';}catch(e){} if(ac!=='talepler'||!state.user)return false; if(isAdmin()){state.adminTab='talepler'; setMode('admin');} else setMode('requests'); loadRequests().then(()=>{if(state.mode==='admin')renderAdmin(); else if(state.mode==='requests')renderMyRequests();}); try{const u=new URL(location.href); if(u.searchParams.has('ac')){u.searchParams.delete('ac'); history.replaceState(null,'',u.pathname+u.search+u.hash);}}catch(e){} return true;}
+    function openFromLink(href){let ac=''; try{ac=new URL(href||location.href,location.href).searchParams.get('ac')||'';}catch(e){} if(!state.user||!['talepler','dogum'].includes(ac))return false; if(ac==='dogum'){setMode('birthdays');} else if(isAdmin()){state.adminTab='talepler'; setMode('admin');} else setMode('requests'); if(ac==='talepler')loadRequests().then(()=>{if(state.mode==='admin')renderAdmin(); else if(state.mode==='requests')renderMyRequests();}); try{const u=new URL(location.href); if(u.searchParams.has('ac')){u.searchParams.delete('ac'); history.replaceState(null,'',u.pathname+u.search+u.hash);}}catch(e){} return true;}
     if('serviceWorker' in navigator)navigator.serviceWorker.addEventListener('message',e=>{if(!e.data||!state.user)return; if(e.data.type==='new-notification'){loadAnnouncements(); loadRequests().then(()=>{if(state.mode==='admin'&&state.adminTab==='talepler'&&!document.activeElement.closest('.reply-form'))renderAdmin(); else if(state.mode==='requests')renderMyRequests(); else if(state.mode==='admin')updateDrawer();});} if(e.data.type==='open-url')openFromLink(e.data.url);});
     if(IS_STANDALONE){const n=document.getElementById('installNav'); if(n)n.hidden=true;}
     function notifyCard(){if(!('Notification' in window)||!('serviceWorker' in navigator))return ''; if(Notification.permission==='granted')return ''; if(Notification.permission==='denied')return `<section class="notify-card warn"><strong>Bildirimler kapalı</strong><span>Duyurulardan haberdar olmak için telefon ayarlarından bu uygulamanın bildirimlerine izin verin.</span></section>`; return `<section class="notify-card"><div><strong>Bildirimleri açın</strong><span>Duyuru ve ziyaret programları anında telefonunuza gelsin.</span></div><button type="button" id="notifyCardBtn">Bildirimleri Aç</button></section>`;}
