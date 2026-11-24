@@ -857,7 +857,28 @@ async function handle(request, env) {
     if (!item.name) return json({ error: 'name_required' }, 400);
     leaders.push(item);
     await putJson(env, K.leaders, leaders);
-    return json({ ok: true, leader: item, leaders });
+    // Mahalle başkanı eklenince otomatik kullanıcı hesabı (mahalle grubu, kendi mahallesi)
+    let account = null;
+    if (b.createAccount && item.neighborhood) {
+      const base = await getJson(env, K.users, []);
+      const current = await loadUsers(env);
+      const nk = s2 => normalizeUser(s2).replace(/_/g, '');
+      const existing = current.find(u => nk(u.name) === nk(item.name));
+      if (existing) account = { existing: true, username: existing.username, loginUsername: existing.loginUsername };
+      else {
+        const stem = normalizeUser(item.name) || 'kullanici';
+        let username = stem, n = 2;
+        const taken = u2 => base.some(u => u.username === u2) || current.some(u => u.loginUsername === u2);
+        while (taken(username)) username = `${stem}_${n++}`;
+        base.push({ username, name: item.name, role: 'neighborhood', neighborhoods: [item.neighborhood], createdAt: new Date().toISOString(), createdBy: user.username, leaderId: item.id });
+        await putJson(env, K.users, base);
+        const overrides = await getJson(env, K.overrides, {});
+        overrides[username] = { role: 'neighborhood', group: 'mahalle', neighborhoods: [item.neighborhood], disabled: false, loginUsername: username, name: item.name, refName: item.name, password: DEFAULT_PASSWORD };
+        await putJson(env, K.overrides, overrides);
+        account = { created: true, username, loginUsername: username, password: DEFAULT_PASSWORD };
+      }
+    }
+    return json({ ok: true, leader: item, leaders, account, users: account ? await loadUsers(env) : undefined });
   }
   if (path.startsWith('/leaders/') && (method === 'PUT' || method === 'DELETE')) {
     const denied = requireAdmin(); if (denied) return denied;

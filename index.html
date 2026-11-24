@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="2026.11.24-1">
+  <meta name="app-version" content="2026.11.24-2">
   <meta name="apple-mobile-web-app-title" content="Kepez Çağrı">
   <meta name="application-name" content="Kepez Çağrı">
   <meta name="theme-color" content="#123c7c">
@@ -599,6 +599,21 @@
     .update-bar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom));z-index:9998;display:flex;align-items:center;gap:12px;background:#0f172a;color:#fff;padding:10px 10px 10px 16px;border-radius:14px;box-shadow:0 10px 30px rgba(2,6,23,.35);font-size:.92rem;max-width:calc(100vw - 24px);white-space:nowrap}
     .update-bar button{min-height:36px;padding:0 14px;border-radius:10px;background:#f59e0b!important;color:#111!important;font-weight:800;box-shadow:none!important}
     .sent-reply{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:8px 12px;margin:0 0 8px;color:#14532d}
+    .slot-empty{background:#fffbeb!important;border-left:3px solid #f59e0b;position:relative;cursor:default}
+    .slot-empty .meta{color:#b45309}
+    .slot-add{position:absolute;right:12px;top:50%;transform:translateY(-50%);min-height:32px;padding:0 12px;border-radius:9px;font-size:.85rem}
+    .member .miss{color:#b45309;font-weight:600}
+    .add-leader .check-row{display:flex;align-items:center;gap:8px;margin:6px 0 12px;font-weight:600}
+    .add-leader .check-row input{width:18px;height:18px}
+    .bolge-table-wrap{margin-top:14px}
+    .bolge-table-wrap h3{font-size:1rem;margin:0 0 8px}
+    .bolge-table{width:100%;border-collapse:collapse;font-size:.9rem}
+    .bolge-table th{text-align:left;font-size:.78rem;text-transform:uppercase;letter-spacing:.03em;color:#64748b;padding:8px;border-bottom:1px solid #e5e7eb;background:#f8fafc}
+    .bolge-table td{padding:8px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+    .mini-tel{font-size:.82rem;color:#0b4ea2;white-space:nowrap;margin-left:4px}
+    .muted{color:#94a3b8}
+    .link-btn{background:none!important;border:0;padding:0;min-height:0;color:#0b4ea2!important;font-weight:700;box-shadow:none!important;cursor:pointer;text-align:left;font:inherit;font-weight:700}
+    @media (max-width:700px){.bolge-table thead{display:none}.bolge-table tr{display:block;border-bottom:1px solid #e5e7eb;padding:6px 0}.bolge-table td{display:block;border:0;padding:3px 4px}.bolge-table td:nth-child(2)::before{content:'Koordinatör: ';color:#64748b}.bolge-table td:nth-child(3)::before{content:'Başkan: ';color:#64748b}}
   </style>
 </head>
 <body class="locked">
@@ -631,6 +646,7 @@
           <button class="nav-item " data-mode="yurutme" type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/><path d="M19 3l1.5 1.5L23 2"/></svg><span class="nav-label">Yürütme Kurulu</span></button>
           <button class="nav-item " data-mode="board" type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4"/><path d="M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/></svg><span class="nav-label">Yönetim Kurulu</span></button>
           <button class="nav-item " data-mode="leaders" type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 22V4"/><path d="M4 4h13l-2 4 2 4H4"/></svg><span class="nav-label">Mahalle Başkanları</span></button>
+          <button class="nav-item " data-mode="bolgekoord" type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6v16l7-4 8 4 7-4V2l-7 4-8-4-7 4z"/><path d="M8 2v16M16 6v16"/></svg><span class="nav-label">Bölge Koordinatörleri</span></button>
           <button class="nav-item " data-mode="ilkoord" type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M2 12h20"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg><span class="nav-label">İl Koordinatörleri</span></button>
           <div class="nav-section" id="navSectionMgmt" hidden>Yönetim</div>
           <button class="nav-item " data-mode="analysis" id="analysisNavBtn" hidden type="button"><svg class="nav-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 3 3 6v15l6-3 6 3 6-3V3l-6 3-6-3z"/><path d="M9 3v15"/><path d="M15 6v15"/></svg><span class="nav-label">Kepez Analiz</span></button>
@@ -808,12 +824,13 @@
     function isNeighborhoodLeader(l){const r=String(l.role||'').toLocaleLowerCase('tr-TR'); return isKepezNeighborhood(l.neighborhood)&&r.includes('mahalle başkanı');}
     // Mahalle başkanları tüm kademelere açık: kullanıcının kendi mahallesiyle sınırlanmaz.
     function leaderList(){const q=norm(state.query); return state.leaders.filter(l=>isNeighborhoodLeader(l)&&(!q||norm([l.name,l.phone,l.neighborhood,l.address,l.role,l.branch].join(' ')).includes(q))).sort((a,b)=>(a.neighborhood||'').localeCompare(b.neighborhood||'','tr')||String(a.branch).localeCompare(String(b.branch),'tr')||a.name.localeCompare(b.name,'tr'));}
-    function isBoardTab(t=state.memberTab){return t==='board'||t==='yurutme'||t==='ilkoord';}
+    function isBoardTab(t=state.memberTab){return t==='board'||t==='yurutme'||t==='ilkoord'||t==='bolgekoord';}
     function leaderByName(name){const k=refKey(name); return state.leaders.find(l=>l.branch==='Yönetim Kurulu'&&refKey(l.name)===k)||state.leaders.find(l=>refKey(l.name)===k);}
     function orgAccess(username){return (state.org&&state.org.access&&state.org.access[username])||[];}
     function boardList(kind=state.memberTab){
       const q=norm(state.query); const org=state.org; let list=[];
       if(kind==='yurutme'){list=(org&&org.yurutme||[]).map((y,i)=>{const l=leaderByName(y.name)||{}; return {...l,id:'y-'+y.username,name:y.name,role:y.role||l.role||'',branch:'Yürütme Kurulu',username:y.username,order:i};});}
+      else if(kind==='bolgekoord'){list=(org&&org.bolgeler||[]).map((b,i)=>{const l=leaderByName(b.bolgeKoord)||{}; return {...l,id:'bk-'+i,name:b.bolgeKoord,role:`${b.bolge} Bölge Koordinatörü`,branch:'Bölge Koordinatörü',username:b.bolgeKoordUsername||'',bolge:b,bolgeKoordTab:true,order:i};});}
       else if(kind==='ilkoord'){list=(org&&org.bolgeler||[]).map((b,i)=>{const l=leaderByName(b.ilKoord)||{}; return {...l,id:'ik-'+i,name:b.ilKoord,role:`${b.bolge} İl Koordinatörü`,branch:'İl Koordinatörü',username:b.ilKoordUsername,bolge:b,order:i};});}
       else {const order=new Map((org&&org.yonetim||[]).map((y,i)=>[refKey(y.name),y])); list=state.leaders.filter(l=>l.branch==='Yönetim Kurulu').map(l=>{const y=order.get(refKey(l.name)); return {...l,username:y&&y.username,order:y?(org.yonetim.indexOf(y)):999};}).sort((a,b)=>a.order-b.order||a.name.localeCompare(b.name,'tr'));}
       return list.filter(l=>!q||norm([l.name,l.phone,l.role,l.address].join(' ')).includes(q));
@@ -830,15 +847,15 @@
       if(mode==='requests'&&isAdmin()){mode='admin'; state.adminTab='talepler';}
       if(mode==='admin'&&!isAdmin()) mode='home';
       if(mode==='analysis'&&!canUseAnalysis()) mode='home';
-      state.selectedLeaderNeighborhood=null; state.selectedLeader=null;
-      if(mode==='board'||mode==='yurutme'||mode==='ilkoord'){state.mode='list'; state.memberTab=mode; if(!state.org)loadOrg().then(render);}
-      else if(mode==='leaders'){state.mode='list'; state.memberTab='leaders';}
+      state.selectedLeaderNeighborhood=null; state.selectedLeader=null; state.addLeaderSlot=null; state.addedAccount=null;
+      if(mode==='board'||mode==='yurutme'||mode==='ilkoord'||mode==='bolgekoord'){state.mode='list'; state.memberTab=mode; if(!state.org)loadOrg().then(render);}
+      else if(mode==='leaders'){state.mode='list'; state.memberTab='leaders'; if(state.neighborhood&&state.neighborhood!=='all')state.selectedLeaderNeighborhood=state.neighborhood;}
       else if(mode==='list'){state.mode='list'; state.memberTab='members';}
       else if(mode==='mine'){state.mode='list'; state.memberTab='mine'; state.selected=null; loadMine().then(render);}
       else if(mode==='requests'){state.mode='requests'; loadRequests().then(render);}
       else if(mode==='check'){state.mode='check';}
       else state.mode=mode;
-      const active=state.mode==='list'?({board:'board',yurutme:'yurutme',ilkoord:'ilkoord',leaders:'leaders',mine:'mine'}[state.memberTab]||'list'):state.mode;
+      const active=state.mode==='list'?({board:'board',yurutme:'yurutme',ilkoord:'ilkoord',bolgekoord:'bolgekoord',leaders:'leaders',mine:'mine'}[state.memberTab]||'list'):state.mode;
       document.querySelectorAll('[data-mode]').forEach(b=>b.classList.toggle('active',b.dataset.mode===active));
       save(); render();
     }
@@ -856,7 +873,7 @@
       if(state.mode==='list'&&(state.memberTab==='leaders'||isBoardTab())){
         setBodyMode(isBoardTab()?'board-mode':'');
         const leaders=isBoardTab()?boardList():leaderList(); const hoods=leaderNeighborhoods(leaders);
-        if(!isBoardTab()&&state.selectedLeaderNeighborhood&&!hoods.some(h=>h.name===state.selectedLeaderNeighborhood))state.selectedLeaderNeighborhood=null;
+        if(!isBoardTab()&&state.selectedLeaderNeighborhood&&!hoods.some(h=>h.name===state.selectedLeaderNeighborhood)&&!allLeaderHoods().includes(state.selectedLeaderNeighborhood))state.selectedLeaderNeighborhood=null;
         const scoped=state.selectedLeaderNeighborhood?leaders.filter(l=>l.neighborhood===state.selectedLeaderNeighborhood):[];
         renderLeaders(leaders,scoped,hoods); renderLeaderDetail(scoped); if(isAdmin())renderLogs(); else clearLogsPanel(); return;
       }
@@ -879,22 +896,38 @@
     }
     function renderLeaders(all,scoped,hoods){
       if(isBoardTab()){renderBoard(boardList()); return;}
-      $('countText').textContent=state.selectedLeaderNeighborhood?`${scoped.length} başkan`:`${hoods.length} mahalle • ${all.length} başkan`;
-      const body=state.selectedLeaderNeighborhood?`<button type="button" class="member" data-leader-back><strong>← Mahallelere dön</strong><span class="meta">${all.length} başkan içinde gezin</span></button>`+(scoped.map(l=>`<div class="member ${l.id===state.selectedLeader?'active':''}" data-leader-id="${esc(l.id)}" role="button" tabindex="0"><strong>${esc(l.name)}</strong><span class="meta">${esc(l.branch)} • ${esc(l.role)}${l.phone?' • '+esc(l.phone):''}</span></div>`).join('')||'<div class="empty">Bu mahallede başkan bulunamadı.</div>'):hoods.map(h=>`<div class="member" data-leader-hood="${esc(h.name)}" role="button" tabindex="0"><strong>${esc(h.name)}</strong><span class="meta">${h.count} başkan • ${h.branchCount} birim</span></div>`).join('')||'<div class="empty">Başkan kaydı bulunamadı.</div>';
+      const q=norm(state.query); const byHood=new Map(hoods.map(h=>[h.name,h])); const hoodList=allLeaderHoods().filter(h=>byHood.has(h)||!q||norm(h).includes(q));
+      $('countText').textContent=state.selectedLeaderNeighborhood?`${scoped.length} başkan`:`${hoodList.length} mahalle • ${all.length} başkan`;
+      const admin=isAdmin(); const sel=state.selectedLeaderNeighborhood;
+      const slots=sel?HOOD_SLOTS.map(br=>{const ls=scoped.filter(l=>l.branch===br); if(ls.length)return ls.map(l=>`<div class="member ${l.id===state.selectedLeader?'active':''}" data-leader-id="${esc(l.id)}" role="button" tabindex="0"><strong>${esc(l.name)}</strong><span class="meta">${esc(leaderTitle(l))}${l.phone?' • '+esc(l.phone):''}</span></div>`).join(''); return `<div class="member slot-empty ${state.addLeaderSlot===br?'active':''}"><strong>${esc(hoodTitle(sel))} ${esc(br)} Mahalle Başkanı</strong><span class="meta">Atanmadı</span>${admin?`<button type="button" class="slot-add" data-add-leader="${esc(br)}">+ Ekle</button>`:''}</div>`;}).join('')+scoped.filter(l=>!HOOD_SLOTS.includes(l.branch)).map(l=>`<div class="member ${l.id===state.selectedLeader?'active':''}" data-leader-id="${esc(l.id)}" role="button" tabindex="0"><strong>${esc(l.name)}</strong><span class="meta">${esc(leaderTitle(l))}</span></div>`).join(''):'';
+      const body=sel?`<button type="button" class="member" data-leader-back><strong>← Mahallelere dön</strong><span class="meta">${esc(hoodTitle(sel))} Mahallesi</span></button>`+slots:hoodList.map(h=>{const x=byHood.get(h); const have=new Set(hoodLeadersOf(h).map(l=>l.branch)); const miss=HOOD_SLOTS.slice(0,2).filter(b=>!have.has(b)); return `<div class="member" data-leader-hood="${esc(h)}" role="button" tabindex="0"><strong>${esc(h)}</strong><span class="meta">${x?x.count:0} başkan${miss.length?` • <span class="miss">Eksik: ${miss.join(', ')}</span>`:''}</span></div>`;}).join('')||'<div class="empty">Başkan kaydı bulunamadı.</div>';
       $('memberList').innerHTML=listTabs()+body;
     }
-    const BOARD_LABELS={board:'yönetim kurulu üyesi',yurutme:'yürütme kurulu üyesi',ilkoord:'il koordinatörü'};
-    function renderBoard(list){$('countText').textContent=`${list.length} ${BOARD_LABELS[state.memberTab]||''}`; const empty=state.org||state.memberTab==='board'?'<div class="empty">Kayıt bulunamadı.</div>':'<div class="empty">Teşkilat listesi henüz yüklenmedi.</div>'; $('memberList').innerHTML=list.map(l=>`<div class="member ${l.id===state.selectedLeader?'active':''}" data-board-id="${esc(l.id)}" role="button" tabindex="0"><strong>${esc(l.name)}</strong><span class="meta">${esc(l.role)}${l.phone?' • '+esc(l.phone):' • Telefon yok'}</span></div>`).join('')||empty;}
+    const BOARD_LABELS={board:'yönetim kurulu üyesi',yurutme:'yürütme kurulu üyesi',ilkoord:'il koordinatörü',bolgekoord:'bölge koordinatörü'};
+    function renderBoard(list){$('countText').textContent=`${list.length} ${BOARD_LABELS[state.memberTab]||''}`; const empty=state.org||state.memberTab==='board'?'<div class="empty">Kayıt bulunamadı.</div>':'<div class="empty">Teşkilat listesi henüz yüklenmedi.</div>'; $('memberList').innerHTML=list.map(l=>`<div class="member ${l.id===state.selectedLeader?'active':''}" data-board-id="${esc(l.id)}" role="button" tabindex="0"><strong>${esc(l.name)}</strong><span class="meta">${esc(l.role)}${l.bolgeKoordTab&&l.bolge?` • ${(l.bolge.hoods||[]).length} mahalle`:''}${l.phone?' • '+esc(l.phone):' • Telefon yok'}</span></div>`).join('')||empty;}
     function hoodChips(hoods){return hoods&&hoods.length?`<div class="hood-chips">${hoods.map(h=>`<span class="chip">${esc(String(h).replace(/ MAH\.$/,''))}</span>`).join('')}</div>`:'-';}
     function orgFacts(l){const org=state.org; if(!org)return ''; const rows=[];
+      if(l.bolge&&l.bolgeKoordTab){const b=l.bolge; rows.push(['Bölge',b.bolge],['İl Koordinatörü',b.ilKoord],['Meclis Üyeleri',b.meclis],['Mahalle Sayısı',String((b.hoods||[]).length)]); return `<div class="facts org-facts">${rows.map(([k,v])=>`<div class="fact"><div>${esc(k)}</div><div>${esc(v||'-')}</div></div>`).join('')}</div>`+bolgeHoodTable(b);}
       if(l.bolge){const b=l.bolge; rows.push(['Bölge',b.bolge],['Bölge Koordinatörü',b.bolgeKoord],['Meclis Üyeleri',b.meclis],['Mahalleler',null,hoodChips(b.hoods)]);}
       else if(l.username&&state.memberTab!=='leaders'){const acc=orgAccess(l.username); const g=org.groups&&org.groups[l.username]; rows.push(['Yetki',g==='yurutme'||g==='il_koord'?'Tüm mahalleler':acc.length?`${acc.length} mahalle`:'Atanmış mahalle yok']); if(g!=='yurutme'&&g!=='il_koord'&&acc.length)rows.push(['Sorumlu Mahalleler',null,hoodChips(acc)]);}
       if(state.memberTab==='leaders'&&l.neighborhood&&org.hoods&&org.hoods[l.neighborhood]){const h=org.hoods[l.neighborhood]; rows.push(['Bölge',h.bolge],['Mahalle Koordinatörü',h.mahalleKoord||'-'],['Bölge Koordinatörü',h.bolgeKoord],['İl Koordinatörü',h.ilKoord]);}
       return rows.length?`<div class="facts org-facts">${rows.map(([k,v,html])=>`<div class="fact"><div>${esc(k)}</div><div>${html||esc(v||'-')}</div></div>`).join('')}</div>`:'';}
-    function leaderCard(l,withHood){return `<div class="log-top"><h2>${esc(l.name)}</h2><span class="badge new">${esc(l.branch)}</span></div><div class="detail-actions">${phoneBtn(l.phone)}${waLink(l.phone)?`<a class="map-link" href="${esc(waLink(l.phone))}" target="_blank" rel="noopener">WhatsApp</a>`:''}${l.address?`<a class="map-link" href="${esc(mapUrlFor(l))}" target="_blank" rel="noopener">Konum Aç</a>`:''}</div><div class="facts"><div class="fact"><div>Görev</div><div>${esc(l.role)}</div></div><div class="fact"><div>Birim</div><div>${esc(l.branch)}</div></div>${withHood?`<div class="fact"><div>Mahalle</div><div>${esc(l.neighborhood||'-')}</div></div>`:''}<div class="fact"><div>Telefon</div><div>${esc(l.phone||'-')}</div></div><div class="fact"><div>Adres</div><div>${esc(l.address||'-')}</div></div></div>`;}
+    function personLink(name){const l=name&&leaderByName(name); const ph=l&&l.phone; return `${esc(name||'-')}${ph?` <a class="mini-tel" href="${esc(telHref(ph))}">${esc(fmtPhone(ph))}</a>`:''}`;}
+    function hoodLeadersOf(h){return state.leaders.filter(l=>l.neighborhood===h&&isNeighborhoodLeader(l));}
+    function bolgeHoodTable(b){const org=state.org||{}; const rows=(b.hoods||[]).map(h=>{const d=(org.hoods||{})[h]||{}; const ak=hoodLeadersOf(h).filter(l=>l.branch==='Ana Kademe'); return `<tr><td><button type="button" class="link-btn" data-open-hood="${esc(h)}">${esc(hoodShort(h))}</button></td><td>${personLink(d.mahalleKoord)}</td><td>${ak.length?ak.map(l=>`${esc(l.name)}${l.phone?` <a class="mini-tel" href="${esc(telHref(l.phone))}">${esc(fmtPhone(l.phone))}</a>`:''}`).join('<br>'):'<span class="muted">Atanmadı</span>'}</td></tr>`;}).join('');
+      return `<div class="bolge-table-wrap"><h3>${esc(b.bolge)} mahalleleri</h3><table class="bolge-table"><thead><tr><th>Mahalle</th><th>Mahalle Koordinatörü</th><th>Mahalle Başkanı</th></tr></thead><tbody>${rows}</tbody></table></div>`;}
+    function hoodShort(h){return String(h||'').replace(/ MAH\.?$/,'');}
+    function hoodTitle(h){return hoodShort(h).toLocaleLowerCase('tr-TR').split(/\s+/).map(w=>w?w[0].toLocaleUpperCase('tr-TR')+w.slice(1):w).join(' ');}
+    // "Ahatlı Kadın Kolları Mahalle Başkanı" biçiminde görev adı
+    function leaderTitle(l){if(!isNeighborhoodLeader(l))return l.role||''; const br=l.branch==='Ana Kademe'?'Ana Kademe':(l.branch||''); return `${hoodTitle(l.neighborhood)} ${br} Mahalle Başkanı`.replace(/\s+/g,' ');}
+    const HOOD_SLOTS=['Ana Kademe','Gençlik Kolları','Kadın Kolları'];
+    function allLeaderHoods(){const set=new Set(Object.keys((state.org&&state.org.hoods)||{}).filter(isKepezNeighborhood)); state.leaders.forEach(l=>{if(isNeighborhoodLeader(l))set.add(l.neighborhood);}); return Array.from(set).sort((a,b)=>a.localeCompare(b,'tr'));}
+    function leaderCard(l,withHood){return `<div class="log-top"><h2>${esc(l.name)}</h2><span class="badge new">${esc(l.branch)}</span></div><div class="detail-actions">${phoneBtn(l.phone)}${waLink(l.phone)?`<a class="map-link" href="${esc(waLink(l.phone))}" target="_blank" rel="noopener">WhatsApp</a>`:''}${l.address?`<a class="map-link" href="${esc(mapUrlFor(l))}" target="_blank" rel="noopener">Konum Aç</a>`:''}</div><div class="facts"><div class="fact"><div>Görev</div><div>${esc(leaderTitle(l))}</div></div><div class="fact"><div>Birim</div><div>${esc(l.branch)}</div></div>${withHood?`<div class="fact"><div>Mahalle</div><div>${esc(l.neighborhood||'-')}</div></div>`:''}<div class="fact"><div>Telefon</div><div>${esc(l.phone||'-')}</div></div><div class="fact"><div>Adres</div><div>${esc(l.address||'-')}</div></div></div>`;}
     function renderLeaderDetail(list=[]){
       if(isBoardTab()){const l=boardList().find(x=>x.id===state.selectedLeader); $('detail').innerHTML=l?leaderCard(l,false)+orgFacts(l):'<div class="empty">Bir kişiye tıklayınca iletişim kartı burada açılacak.</div>'; return;}
       if(!state.selectedLeaderNeighborhood){$('detail').innerHTML='<div class="empty">Mahalle seçince o mahallenin başkanları burada açılacak.</div>'; return;}
+      if(state.addLeaderSlot&&isAdmin()){renderAddLeaderForm(state.selectedLeaderNeighborhood,state.addLeaderSlot); return;}
+      if(state.addedAccount){$('detail').innerHTML=addedAccountCard(state.addedAccount); return;}
       const l=list.find(x=>x.id===state.selectedLeader);
       $('detail').innerHTML=l?leaderCard(l,true)+orgFacts(l):'<div class="empty">Bir başkana tıklayınca iletişim kartı burada açılacak.</div>';
     }
@@ -1414,7 +1447,22 @@
     });
     document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible'||state.mode!=='auto')return; const pending=sessionStorage.getItem('pending-auto-call'); if(!pending||pending!==state.selected)return; const p=$('autoPrompt'); if(p){p.classList.add('show'); p.scrollIntoView({block:'center',behavior:'smooth'});}});
     document.addEventListener('keydown',e=>{if(state.mode!=='auto'||document.body.classList.contains('locked')||e.ctrlKey||e.metaKey||e.altKey)return; if(['TEXTAREA','INPUT','SELECT'].includes(document.activeElement&&document.activeElement.tagName))return; const map={'1':'called','2':'noanswer','3':'later','4':'wrong'}; if(map[e.key]){e.preventDefault(); autoResult(map[e.key]);} else if(e.key==='ArrowRight'){e.preventDefault(); autoMove(1);} else if(e.key==='ArrowLeft'){e.preventDefault(); autoMove(-1);}});
-    $('memberList').onclick=e=>{const tab=e.target.closest('[data-list-tab]'); if(tab){const t=tab.dataset.listTab; setMode(t==='members'?'list':t); state.limit=180; return;} const hood=e.target.closest('[data-leader-hood]'); if(hood){state.selectedLeaderNeighborhood=hood.dataset.leaderHood; state.selectedLeader=null; save(); render(); return;} if(e.target.closest('[data-leader-back]')){state.selectedLeaderNeighborhood=null; state.selectedLeader=null; save(); render(); return;} const leader=e.target.closest('[data-leader-id]'); if(leader){state.selectedLeader=leader.dataset.leaderId; render(); scrollDetailIntoView(); return;} const board=e.target.closest('[data-board-id]'); if(board){state.selectedLeader=board.dataset.boardId; render(); scrollDetailIntoView(); return;} const b=e.target.closest('.member[data-id]'); if(!b)return; state.selected=b.dataset.id; save(); render(); scrollDetailIntoView();};
+    function renderAddLeaderForm(hood,branch){const role=branch==='Ana Kademe'?'Mahalle Başkanı':`${branch} Mahalle Başkanı`;
+      $('detail').innerHTML=`<form id="addLeaderForm" class="add-leader"><div class="log-top"><h2>${esc(hoodTitle(hood))} ${esc(branch)} Mahalle Başkanı</h2><span class="badge new">Yeni</span></div>
+        <p class="small">Eklenen kişi Mahalle Başkanları listesinde ve yönetim panelinde görünür; mahalle başkanı yetkisiyle (yalnızca ${esc(hoodTitle(hood))} mahallesi) kullanıcı hesabı otomatik açılır.</p>
+        <div class="grid2"><div class="field"><label>Ad soyad</label><input name="name" required autocomplete="off" placeholder="Örn. Ahmet Yılmaz"></div><div class="field"><label>Telefon</label><input name="phone" inputmode="tel" autocomplete="off" placeholder="05xx xxx xx xx"></div></div>
+        <div class="field"><label>Adres</label><input name="address" autocomplete="off" placeholder="İsteğe bağlı"></div>
+        <label class="check-row"><input type="checkbox" name="account" checked> Kullanıcı hesabı aç (ilk girişte şifre değiştirilir)</label>
+        <div class="actions"><button type="submit">Kaydet</button><button type="button" class="secondary" data-cancel-add>Vazgeç</button></div></form>`;
+      const f=$('addLeaderForm'); f.querySelector('[data-cancel-add]').onclick=()=>{state.addLeaderSlot=null; render();}; f.name.focus();
+      f.onsubmit=async e=>{e.preventDefault(); const name=f.name.value.trim().replace(/\s+/g,' '); const phone=f.phone.value.trim(); if(!name){toast('Ad soyad girin.'); return;} if(phone&&!phoneValid(phone)){toast('Telefon numarası hatalı görünüyor.'); return;}
+        const bt=f.querySelector('button[type=submit]'); bt.disabled=true;
+        try{const d=await api('/leaders',{method:'POST',json:{name,phone,address:f.address.value.trim(),neighborhood:hood,branch,role,createAccount:f.account.checked}}); state.leaders=d.leaders||state.leaders; if(d.users)state.users=d.users; state.addLeaderSlot=null; state.selectedLeader=d.leader&&d.leader.id; state.addedAccount=d.account?{...d.account,name:d.leader.name,hood,branch,phone:d.leader.phone}:null; render(); toast('Başkan eklendi.');}
+        catch(err){bt.disabled=false; toast('Kaydedilemedi: '+(err.message||'hata'));}};}
+    function addedAccountCard(a){const msg=a.created?`<div class="facts"><div class="fact"><div>Kullanıcı adı</div><div><b>${esc(a.loginUsername)}</b></div></div><div class="fact"><div>İlk şifre</div><div><b>${esc(a.password)}</b></div></div></div><p class="small">Bilgileri kişiye iletin; ilk girişte kendi şifresini belirleyecek. Kurulum mesajını Sistem Kullanımı sekmesinden WhatsApp ile gönderebilirsiniz.</p>`:`<p>Bu isimle zaten bir kullanıcı hesabı var: <b>${esc(a.loginUsername)}</b>. Yeni hesap açılmadı; gerekirse yetkisini Kullanıcılar sekmesinden düzenleyin.</p>`;
+      return `<div class="log-top"><h2>${esc(a.name)}</h2><span class="badge called">Eklendi</span></div><p>${esc(hoodTitle(a.hood))} ${esc(a.branch)} Mahalle Başkanı olarak kaydedildi.</p>${msg}<div class="actions"><button type="button" class="secondary" data-close-added>Tamam</button></div>`;}
+    $('detail').addEventListener('click',e=>{if(e.target.closest('[data-close-added]')){state.addedAccount=null; render();} const oh=e.target.closest('[data-open-hood]'); if(oh){setMode('leaders'); state.selectedLeaderNeighborhood=oh.dataset.openHood; save(); render(); scrollDetailIntoView();}});
+    $('memberList').onclick=e=>{const add=e.target.closest('[data-add-leader]'); if(add){e.stopPropagation(); state.addLeaderSlot=add.dataset.addLeader; state.addedAccount=null; state.selectedLeader=null; render(); scrollDetailIntoView(); return;} const tab=e.target.closest('[data-list-tab]'); if(tab){const t=tab.dataset.listTab; const hood=state.neighborhood; setMode(t==='members'?'list':t); if(t==='leaders'&&hood&&hood!=='all'){state.selectedLeaderNeighborhood=hood; save(); render();} state.limit=180; return;} const hood=e.target.closest('[data-leader-hood]'); if(hood){state.selectedLeaderNeighborhood=hood.dataset.leaderHood; state.selectedLeader=null; state.addLeaderSlot=null; state.addedAccount=null; save(); render(); return;} if(e.target.closest('[data-leader-back]')){state.selectedLeaderNeighborhood=null; state.selectedLeader=null; state.addLeaderSlot=null; state.addedAccount=null; save(); render(); return;} const leader=e.target.closest('[data-leader-id]'); if(leader){state.selectedLeader=leader.dataset.leaderId; state.addLeaderSlot=null; state.addedAccount=null; render(); scrollDetailIntoView(); return;} const board=e.target.closest('[data-board-id]'); if(board){state.selectedLeader=board.dataset.boardId; render(); scrollDetailIntoView(); return;} const b=e.target.closest('.member[data-id]'); if(!b)return; state.selected=b.dataset.id; save(); render(); scrollDetailIntoView();};
     $('neighborhoodSelect').onchange=e=>{state.neighborhood=e.target.value; state.limit=180; state.selected=null; save(); render();};
     $('searchInput').oninput=e=>{state.query=e.target.value; state.limit=180; render();};
     $('statusFilter').onchange=e=>{state.status=e.target.value; state.limit=180; render();};
