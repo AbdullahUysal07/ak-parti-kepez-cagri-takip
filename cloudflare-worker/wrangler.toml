@@ -14,3 +14,7 @@ VAPID_SUBJECT = "mailto:abdullahuysal01@gmail.com"
 [[kv_namespaces]]
 binding = "VISIT_IMAGES"
 id = "98e0789e8aa04be9b174c8535e7a70af"
+
+# Her gün 07:00 UTC = Türkiye saatiyle 10:00 doğum günü bildirimi
+[triggers]
+crons = ["0 7 * * *"]
