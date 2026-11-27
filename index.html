@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="2026.11.27-3">
+  <meta name="app-version" content="2026.11.27-4">
   <meta name="apple-mobile-web-app-title" content="Kepez Çağrı">
   <meta name="application-name" content="Kepez Çağrı">
   <meta name="theme-color" content="#123c7c">
@@ -1529,25 +1529,86 @@
     $('detail').addEventListener('click',e=>{const o=e.target.closest('[data-okul-open]'); if(o){state.okulSel=o.dataset.okulOpen; state.sandikSel=null; renderSandik();}});
     // Seçim öncesi: tüm sandık kurulları, her mahalle ayrı sayfa (2024 takip formu düzeninde)
     async function exportAllSandik(btn){btn.disabled=true; const old=btn.textContent; btn.textContent='Hazırlanıyor…'; try{const d=await api('/sandik/summary?full=1'); const nos={}; Object.entries(d.map||{}).forEach(([no,[h,n]])=>{(nos[h]=nos[h]||[]).push([no,n]);}); const sm=sandikMap(); Object.keys(d.hoods||{}).forEach(h=>{if(!nos[h])nos[h]=(sm.byHood[h]||[]).map(x=>[x.no,x.members.length]);}); const t=new Date(); await exportSandikXlsx(d.hoods||{},nos,`Kepez-Sandik-Kurullari-${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}.xlsx`); toast('Excel dosyası indirildi.');}catch(e){toast('Liste alınamadı: '+(e.message||'hata'));}finally{btn.disabled=false; btn.textContent=old;}}
-    async function exportSandikXlsx(byHood,nosByHood,file){await loadScript(XLSX_URL); const wb=XLSX.utils.book_new(); const up=v=>String(v||'').trim().toLocaleUpperCase('tr-TR'); const P=p=>p&&p.name?['',p.name,'',p.phone?fmtPhone(p.phone):'']:['','','',''];
+    // ---- 2024 "Okul/Bina Esaslı Sandık Takip Formu" biçiminde .xlsx üretimi (biçimlendirme dahil, kütüphanesiz)
+    const XL={crcT:null,
+      crc(b){if(!XL.crcT){XL.crcT=new Uint32Array(256); for(let n=0;n<256;n++){let c=n; for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1; XL.crcT[n]=c>>>0;}} let c=0xFFFFFFFF; for(let i=0;i<b.length;i++)c=XL.crcT[(c^b[i])&255]^(c>>>8); return (c^0xFFFFFFFF)>>>0;},
+      zip(files){const enc=new TextEncoder(); const parts=[], central=[]; let off=0; const u16=v=>[v&255,(v>>8)&255], u32=v=>[v&255,(v>>8)&255,(v>>16)&255,(v>>>24)&255];
+        files.forEach(([name,text])=>{const nb=enc.encode(name), db=enc.encode(text), crc=XL.crc(db);
+          const lh=new Uint8Array([...u32(0x04034b50),...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0x21),...u32(crc),...u32(db.length),...u32(db.length),...u16(nb.length),...u16(0)]);
+          parts.push(lh,nb,db); central.push(new Uint8Array([...u32(0x02014b50),...u16(20),...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0x21),...u32(crc),...u32(db.length),...u32(db.length),...u16(nb.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(off)]),nb); off+=lh.length+nb.length+db.length;});
+        const csz=central.reduce((a,x)=>a+x.length,0); const end=new Uint8Array([...u32(0x06054b50),...u16(0),...u16(0),...u16(files.length),...u16(files.length),...u32(csz),...u32(off),...u16(0)]);
+        return new Blob([...parts,...central,end],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});},
+      x(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g,'');},
+      col(i){let s=''; i++; while(i){const m=(i-1)%26; s=String.fromCharCode(65+m)+s; i=Math.floor((i-1)/26);} return s;}};
+    // Stil numaraları (styles.xml içindeki cellXfs sırası)
+    const XS={title:1,label:2,colon:3,val:4,valN:5,person:6,thA:7,th:8,thL:9,no:10,role:11,cell:12,sumH:13,sumC:14,sumT:15,sub:16};
+    const XL_STYLES=`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="9"><font><sz val="11"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="14"/><name val="Arial"/><family val="2"/></font><font><b/><sz val="14"/><name val="Calibri"/><family val="2"/></font><font><b/><sz val="10"/><name val="Arial"/><family val="2"/></font><font><sz val="10"/><name val="Arial"/><family val="2"/></font><font><b/><sz val="10"/><name val="Arial"/><family val="2"/></font><font><sz val="14"/><name val="Calibri"/><family val="2"/></font><font><sz val="12"/><name val="Arial"/><family val="2"/></font><font><i/><sz val="10"/><name val="Arial"/><family val="2"/></font></fonts>
+<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill><fill><patternFill patternType="solid"><fgColor rgb="FFF2F2F2"/><bgColor indexed="64"/></patternFill></fill></fills>
+<borders count="3"><border><left/><right/><top/><bottom/><diagonal/></border><border><left style="thin"><color auto="1"/></left><right style="thin"><color auto="1"/></right><top style="thin"><color auto="1"/></top><bottom style="thin"><color auto="1"/></bottom><diagonal/></border><border><left style="medium"><color auto="1"/></left><right style="medium"><color auto="1"/></right><top style="medium"><color auto="1"/></top><bottom style="medium"><color auto="1"/></bottom><diagonal/></border></borders>
+<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
+<cellXfs count="17"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+<xf numFmtId="0" fontId="1" fillId="0" borderId="2" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment vertical="center"/></xf>
+<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf>
+<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment vertical="center"/></xf>
+<xf numFmtId="0" fontId="4" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment vertical="center" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="5" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="2" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="2" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf>
+<xf numFmtId="0" fontId="4" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="2" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="left" vertical="center"/></xf>
+<xf numFmtId="0" fontId="6" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="5" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center" wrapText="1"/></xf>
+<xf numFmtId="0" fontId="7" fillId="0" borderId="1" xfId="0" applyFont="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="3" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>
+<xf numFmtId="0" fontId="8" fillId="0" borderId="0" xfId="0" applyFont="1" applyAlignment="1"><alignment vertical="center"/></xf></cellXfs>
+<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`;
+    // Basit sayfa kurucu: hücreler {r,c,v,s}, birleştirmeler, satır yükseklikleri
+    function xlSheet(){const cells=new Map(), heights={}, merges=[]; return {cells,heights,merges,
+      set(r,c,v,s){cells.set(r+':'+c,{r,c,v,s});}, h(r,v){heights[r]=v;}, merge(r1,c1,r2,c2,s){merges.push(`${XL.col(c1)}${r1}:${XL.col(c2)}${r2}`); for(let r=r1;r<=r2;r++)for(let c=c1;c<=c2;c++)if(!cells.has(r+':'+c))this.set(r,c,'',s);}};}
+    function xlSheetXml(sh,cols,lastCol,landscape){const rows={}; let maxR=1; sh.cells.forEach(x=>{(rows[x.r]=rows[x.r]||[]).push(x); maxR=Math.max(maxR,x.r);}); Object.keys(sh.heights).forEach(r=>{maxR=Math.max(maxR,+r); rows[r]=rows[r]||[];});
+      const data=Object.keys(rows).map(Number).sort((a,b)=>a-b).map(r=>`<row r="${r}"${sh.heights[r]?` ht="${sh.heights[r]}" customHeight="1"`:''}>${rows[r].sort((a,b)=>a.c-b.c).map(x=>{const ref=XL.col(x.c)+x.r; const st=x.s?` s="${x.s}"`:''; if(x.v===''||x.v==null)return `<c r="${ref}"${st}/>`; if(typeof x.v==='number')return `<c r="${ref}"${st}><v>${x.v}</v></c>`; return `<c r="${ref}"${st} t="inlineStr"><is><t xml:space="preserve">${XL.x(x.v)}</t></is></c>`;}).join('')}</row>`).join('');
+      return {maxR,xml:`<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr><dimension ref="A1:${XL.col(lastCol)}${maxR}"/><sheetViews><sheetView workbookViewId="0" zoomScale="85" zoomScaleNormal="85"/></sheetViews><sheetFormatPr defaultRowHeight="15"/><cols>${cols.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('')}</cols><sheetData>${data}</sheetData>${sh.merges.length?`<mergeCells count="${sh.merges.length}">${sh.merges.map(m=>`<mergeCell ref="${m}"/>`).join('')}</mergeCells>`:''}<pageMargins left="0.24" right="0.24" top="0.35" bottom="0.35" header="0.2" footer="0.2"/><pageSetup paperSize="9" orientation="${landscape?'landscape':'portrait'}" fitToWidth="1" fitToHeight="0"/></worksheet>`};}
+    function xlWorkbook(sheets){// sheets: [{name, xml, area}]
+      const files=[['[Content_Types].xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>${sheets.map((s,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join('')}</Types>`],
+        ['_rels/.rels','<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'],
+        ['xl/workbook.xml',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><bookViews><workbookView/></bookViews><sheets>${sheets.map((s,i)=>`<sheet name="${XL.x(s.name)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join('')}</sheets><definedNames>${sheets.map((s,i)=>`<definedName name="_xlnm.Print_Area" localSheetId="${i}">'${XL.x(s.name.replace(/'/g,"''"))}'!${s.area}</definedName>`).join('')}</definedNames></workbook>`],
+        ['xl/_rels/workbook.xml.rels',`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((s,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join('')}<Relationship Id="rId${sheets.length+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>`],
+        ['xl/styles.xml',XL_STYLES],...sheets.map((s,i)=>[`xl/worksheets/sheet${i+1}.xml`,s.xml])];
+      return XL.zip(files);}
+    // Bir okul sayfası: 2024 formunun birebir düzeni (A:Sandık No, B-C:Görev, D:Adı Soyadı, E:TC, F:Cep Tel)
+    function sandikFormSheet(hood,okul,od,nos,data){const sh=xlSheet(); const tel=p=>p&&p.phone?'0'+phoneNational(p.phone):'';
+      sh.set(1,0,'KEPEZ  İLÇESİ OKUL/BİNA ESASLI SANDIK TAKİP FORMU',XS.title); sh.merge(1,0,1,5,XS.title); sh.h(1,33);
+      [['İLÇE ADI','KEPEZ',XS.val],['MAHALLE',hoodShort(hood),XS.val],['OKUL',okul,XS.valN]].forEach(([l,v,s],i)=>{const r=3+i; sh.set(r,1,l,XS.label); sh.set(r,2,':',XS.colon); sh.set(r,3,v,s); if(i===2)sh.merge(r,3,r,5,s); sh.h(r,i===2?29.25:20.25);});
+      sh.h(6,20.25); sh.set(7,1,'OKUL SORUMLUSU',XS.label); sh.set(7,2,':',XS.colon); sh.set(7,3,(od.sorumlu&&od.sorumlu.name)||'',XS.person); sh.set(7,5,tel(od.sorumlu),XS.person); sh.h(7,20.25); sh.h(8,20.25);
+      const kat=(od.katlar||[]); const katN=Math.max(3,kat.length); for(let i=0;i<katN;i++){const r=9+i; if(!i){sh.set(r,1,'KAT SORUMLUSU',XS.label); sh.set(r,2,':',XS.colon);} sh.set(r,3,(kat[i]&&kat[i].name)||'',XS.person); sh.set(r,5,tel(kat[i]),XS.person); sh.h(r,20.25);}
+      let r=9+katN; sh.h(r,10.5); r++;
+      nos.forEach((no,bi)=>{const e=data[no]||{};
+        sh.set(r,0,'Sandık No. ',XS.thA); sh.set(r,1,'GÖREV',XS.thL); sh.merge(r,1,r,2,XS.thL); sh.set(r,3,bi?'':'ADI SOYADI',XS.th); sh.set(r,4,bi?'':'TC',XS.th); sh.set(r,5,bi?'':'CEP TEL',XS.th); sh.h(r,24.95); r++;
+        sh.set(r,0,Number(no)||no,XS.no); sh.merge(r,0,r+3,0,XS.no);
+        SANDIK_ROLES.forEach(([k,l],i)=>{const p=(e.roles||{})[k]; sh.set(r+i,1,l,XS.role); sh.merge(r+i,1,r+i,2,XS.role); sh.set(r+i,3,(p&&p.name)||'',XS.cell); sh.set(r+i,4,'',XS.cell); sh.set(r+i,5,tel(p),XS.cell); sh.h(r+i,24.95);});
+        r+=4; if(e.note){sh.set(r,0,'Not: '+e.note,XS.sub); sh.merge(r,0,r,5,XS.sub); r++;}});
+      const out=xlSheetXml(sh,[11.14,29.86,2.57,34.86,27.43,32.43],5,false); return {xml:out.xml,area:`$A$1:$F$${out.maxR}`};}
+    function sandikSummarySheet(rows){const sh=xlSheet(); sh.set(1,0,'KEPEZ İLÇESİ SANDIK KURULLARI ÖZETİ',XS.title); sh.merge(1,0,1,7,XS.title); sh.h(1,30); sh.set(2,0,'Hazırlanma: '+new Date().toLocaleString('tr-TR'),XS.sub); sh.merge(2,0,2,7,XS.sub);
+      const H=['Mahalle','Okul / Bina','Sandık','Kurulu Tam','Eksik Sandık','Dolu Görev','Okul Sorumlusu','Kat Sorumlusu']; H.forEach((h,c)=>sh.set(4,c,h,XS.sumH)); sh.h(4,30);
+      rows.forEach((row,i)=>{row.forEach((v,c)=>sh.set(5+i,c,v,c?XS.sumC:XS.role)); sh.h(5+i,20);});
+      const t=rows.reduce((a,r)=>a.map((v,i)=>i?v+(Number(r[i])||0):v),['TOPLAM',0,0,0,0,0,0,0]); t.forEach((v,c)=>sh.set(5+rows.length,c,v,XS.sumT)); sh.h(5+rows.length,22);
+      const out=xlSheetXml(sh,[22,44,9,11,12,11,15,14],7,true); return {xml:out.xml,area:`$A$1:$H$${out.maxR}`};}
+    async function exportSandikXlsx(byHood,nosByHood,file){const up=v=>String(v||'').trim().toLocaleUpperCase('tr-TR'); const sheets=[], summary=[], used=new Set();
       const hoods=Object.keys({...byHood,...nosByHood}).filter(isKepezNeighborhood).sort((a,b)=>a.localeCompare(b,'tr'));
-      const summary=[['KEPEZ İLÇESİ SANDIK KURULLARI ÖZETİ'],[`Hazırlanma: ${new Date().toLocaleString('tr-TR')}`],[],['Mahalle','Sandık Sayısı','Kurulu Tam','Eksik Sandık','Dolu Görev','Toplam Görev','Okul Sorumlusu','Kat Sorumlusu']];
-      const used=new Set();
-      hoods.forEach(h=>{const data=byHood[h]||{}; const nos=[...new Set([...(nosByHood[h]||[]).map(x=>String(x[0])),...Object.keys(data).filter(k=>k!=='_okullar')])].sort((a,b)=>Number(a)-Number(b)); const ok=data._okullar||{};
-        const groups=new Map(); Object.keys(ok).forEach(o=>groups.set(o,[])); nos.forEach(no=>{const b=up(data[no]&&data[no].bina)||'(OKUL/BİNA GİRİLMEMİŞ)'; if(!groups.has(b))groups.set(b,[]); groups.get(b).push(no);});
-        const rows=[['KEPEZ İLÇESİ OKUL/BİNA ESASLI SANDIK TAKİP FORMU'],['İLÇE ADI','KEPEZ'],['MAHALLE',hoodShort(h)],[]]; let done=0, filledRoles=0;
-        [...groups.entries()].sort((a,b)=>a[0].startsWith('(')-b[0].startsWith('(')||a[0].localeCompare(b[0],'tr')).forEach(([o,list])=>{const od=ok[o]||{};
-          rows.push(['OKUL',o]); if(!o.startsWith('(')){rows.push(['OKUL SORUMLUSU',...P(od.sorumlu)]); (od.katlar&&od.katlar.length?od.katlar:[null]).forEach((k,i)=>rows.push([i?'':'KAT SORUMLUSU',...P(k)]));}
-          rows.push([]); rows.push(['Sandık No','Görev','Ad Soyad','TC','Cep Tel']);
-          list.forEach(no=>{const e=data[no]||{}; let n=0; SANDIK_ROLES.forEach(([k,l],i)=>{const p=(e.roles||{})[k]; if(p&&p.name)n++; rows.push([i?'':Number(no),l,p&&p.name||'','',p&&p.phone?fmtPhone(p.phone):''])}); if(e.note)rows.push(['','Not',e.note]); filledRoles+=n; if(n===4)done++;});
-          rows.push([]);});
-        const ws=XLSX.utils.aoa_to_sheet(rows); ws['!cols']=[{wch:18},{wch:30},{wch:30},{wch:14},{wch:16}];
-        let name=hoodShort(h).replace(/[\[\]:*?\/\\]/g,' ').slice(0,31); while(used.has(name))name=name.slice(0,28)+'_'+used.size; used.add(name); XLSX.utils.book_append_sheet(wb,ws,name);
-        const okulS=Object.values(ok).filter(x=>x.sorumlu&&x.sorumlu.name).length, katS=Object.values(ok).reduce((a,x)=>a+(x.katlar||[]).length,0);
-        summary.push([hoodShort(h),nos.length,done,nos.length-done,filledRoles,nos.length*4,okulS,katS]);});
-      const tot=summary.slice(4).reduce((a,r)=>a.map((v,i)=>i?v+(r[i]||0):v),['TOPLAM',0,0,0,0,0,0,0]); summary.push([],tot);
-      const s=XLSX.utils.aoa_to_sheet(summary); s['!cols']=[{wch:24},{wch:13},{wch:11},{wch:13},{wch:11},{wch:13},{wch:15},{wch:14}];
-      wb.SheetNames.unshift('ÖZET'); wb.Sheets['ÖZET']=s; XLSX.writeFile(wb,file);}
+      hoods.forEach(h=>{const data=byHood[h]||{}; const ok=data._okullar||{}; const nos=[...new Set([...(nosByHood[h]||[]).map(x=>String(x[0])),...Object.keys(data).filter(k=>k!=='_okullar')])].sort((a,b)=>Number(a)-Number(b));
+        const groups=new Map(); Object.keys(ok).forEach(o=>groups.set(o,[])); nos.forEach(no=>{const b=up(data[no]&&data[no].bina); if(!groups.has(b))groups.set(b,[]); groups.get(b).push(no);});
+        const ordered=[...groups.entries()].filter(([o,l])=>o||l.length).sort((a,b)=>(!a[0])-(!b[0])||a[0].localeCompare(b[0],'tr'));
+        ordered.forEach(([o,list],i)=>{const od=ok[o]||{}; let name=(hoodShort(h)+(i?String(i):'')).replace(/[\[\]:*?\/\\]/g,' ').slice(0,31); while(used.has(name))name=name.slice(0,28)+'_'+used.size; used.add(name);
+          const sh=sandikFormSheet(h,o,od,list,data); sheets.push({name,...sh});
+          let done=0, filled=0; list.forEach(no=>{const n=SANDIK_ROLES.filter(([k])=>((data[no]||{}).roles||{})[k]&&data[no].roles[k].name).length; filled+=n; if(n===4)done++;});
+          summary.push([hoodShort(h),o||'(Okul/bina girilmemiş)',list.length,done,list.length-done,filled,od.sorumlu&&od.sorumlu.name?1:0,(od.katlar||[]).length]);});});
+      if(!sheets.length){toast('Aktarılacak sandık bulunamadı.'); return;}
+      const s=sandikSummarySheet(summary); sheets.push({name:'ÖZET',...s});
+      const blob=xlWorkbook(sheets); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=file; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),4000);}
     function bindSandikEditor(form,hood){const no=form.dataset.sandikNo; const x=sandikMap().by.get(no); const own=new Set((x?x.members:[]).map(m=>m.id)); const pool=state.members.filter(m=>m.neighborhood===hood||own.has(m.id));
       form.querySelectorAll('.sc-role').forEach(fs=>bindPersonSuggest(fs,pool,own));
       form.querySelector('[data-sandik-close]').onclick=()=>{state.sandikSel=null; renderSandik();};
