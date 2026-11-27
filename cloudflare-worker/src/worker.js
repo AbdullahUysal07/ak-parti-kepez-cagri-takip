@@ -935,9 +935,23 @@ async function handle(request, env) {
     if (!hood || !no) return json({ error: 'bad_request' }, 400);
     if (!userCanSeeHood(user, hood)) return json({ error: 'forbidden' }, 403);
     const data = await getJson(env, sandikKey(hood), {});
-    const person = p => p && (p.name || p.phone) ? { name: clean(p.name, 120).toLocaleUpperCase('tr-TR'), phone: cleanPhone(p.phone), memberId: clean(p.memberId, 40) } : null;
+    const person = p => p && (p.name || p.phone) ? { name: clean(p.name, 120).toLocaleUpperCase('tr-TR'), phone: cleanPhone(p.phone), memberId: clean(p.memberId, 40), memberHood: clean(p.memberHood, 80) } : null;
     const roles = {};
     for (const r of SANDIK_ROLES) { const v = person(b.roles && b.roles[r]); if (v) roles[r] = v; }
+    // Sandık kuruluna yalnızca üyeler yazılabilir: kişi güncel üye listesinde (kendi mahallesinin kaydında) bulunmalı
+    const index = await getJson(env, K.memberIndex, null);
+    if (index) {
+      const shardCache = new Map();
+      const notMember = [];
+      for (const [r, v] of Object.entries(roles)) {
+        const h = v.memberHood || hood;
+        if (!shardCache.has(h)) shardCache.set(h, new Map((await getJson(env, memberHoodKey(index.version, h), [])).map(x => [x[0], x[1]])));
+        const official = v.memberId && shardCache.get(h).get(v.memberId);
+        if (!official) notMember.push(r);
+        else v.name = clean(official, 120); // adı üye kaydındaki haliyle yaz
+      }
+      if (notMember.length) return json({ error: 'not_member', roles: notMember }, 400);
+    }
     const entry = { roles, bina: clean(b.bina, 160), note: clean(b.note, 500), updatedAt: new Date().toISOString(), updatedBy: user.name };
     if (!Object.keys(roles).length && !entry.bina && !entry.note) delete data[no]; else data[no] = entry;
     await putJson(env, sandikKey(hood), data);
