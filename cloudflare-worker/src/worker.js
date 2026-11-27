@@ -167,6 +167,8 @@ const USER_TITLES = { hasan_demir: 'İlçe Başkanı', ilkaygunesss: 'İlçe Te�
 const ANALYSIS_USERS = ['ilkaygunesss', 'huseyin_ilkay_gunes'];
 const REF_SHARDS = 64;
 const MAX_VISIT_IMAGES = 5;
+const sandikKey = hood => `__sandik__:${hood}`;
+const SANDIK_ROLES = ['asil', 'yedek', 'musahitAsil', 'musahitYedek'];
 const TOKEN_DAYS = 120;
 const K = {
   secret: '__server_secret__',
@@ -266,8 +268,12 @@ function effectiveUser(u, o, org) {
   if (!GROUP_LABELS[group]) group = baseRole === 'neighborhood' ? 'mahalle' : 'yonetim';
   const role = group === 'mahalle' ? 'neighborhood' : 'management';
   const admin = ADMIN_USERNAMES.includes(u.username);
-  // Teşkilat listesi henüz yüklenmediyse yönetim eskisi gibi tüm mahalleleri görür
-  const allHoods = admin || group === 'yurutme' || group === 'il_koord' || (role === 'management' && !org && !o.group);
+  // Tüm mahalleler: yöneticiler, teşkilat listesinde "allHoods" olanlar (İlçe Başkanı, Kadın/Gençlik Kolları Başkanı)
+  // ve panelden "tüm mahalleler" verilenler. Diğer herkes yalnızca sorumlu olduğu mahalleleri görür.
+  const orgAll = org && Array.isArray(org.allHoods) ? org.allHoods.includes(u.username) : null;
+  const allHoods = admin || o.allHoods === true
+    || (o.allHoods !== false && (orgAll === true || (orgAll === null && (group === 'yurutme' || group === 'il_koord'))))
+    || (role === 'management' && !org && !o.group);
   const assigned = o.neighborhoods && o.neighborhoods.length ? o.neighborhoods
     : role === 'management' ? ((org && org.access && org.access[u.username]) || []) : (u.neighborhoods || []);
   return {
@@ -333,7 +339,7 @@ const isAdminUser = u => !!u && ADMIN_USERNAMES.includes(u.username);
 // --------------------------- Üyeler ---------------------------------------
 // Üye satırı biçimi (yer tasarrufu için dizi): [id, ad soyad, telefon, adres, üyelik tarihi, referanslar(dizi)]
 function rowToMember(row, hood) {
-  return { id: row[0], name: row[1], phone: row[2], address: row[3], joined: row[4], refs: row[5] || [], bd: row[6] || '', neighborhood: hood };
+  return { id: row[0], name: row[1], phone: row[2], address: row[3], joined: row[4], refs: row[5] || [], bd: row[6] || '', sandik: row[7] || '', neighborhood: hood };
 }
 
 async function membersResponse(env, user, have) {
@@ -884,6 +890,12 @@ async function handle(request, env) {
     const previous = await getJson(env, K.memberIndex, null);
     const index = { version: b.version, nameIndex: !!b.nameIndex, bdIndex: !!b.bdIndex, updatedAt: new Date().toISOString(), updatedBy: user.name, total: Number(b.total) || 0, hoods: b.hoods.map(h => ({ name: clean(h.name, 80), count: Number(h.count) || 0 })) };
     await putJson(env, K.memberIndex, index);
+    // Sandık → mahalle eşleşmesi (tüm liste üzerinden, yükleyen yöneticinin tarayıcısında hesaplanır)
+    if (b.sandikHoods && typeof b.sandikHoods === 'object') {
+      const map = {};
+      for (const [no, h] of Object.entries(b.sandikHoods)) { const n = String(no).replace(/\D/g, '').slice(0, 6); if (n) map[n] = [clean(h && h[0], 80), Number(h && h[1]) || 0]; }
+      await putJson(env, '__sandik_map__', map);
+    }
     let removed = 0;
     if (previous && previous.version && previous.version !== b.version) {
       removed += await deleteByPrefix(env, `__members__:${previous.version}:`);
@@ -906,6 +918,38 @@ async function handle(request, env) {
   if (path === '/admin/birthday-push' && method === 'POST') {
     const denied = requireAdmin(); if (denied) return denied;
     return json({ ok: true, ...(await birthdayPush(env, { force: true, onlyUser: url.searchParams.get('me') ? user.username : '' })) });
+  }
+
+  // ---- Sandık kurulları (mahalle bazında: __sandik__:<mahalle>) ----
+  if (path === '/sandik' && method === 'GET') {
+    const hood = clean(url.searchParams.get('hood'), 80);
+    if (!hood || !userCanSeeHood(user, hood)) return json({ error: 'forbidden' }, 403);
+    const map = await getJson(env, '__sandik_map__', null);
+    const nos = map ? Object.entries(map).filter(([, v]) => v[0] === hood).map(([no, v]) => [no, v[1]]) : null;
+    return json({ ok: true, hood, data: await getJson(env, sandikKey(hood), {}), nos });
+  }
+  if (path === '/sandik' && method === 'PUT') {
+    const b = await body();
+    const hood = clean(b.hood, 80);
+    const no = String(b.sandik || '').replace(/\D/g, '').slice(0, 6);
+    if (!hood || !no) return json({ error: 'bad_request' }, 400);
+    if (!userCanSeeHood(user, hood)) return json({ error: 'forbidden' }, 403);
+    const data = await getJson(env, sandikKey(hood), {});
+    const person = p => p && (p.name || p.phone) ? { name: clean(p.name, 120).toLocaleUpperCase('tr-TR'), phone: cleanPhone(p.phone), memberId: clean(p.memberId, 40) } : null;
+    const roles = {};
+    for (const r of SANDIK_ROLES) { const v = person(b.roles && b.roles[r]); if (v) roles[r] = v; }
+    const entry = { roles, bina: clean(b.bina, 160), note: clean(b.note, 500), updatedAt: new Date().toISOString(), updatedBy: user.name };
+    if (!Object.keys(roles).length && !entry.bina && !entry.note) delete data[no]; else data[no] = entry;
+    await putJson(env, sandikKey(hood), data);
+    return json({ ok: true, hood, data });
+  }
+  if (path === '/sandik/summary' && method === 'GET') {
+    const index = await getJson(env, K.memberIndex, null);
+    const hoods = ((index && index.hoods) || []).map(h => h.name).filter(h => userCanSeeHood(user, h));
+    const all = url.searchParams.get('full') === '1' && admin;
+    const out = {};
+    await Promise.all(hoods.map(async h => { const d = await getJson(env, sandikKey(h), {}); out[h] = all ? d : Object.fromEntries(Object.entries(d).map(([k, v]) => [k, Object.keys(v.roles || {})])); }));
+    return json({ ok: true, hoods: out });
   }
 
   // ---- Harita ----
@@ -1104,11 +1148,18 @@ async function handle(request, env) {
     const group = GROUP_LABELS[b.group] ? b.group : (b.role === 'neighborhood' ? 'mahalle' : 'yonetim');
     const role = group === 'mahalle' ? 'neighborhood' : 'management';
     const hoodsIn = Array.isArray(b.neighborhoods) ? b.neighborhoods : [b.neighborhood];
+    const wantedHoods = [...new Set(hoodsIn.map(h => clean(h, 80)).filter(Boolean))].slice(0, 80);
+    const orgNow = await getJson(env, K.org, null);
+    const orgHoods = (orgNow && orgNow.access && orgNow.access[username]) || [];
+    // Teşkilat listesindeki sorumluluklarla aynıysa ayrıca kaydetme (liste güncellenince kendiliğinden değişsin)
+    const sameAsOrg = role === 'management' && wantedHoods.length === orgHoods.length && wantedHoods.every(h => orgHoods.includes(h));
+    const orgAll = !!(orgNow && Array.isArray(orgNow.allHoods) && orgNow.allHoods.includes(username));
     const overrides = await getJson(env, K.overrides, {});
     overrides[username] = {
       role,
       group,
-      neighborhoods: group === 'yurutme' || group === 'il_koord' ? [] : hoodsIn.map(h => clean(h, 80)).filter(Boolean).slice(0, 80),
+      neighborhoods: sameAsOrg ? [] : wantedHoods,
+      allHoods: b.allHoods === true ? true : (b.allHoods === false && orgAll ? false : undefined),
       disabled: !!b.disabled,
       loginUsername: normalizeUser(b.loginUsername || username) || username,
       name: clean(b.name, 120),
