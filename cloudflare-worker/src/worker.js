@@ -943,13 +943,32 @@ async function handle(request, env) {
     await putJson(env, sandikKey(hood), data);
     return json({ ok: true, hood, data });
   }
+  // Okul/bina görevlileri: okul sorumlusu ve kat sorumluları (mahalle kaydında "_okullar" altında)
+  if (path === '/sandik/okul' && method === 'PUT') {
+    const b = await body();
+    const hood = clean(b.hood, 80);
+    const okul = clean(b.okul, 160).toLocaleUpperCase('tr-TR');
+    if (!hood || !okul) return json({ error: 'bad_request' }, 400);
+    if (!userCanSeeHood(user, hood)) return json({ error: 'forbidden' }, 403);
+    const data = await getJson(env, sandikKey(hood), {});
+    const okullar = data._okullar || {};
+    const person = p => p && (p.name || p.phone) ? { name: clean(p.name, 120).toLocaleUpperCase('tr-TR'), phone: cleanPhone(p.phone), memberId: clean(p.memberId, 40) } : null;
+    const oldName = clean(b.oldOkul, 160).toLocaleUpperCase('tr-TR');
+    if (oldName && oldName !== okul) delete okullar[oldName];
+    if (b.remove) delete okullar[okul];
+    else okullar[okul] = { sorumlu: person(b.sorumlu), katlar: (Array.isArray(b.katlar) ? b.katlar : []).map(person).filter(Boolean).slice(0, 20), updatedAt: new Date().toISOString(), updatedBy: user.name };
+    data._okullar = okullar;
+    await putJson(env, sandikKey(hood), data);
+    return json({ ok: true, hood, data });
+  }
   if (path === '/sandik/summary' && method === 'GET') {
     const index = await getJson(env, K.memberIndex, null);
     const hoods = ((index && index.hoods) || []).map(h => h.name).filter(h => userCanSeeHood(user, h));
     const all = url.searchParams.get('full') === '1' && admin;
     const out = {};
-    await Promise.all(hoods.map(async h => { const d = await getJson(env, sandikKey(h), {}); out[h] = all ? d : Object.fromEntries(Object.entries(d).map(([k, v]) => [k, Object.keys(v.roles || {})])); }));
-    return json({ ok: true, hoods: out });
+    await Promise.all(hoods.map(async h => { const d = await getJson(env, sandikKey(h), {}); out[h] = all ? d : Object.fromEntries(Object.entries(d).filter(([k]) => k !== '_okullar').map(([k, v]) => [k, Object.keys(v.roles || {})])); }));
+    const map = all ? await getJson(env, '__sandik_map__', {}) : undefined;
+    return json({ ok: true, hoods: out, map });
   }
 
   // ---- Harita ----
