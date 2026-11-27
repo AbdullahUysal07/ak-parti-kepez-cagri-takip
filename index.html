@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="app-version" content="2026.11.27-2">
+  <meta name="app-version" content="2026.11.27-3">
   <meta name="apple-mobile-web-app-title" content="Kepez Çağrı">
   <meta name="application-name" content="Kepez Çağrı">
   <meta name="theme-color" content="#123c7c">
@@ -673,6 +673,22 @@
     @media (max-width:700px){.sc-person{grid-template-columns:1fr}.sandik-shell .admin-section-head select{max-width:none;width:100%}.sandik-grid{grid-template-columns:1fr}}
     .all-hoods-row{display:flex;align-items:center;gap:8px;margin:6px 0;font-weight:600}
     .all-hoods-row input{width:18px;height:18px}
+    .sandik-h{font-size:1rem;margin:16px 0 8px;display:flex;align-items:baseline;gap:8px}
+    .okul-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;align-items:start}
+    .okul-card{display:block;text-align:left;background:#fff!important;color:#0f172a!important;border:1px solid #e5e7eb;border-top:4px solid #ef4444;border-radius:14px;padding:12px;box-shadow:none!important;font:inherit;min-height:0;cursor:pointer;width:100%}
+    .okul-card.part{border-top-color:#f59e0b}.okul-card.ok{border-top-color:#16a34a}
+    .okul-card strong{display:block;margin-bottom:2px}
+    .okul-card .sc-meta{display:block}
+    .okul-card ul{list-style:none;margin:6px 0 0;padding:0;font-size:.84rem}
+    .okul-card li{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-top:1px dashed #f1f5f9}
+    .okul-card li span{color:#64748b;white-space:nowrap}.okul-card li b{text-align:right}
+    .okul-edit{grid-column:1/-1;cursor:default;border-top-color:#0b4ea2}
+    .okul-add{min-height:64px;border:1.5px dashed #93c5fd!important;background:#f8fbff!important;color:#0b4ea2!important;border-radius:14px;font-weight:800;box-shadow:none!important}
+    .kat-row .sc-person{grid-template-columns:1.4fr 1fr auto;margin-bottom:6px}
+    .kat-del{min-height:40px;width:40px;padding:0;border-radius:10px;background:#fef2f2!important;color:#b91c1c!important;box-shadow:none!important;font-size:1.2rem}
+    .kat-add{min-height:36px;font-size:.85rem;margin-top:2px}
+    .sandik-export-all{min-height:40px;padding:0 14px;border-radius:10px;font-weight:800;background:#15803d!important;color:#fff!important}
+    @media (max-width:700px){.kat-row .sc-person{grid-template-columns:1fr auto}.kat-row .sc-person>input[name=phone]{grid-column:1}.okul-grid{grid-template-columns:1fr}.sandik-export-all{width:100%}}
   </style>
 </head>
 <body class="locked">
@@ -1469,14 +1485,17 @@
       const shown=list.filter(x=>f==='all'||(f==='missing'?sandikDone(data[x.no])<4:sandikDone(data[x.no])===4));
       $('detail').innerHTML=`<div class="admin-shell sandik-shell"><div class="admin-section-head"><h2>Sandık Kurulları</h2>${hoods.length>1?`<select id="sandikHood">${hoods.map(h=>`<option value="${esc(h)}" ${h===hood?'selected':''}>${esc(h)}</option>`).join('')}</select>`:`<span class="small">${esc(hood)}</span>`}</div>
         <div class="sandik-stats"><div><b>${list.length}</b><span>sandık</span></div><div><b>${done}</b><span>kurulu tamam</span></div><div><b>${people}/${filled}</b><span>görev dolu</span></div><div class="sandik-prog"><i style="width:${filled?Math.round(people/filled*100):0}%"></i></div></div>
-        <div class="sandik-tools"><div class="seg"><button type="button" class="${f==='all'?'active':''}" data-sandik-filter="all">Tümü</button><button type="button" class="${f==='missing'?'active':''}" data-sandik-filter="missing">Eksik</button><button type="button" class="${f==='done'?'active':''}" data-sandik-filter="done">Tamam</button></div><button type="button" class="secondary" id="sandikCsv">Excel'e (CSV) indir</button>${isAdmin()?'<button type="button" class="secondary" id="sandikCsvAll">Tüm Kepez (CSV)</button>':''}</div>
+        <div class="sandik-tools"><div class="seg"><button type="button" class="${f==='all'?'active':''}" data-sandik-filter="all">Tümü</button><button type="button" class="${f==='missing'?'active':''}" data-sandik-filter="missing">Eksik</button><button type="button" class="${f==='done'?'active':''}" data-sandik-filter="done">Tamam</button></div><button type="button" class="secondary" id="sandikCsv">Bu mahalleyi Excel'e indir</button>${isAdmin()?'<button type="button" class="sandik-export-all" id="sandikCsvAll">📥 Tüm sandık kurullarını Excel\'e çek (mahalle mahalle)</button>':''}</div>
         <p class="small">Sandık numaraları AKBİS'teki güncel seçmen kaydından gelir. Her sandık için asil ve yedek kurul üyesi ile asil ve yedek müşahit belirleyin. İsim yazarken mahalle üyelerinden öneri çıkar; o sandıkta oy kullananlar önce gelir.</p>
+        ${okulSection(hood,data,list)}
+        <h3 class="sandik-h">Sandıklar</h3>
         <div class="sandik-grid">${shown.map(x=>sandikCard(x,data[x.no],hood,sel===x.no)).join('')||'<div class="empty small-empty">Bu filtrede sandık yok.</div>'}</div></div>`;
       const hs=$('sandikHood'); if(hs)hs.onchange=()=>{state.sandikHood=hs.value; state.sandikSel=null; renderSandik();};
       document.querySelectorAll('[data-sandik-filter]').forEach(b=>b.onclick=()=>{state.sandikFilter=b.dataset.sandikFilter; renderSandik();});
-      $('sandikCsv').onclick=()=>exportSandikCsv({[hood]:data},`sandik-kurulu-${hoodShort(hood).toLocaleLowerCase('tr-TR').replace(/\s+/g,'-')}.csv`);
-      const all=$('sandikCsvAll'); if(all)all.onclick=async()=>{try{const d=await api('/sandik/summary?full=1'); exportSandikCsv(d.hoods||{},'sandik-kurullari-kepez.csv');}catch(e){toast('Liste alınamadı.');}};
+      $('sandikCsv').onclick=()=>exportSandikXlsx({[hood]:data},{[hood]:list.map(x=>[x.no,x.total||x.members.length])},`Sandik-Kurulu-${hoodShort(hood).replace(/\s+/g,'-')}.xlsx`);
+      const all=$('sandikCsvAll'); if(all)all.onclick=()=>exportAllSandik(all);
       const ed=document.querySelector('.sandik-edit'); if(ed)bindSandikEditor(ed,hood);
+      const oe=document.querySelector('.okul-edit'); if(oe)bindOkulEditor(oe,hood,list);
     }
     function sandikCard(x,entry,hood,open){const n=sandikDone(entry); const okuls=OKUL_2024[hood]||[];
       if(!open)return `<button type="button" class="sandik-card ${n===4?'ok':n?'part':''}" data-sandik-open="${esc(x.no)}"><div class="sc-top"><strong>Sandık ${esc(x.no)}</strong><span class="sc-badge">${n===4?'Tamam':n+'/4'}</span></div><div class="sc-meta">${x.total||x.members.length} üye oy kullanıyor${entry&&entry.bina?' • '+esc(entry.bina):''}</div><ul>${SANDIK_ROLES.map(([k,l])=>{const p=entry&&entry.roles&&entry.roles[k]; return `<li><span>${esc(l.replace('Sandık Kurulu Üyesi','Kurul'))}</span><b class="${p?'':'muted'}">${p?esc(p.name):'—'}</b></li>`;}).join('')}</ul></button>`;
@@ -1486,20 +1505,60 @@
         <label class="sc-field">Not<input name="note" value="${esc((entry&&entry.note)||'')}" placeholder="İsteğe bağlı" autocomplete="off"></label>
         ${entry&&entry.updatedBy?`<p class="small">Son güncelleme: ${esc(entry.updatedBy)} • ${esc(fmtDate(entry.updatedAt))}</p>`:''}
         <div class="actions"><button type="submit">Kaydet</button><button type="button" class="secondary" data-sandik-close>Kapat</button></div></form>`;}
-    function bindSandikEditor(form,hood){const no=form.dataset.sandikNo; const x=sandikMap().by.get(no); const own=new Set((x?x.members:[]).map(m=>m.id)); const pool=state.members.filter(m=>m.neighborhood===hood||own.has(m.id));
-      form.querySelectorAll('.sc-role').forEach(fs=>{const name=fs.querySelector('[name=name]'), phone=fs.querySelector('[name=phone]'), mid=fs.querySelector('[name=memberId]'), box=fs.querySelector('.sc-suggest');
+    function bindPersonSuggest(fs,pool,own){const name=fs.querySelector('[name=name]'), phone=fs.querySelector('[name=phone]'), mid=fs.querySelector('[name=memberId]'), box=fs.querySelector('.sc-suggest'); if(!name||name.dataset.bound)return; name.dataset.bound='1';
         name.addEventListener('input',()=>{mid.value=''; const q=norm(name.value); if(q.length<2){box.hidden=true; return;} const hits=pool.filter(m=>norm(m.name).includes(q)).sort((a,b)=>(own.has(b.id)-own.has(a.id))||a.name.localeCompare(b.name,'tr')).slice(0,8); box.innerHTML=hits.map(m=>`<button type="button" data-pick="${esc(m.id)}"><b>${esc(m.name)}</b><span>${own.has(m.id)?'Bu sandıkta • ':m.sandik?'Sandık '+esc(m.sandik)+' • ':''}${m.phone?esc(fmtPhone(m.phone)):'Telefon yok'}</span></button>`).join(''); box.hidden=!hits.length;});
         box.addEventListener('mousedown',e=>{const b=e.target.closest('[data-pick]'); if(!b)return; e.preventDefault(); const m=pool.find(z=>z.id===b.dataset.pick); if(!m)return; name.value=m.name; mid.value=m.id; if(m.phone)phone.value=fmtPhone(m.phone); box.hidden=true;});
-        name.addEventListener('blur',()=>setTimeout(()=>{box.hidden=true;},150));});
+        name.addEventListener('blur',()=>setTimeout(()=>{box.hidden=true;},150));}
+    function personRow(p,extra=''){p=p||{}; return `<div class="sc-person"><div class="sc-name"><input name="name" value="${esc(p.name||'')}" placeholder="Ad soyad" autocomplete="off"><input type="hidden" name="memberId" value="${esc(p.memberId||'')}"><div class="sc-suggest" hidden></div></div><input name="phone" value="${esc(p.phone?fmtPhone(p.phone):'')}" placeholder="Telefon" inputmode="tel" autocomplete="off">${extra}</div>`;}
+    function readPerson(el){const n=el.querySelector('[name=name]').value.trim(), ph=el.querySelector('[name=phone]').value.trim(); return n||ph?{name:n,phone:ph,memberId:el.querySelector('[name=memberId]').value}:null;}
+    // Okul/bina listesi: sandıklara yazılan okul adları + kayıtlı okul görevlileri
+    function okulGroups(data,list){const up=v=>String(v||'').trim().toLocaleUpperCase('tr-TR'); const map=new Map(); Object.keys(data._okullar||{}).forEach(o=>map.set(o,[])); list.forEach(x=>{const b=up(data[x.no]&&data[x.no].bina); if(!b)return; if(!map.has(b))map.set(b,[]); map.get(b).push(x.no);}); return [...map.entries()].sort((a,b)=>a[0].localeCompare(b[0],'tr'));}
+    function okulSection(hood,data,list){const groups=okulGroups(data,list); const ok=data._okullar||{}; const sel=state.okulSel;
+      const cards=groups.map(([o,nos])=>{const d=ok[o]||{}; if(sel===o)return okulEditor(hood,o,d,nos); const k=(d.katlar||[]).length; const full=d.sorumlu&&d.sorumlu.name&&k; return `<button type="button" class="okul-card ${full?'ok':d.sorumlu||k?'part':''}" data-okul-open="${esc(o)}"><strong>🏫 ${esc(o)}</strong><span class="sc-meta">${nos.length?`Sandık: ${nos.map(esc).join(', ')}`:'Henüz sandık bağlanmadı'}</span><ul><li><span>Okul sorumlusu</span><b class="${d.sorumlu?'':'muted'}">${d.sorumlu?esc(d.sorumlu.name):'—'}</b></li><li><span>Kat sorumluları</span><b class="${k?'':'muted'}">${k?(d.katlar.map(p=>esc(p.name)).join(', ')):'—'}</b></li></ul></button>`;}).join('');
+      return `<h3 class="sandik-h">Okullar / Binalar <span class="small">okul sorumlusu ve kat sorumluları</span></h3><div class="okul-grid">${cards}${sel==='__new__'?okulEditor(hood,'',{},[]):`<button type="button" class="okul-add" data-okul-open="__new__">+ Okul / bina ekle</button>`}</div>${groups.length?'':'<p class="small">İpucu: Sandık kartlarına okul/bina adı yazdığınızda okul burada kendiliğinden listelenir.</p>'}`;}
+    function okulEditor(hood,o,d,nos){const okuls=OKUL_2024[hood]||[]; return `<form class="okul-card okul-edit" data-okul="${esc(o)}"><label class="sc-field">Okul / bina adı<input name="okul" list="okulList2" value="${esc(o)}" placeholder="Okul veya bina adı" autocomplete="off" required><datalist id="okulList2">${okuls.map(x=>`<option value="${esc(x)}">`).join('')}</datalist></label>${nos.length?`<p class="small">Bu okuldaki sandıklar: ${nos.map(esc).join(', ')}</p>`:''}
+        <fieldset class="sc-role" data-okul-role="sorumlu"><legend>Okul Sorumlusu</legend>${personRow(d.sorumlu)}</fieldset>
+        <fieldset class="sc-role kat-list"><legend>Kat Sorumluları</legend>${(d.katlar&&d.katlar.length?d.katlar:[null]).map(p=>`<div class="kat-row">${personRow(p,'<button type="button" class="kat-del" data-kat-del title="Kaldır">×</button>')}</div>`).join('')}<button type="button" class="secondary kat-add" data-kat-add>+ Kat sorumlusu ekle</button></fieldset>
+        <div class="actions"><button type="submit">Kaydet</button><button type="button" class="secondary" data-okul-close>Kapat</button>${o&&(state.sandikData[hood]._okullar||{})[o]?'<button type="button" class="danger" data-okul-remove>Görevlileri sil</button>':''}</div></form>`;}
+    function bindOkulEditor(form,hood,list){const pool=state.members.filter(m=>m.neighborhood===hood); const own=new Set(); const bindAll=()=>form.querySelectorAll('.sc-person').forEach(el=>bindPersonSuggest(el,pool,own)); bindAll();
+      form.addEventListener('click',e=>{if(e.target.closest('[data-kat-add]')){const r=document.createElement('div'); r.className='kat-row'; r.innerHTML=personRow(null,'<button type="button" class="kat-del" data-kat-del title="Kaldır">×</button>'); form.querySelector('[data-kat-add]').before(r); bindAll(); r.querySelector('[name=name]').focus();} const del=e.target.closest('[data-kat-del]'); if(del){del.closest('.kat-row').remove();} if(e.target.closest('[data-okul-close]')){state.okulSel=null; renderSandik();}});
+      const send=async payload=>{const d=await api('/sandik/okul',{method:'PUT',json:{hood,oldOkul:form.dataset.okul,...payload}}); state.sandikData[hood]=d.data; state.okulSel=null; renderSandik();};
+      const rm=form.querySelector('[data-okul-remove]'); if(rm)rm.onclick=async()=>{if(!confirm('Bu okulun görevlileri silinsin mi?'))return; try{await send({okul:form.dataset.okul,remove:true}); toast('Silindi.');}catch(e){toast('Silinemedi.');}};
+      form.onsubmit=async e=>{e.preventDefault(); const okul=form.okul.value.trim(); if(!okul){toast('Okul adı girin.'); return;} const sorumlu=readPerson(form.querySelector('[data-okul-role=sorumlu]')); const katlar=[...form.querySelectorAll('.kat-row')].map(readPerson).filter(Boolean); const all=[sorumlu,...katlar].filter(Boolean); if(all.some(p=>p.phone&&!phoneValid(p.phone))){toast('Telefon numaralarından biri hatalı görünüyor.'); return;} const bt=form.querySelector('button[type=submit]'); bt.disabled=true; try{await send({okul,sorumlu,katlar}); toast('Okul görevlileri kaydedildi.');}catch(err){bt.disabled=false; toast('Kaydedilemedi: '+(err.message||'hata'));}};
+      form.scrollIntoView({block:'nearest'}); }
+    $('detail').addEventListener('click',e=>{const o=e.target.closest('[data-okul-open]'); if(o){state.okulSel=o.dataset.okulOpen; state.sandikSel=null; renderSandik();}});
+    // Seçim öncesi: tüm sandık kurulları, her mahalle ayrı sayfa (2024 takip formu düzeninde)
+    async function exportAllSandik(btn){btn.disabled=true; const old=btn.textContent; btn.textContent='Hazırlanıyor…'; try{const d=await api('/sandik/summary?full=1'); const nos={}; Object.entries(d.map||{}).forEach(([no,[h,n]])=>{(nos[h]=nos[h]||[]).push([no,n]);}); const sm=sandikMap(); Object.keys(d.hoods||{}).forEach(h=>{if(!nos[h])nos[h]=(sm.byHood[h]||[]).map(x=>[x.no,x.members.length]);}); const t=new Date(); await exportSandikXlsx(d.hoods||{},nos,`Kepez-Sandik-Kurullari-${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}.xlsx`); toast('Excel dosyası indirildi.');}catch(e){toast('Liste alınamadı: '+(e.message||'hata'));}finally{btn.disabled=false; btn.textContent=old;}}
+    async function exportSandikXlsx(byHood,nosByHood,file){await loadScript(XLSX_URL); const wb=XLSX.utils.book_new(); const up=v=>String(v||'').trim().toLocaleUpperCase('tr-TR'); const P=p=>p&&p.name?['',p.name,'',p.phone?fmtPhone(p.phone):'']:['','','',''];
+      const hoods=Object.keys({...byHood,...nosByHood}).filter(isKepezNeighborhood).sort((a,b)=>a.localeCompare(b,'tr'));
+      const summary=[['KEPEZ İLÇESİ SANDIK KURULLARI ÖZETİ'],[`Hazırlanma: ${new Date().toLocaleString('tr-TR')}`],[],['Mahalle','Sandık Sayısı','Kurulu Tam','Eksik Sandık','Dolu Görev','Toplam Görev','Okul Sorumlusu','Kat Sorumlusu']];
+      const used=new Set();
+      hoods.forEach(h=>{const data=byHood[h]||{}; const nos=[...new Set([...(nosByHood[h]||[]).map(x=>String(x[0])),...Object.keys(data).filter(k=>k!=='_okullar')])].sort((a,b)=>Number(a)-Number(b)); const ok=data._okullar||{};
+        const groups=new Map(); Object.keys(ok).forEach(o=>groups.set(o,[])); nos.forEach(no=>{const b=up(data[no]&&data[no].bina)||'(OKUL/BİNA GİRİLMEMİŞ)'; if(!groups.has(b))groups.set(b,[]); groups.get(b).push(no);});
+        const rows=[['KEPEZ İLÇESİ OKUL/BİNA ESASLI SANDIK TAKİP FORMU'],['İLÇE ADI','KEPEZ'],['MAHALLE',hoodShort(h)],[]]; let done=0, filledRoles=0;
+        [...groups.entries()].sort((a,b)=>a[0].startsWith('(')-b[0].startsWith('(')||a[0].localeCompare(b[0],'tr')).forEach(([o,list])=>{const od=ok[o]||{};
+          rows.push(['OKUL',o]); if(!o.startsWith('(')){rows.push(['OKUL SORUMLUSU',...P(od.sorumlu)]); (od.katlar&&od.katlar.length?od.katlar:[null]).forEach((k,i)=>rows.push([i?'':'KAT SORUMLUSU',...P(k)]));}
+          rows.push([]); rows.push(['Sandık No','Görev','Ad Soyad','TC','Cep Tel']);
+          list.forEach(no=>{const e=data[no]||{}; let n=0; SANDIK_ROLES.forEach(([k,l],i)=>{const p=(e.roles||{})[k]; if(p&&p.name)n++; rows.push([i?'':Number(no),l,p&&p.name||'','',p&&p.phone?fmtPhone(p.phone):''])}); if(e.note)rows.push(['','Not',e.note]); filledRoles+=n; if(n===4)done++;});
+          rows.push([]);});
+        const ws=XLSX.utils.aoa_to_sheet(rows); ws['!cols']=[{wch:18},{wch:30},{wch:30},{wch:14},{wch:16}];
+        let name=hoodShort(h).replace(/[\[\]:*?\/\\]/g,' ').slice(0,31); while(used.has(name))name=name.slice(0,28)+'_'+used.size; used.add(name); XLSX.utils.book_append_sheet(wb,ws,name);
+        const okulS=Object.values(ok).filter(x=>x.sorumlu&&x.sorumlu.name).length, katS=Object.values(ok).reduce((a,x)=>a+(x.katlar||[]).length,0);
+        summary.push([hoodShort(h),nos.length,done,nos.length-done,filledRoles,nos.length*4,okulS,katS]);});
+      const tot=summary.slice(4).reduce((a,r)=>a.map((v,i)=>i?v+(r[i]||0):v),['TOPLAM',0,0,0,0,0,0,0]); summary.push([],tot);
+      const s=XLSX.utils.aoa_to_sheet(summary); s['!cols']=[{wch:24},{wch:13},{wch:11},{wch:13},{wch:11},{wch:13},{wch:15},{wch:14}];
+      wb.SheetNames.unshift('ÖZET'); wb.Sheets['ÖZET']=s; XLSX.writeFile(wb,file);}
+    function bindSandikEditor(form,hood){const no=form.dataset.sandikNo; const x=sandikMap().by.get(no); const own=new Set((x?x.members:[]).map(m=>m.id)); const pool=state.members.filter(m=>m.neighborhood===hood||own.has(m.id));
+      form.querySelectorAll('.sc-role').forEach(fs=>bindPersonSuggest(fs,pool,own));
       form.querySelector('[data-sandik-close]').onclick=()=>{state.sandikSel=null; renderSandik();};
       form.onsubmit=async e=>{e.preventDefault(); const roles={}; let bad=''; form.querySelectorAll('.sc-role').forEach(fs=>{const n=fs.querySelector('[name=name]').value.trim(), ph=fs.querySelector('[name=phone]').value.trim(); if(ph&&!phoneValid(ph))bad=fs.querySelector('legend').textContent; if(n||ph)roles[fs.dataset.role]={name:n,phone:ph,memberId:fs.querySelector('[name=memberId]').value};}); if(bad){toast(bad+': telefon numarası hatalı görünüyor.'); return;}
         const names=Object.values(roles).map(r=>norm(r.name)).filter(Boolean); if(new Set(names).size<names.length){toast('Aynı kişi bu sandıkta birden fazla göreve yazılmış.'); return;}
-        const data=(state.sandikData||{})[hood]||{}; const dup=Object.entries(data).filter(([k])=>k!==no).flatMap(([k,v])=>Object.values(v.roles||{}).filter(r=>names.includes(norm(r.name))).map(r=>`${r.name} (Sandık ${k})`)); if(dup.length&&!confirm(`Bu kişi(ler) başka sandıkta da görevli: ${dup.join(', ')}. Yine de kaydedilsin mi?`))return;
+        const data=(state.sandikData||{})[hood]||{}; const dup=Object.entries(data).filter(([k])=>k!==no&&k!=='_okullar').flatMap(([k,v])=>Object.values(v.roles||{}).filter(r=>names.includes(norm(r.name))).map(r=>`${r.name} (Sandık ${k})`)); if(dup.length&&!confirm(`Bu kişi(ler) başka sandıkta da görevli: ${dup.join(', ')}. Yine de kaydedilsin mi?`))return;
         const bt=form.querySelector('button[type=submit]'); bt.disabled=true;
         try{const d=await api('/sandik',{method:'PUT',json:{hood,sandik:no,roles,bina:form.bina.value.trim(),note:form.note.value.trim()}}); state.sandikData[hood]=d.data||data; state.sandikSel=null; renderSandik(); toast(`Sandık ${no} kaydedildi.`);}catch(err){bt.disabled=false; toast('Kaydedilemedi: '+(err.message||'hata'));}};
       const first=form.querySelector('.sc-role [name=name]'); if(first&&!first.value)first.focus();}
-    function exportSandikCsv(byHood,file){const rows=[['Mahalle','Sandık No','Okul/Bina','Görev','Ad Soyad','Telefon','Not']]; const sm=sandikMap(); Object.keys(byHood).sort((a,b)=>a.localeCompare(b,'tr')).forEach(h=>{const nos=new Set([...(((state.sandikNos||{})[h])||[]).map(x=>x[0]),...(state.sandikNos&&state.sandikNos[h]?[]:(sm.byHood[h]||[]).map(x=>x.no)),...Object.keys(byHood[h]||{})]); [...nos].sort((a,b)=>Number(a)-Number(b)).forEach(no=>{const e=(byHood[h]||{})[no]||{}; SANDIK_ROLES.forEach(([k,l])=>{const p=(e.roles||{})[k]||{}; rows.push([h,no,e.bina||'',l,p.name||'',p.phone?fmtPhone(p.phone):'',e.note||'']);});});}); const csv='﻿'+rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(';')).join('\r\n'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download=file; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);}
-    $('detail').addEventListener('click',e=>{const o=e.target.closest('[data-sandik-open]'); if(o){state.sandikSel=o.dataset.sandikOpen; renderSandik(); const f=document.querySelector('.sandik-edit'); if(f)f.scrollIntoView({block:'start',behavior:'smooth'});}});
+    function exportSandikCsv(byHood,file){const rows=[['Mahalle','Sandık No','Okul/Bina','Görev','Ad Soyad','Telefon','Not']]; const sm=sandikMap(); Object.keys(byHood).sort((a,b)=>a.localeCompare(b,'tr')).forEach(h=>{const nos=new Set([...(((state.sandikNos||{})[h])||[]).map(x=>x[0]),...(state.sandikNos&&state.sandikNos[h]?[]:(sm.byHood[h]||[]).map(x=>x.no)),...Object.keys(byHood[h]||{}).filter(k=>k!=='_okullar')]); [...nos].sort((a,b)=>Number(a)-Number(b)).forEach(no=>{const e=(byHood[h]||{})[no]||{}; SANDIK_ROLES.forEach(([k,l])=>{const p=(e.roles||{})[k]||{}; rows.push([h,no,e.bina||'',l,p.name||'',p.phone?fmtPhone(p.phone):'',e.note||'']);});});}); const csv='﻿'+rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(';')).join('\r\n'); const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download=file; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);}
+    $('detail').addEventListener('click',e=>{const o=e.target.closest('[data-sandik-open]'); if(o){state.sandikSel=o.dataset.sandikOpen; state.okulSel=null; renderSandik(); const f=document.querySelector('.sandik-edit'); if(f)f.scrollIntoView({block:'start',behavior:'smooth'});}});
     function renderCheck(){
       $('countText').textContent='Üye Sorgula'; $('memberList').innerHTML='';
       const c=state.check||{name:'',phone:'',result:null};
