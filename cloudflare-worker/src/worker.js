@@ -171,6 +171,7 @@ const sandikKey = hood => `__sandik__:${hood}`;
 const SANDIK_ROLES = ['asil', 'yedek', 'musahitAsil', 'musahitYedek'];
 const TOKEN_DAYS = 120;
 const K = {
+  settings: '__settings__',
   secret: '__server_secret__',
   users: '__users__',
   overrides: '__access_overrides__',
@@ -918,6 +919,27 @@ async function handle(request, env) {
   if (path === '/admin/birthday-push' && method === 'POST') {
     const denied = requireAdmin(); if (denied) return denied;
     return json({ ok: true, ...(await birthdayPush(env, { force: true, onlyUser: url.searchParams.get('me') ? user.username : '' })) });
+  }
+
+  // ---- Uygulama ayarları (ör. mahalle başkanlarına sandık kurulu hatırlatması) ----
+  if (path === '/settings' && method === 'GET') return json({ ok: true, settings: await getJson(env, K.settings, {}) });
+  if (path === '/settings' && method === 'PUT') {
+    const denied = requireAdmin(); if (denied) return denied;
+    const b = await body();
+    const settings = await getJson(env, K.settings, {});
+    if (b.sandikReminder) {
+      const r = b.sandikReminder;
+      settings.sandikReminder = { on: !!r.on, everyDays: Math.min(14, Math.max(1, Number(r.everyDays) || 3)), updatedAt: new Date().toISOString(), updatedBy: user.name };
+    }
+    await putJson(env, K.settings, settings);
+    let notified = null;
+    if (b.notify && settings.sandikReminder && settings.sandikReminder.on) {
+      const targets = (await loadUsers(env)).filter(u => u.group === 'mahalle' && !u.disabled && !u.allHoods).map(u => u.username);
+      try {
+        notified = await pushToUsers(env, targets, { title: '🗳️ Sandık kurulları', body: 'Mahallenizin sandık kurullarını oluşturmaya başlayabilirsiniz. Her sandık için 2 kurul üyesi ve 2 müşahit belirlemeniz yeterli.', url: './?ac=sandik' });
+      } catch (e) {}
+    }
+    return json({ ok: true, settings, notified });
   }
 
   // ---- Sandık kurulları (mahalle bazında: __sandik__:<mahalle>) ----
