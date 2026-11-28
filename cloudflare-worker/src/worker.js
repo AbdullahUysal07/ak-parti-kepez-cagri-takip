@@ -981,8 +981,10 @@ async function handle(request, env) {
     const all = url.searchParams.get('full') === '1' && admin;
     const out = {};
     await Promise.all(hoods.map(async h => { const d = await getJson(env, sandikKey(h), {}); out[h] = all ? d : Object.fromEntries(Object.entries(d).filter(([k]) => k !== '_okullar').map(([k, v]) => [k, Object.keys(v.roles || {})])); }));
-    const map = all ? await getJson(env, '__sandik_map__', {}) : undefined;
-    return json({ ok: true, hoods: out, map });
+    const fullMap = await getJson(env, '__sandik_map__', {});
+    const totals = {};
+    for (const [, v] of Object.entries(fullMap)) if (v && out[v[0]] !== undefined) totals[v[0]] = (totals[v[0]] || 0) + 1;
+    return json({ ok: true, hoods: out, map: all ? fullMap : undefined, totals });
   }
 
   // ---- Harita ----
@@ -1275,7 +1277,7 @@ async function handle(request, env) {
     const text = clean(b.body, 5000);
     if (!text) return json({ error: 'body_required' }, 400);
     const announcements = await getJson(env, K.announcements, []);
-    const announcement = { id: crypto.randomUUID(), body: text, target: normalizeTarget(b.target), authorName: b.authorName || 'Hasan Demir', createdAt: new Date().toISOString(), reads: [], likes: [] };
+    const announcement = { id: crypto.randomUUID(), body: text, target: normalizeTarget(b.target), authorName: b.authorName || 'Hasan Demir', createdAt: new Date().toISOString(), reads: [], likes: [], popup: !!b.popup, action: b.action === 'sandik' ? 'sandik' : '' };
     announcements.unshift(announcement);
     await putJson(env, K.announcements, announcements.slice(0, 100));
     await putJson(env, K.latest, { title: announcement.authorName, body: text, url: b.url || './', sentAt: new Date().toISOString() });
@@ -1306,6 +1308,8 @@ async function handle(request, env) {
     const text = clean(b.body, 5000);
     if (!text) return json({ error: 'body_required' }, 400);
     item.body = text;
+    if ('popup' in b) item.popup = !!b.popup;
+    if ('action' in b) item.action = b.action === 'sandik' ? 'sandik' : '';
     item.updatedAt = new Date().toISOString();
     await putJson(env, K.announcements, announcements);
     return json({ ok: true, announcement: item });
